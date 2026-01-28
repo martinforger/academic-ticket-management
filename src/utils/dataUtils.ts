@@ -30,6 +30,8 @@ export function groupRequestsByStudent(requests: Request[]): StudentSummary[] {
         // Mock semester and avatar
         let semester = 'Semester 1';
         let avatarUrl = '';
+        const email = student.studentName.toLowerCase().replace(' ', '.') + '@university.edu';
+        const totalCredits = Math.floor(student.gpa * 25); // Mock credits based on GPA roughly
 
         if (student.studentName.includes('Alex')) {
             semester = 'Semester 7';
@@ -53,6 +55,8 @@ export function groupRequestsByStudent(requests: Request[]): StudentSummary[] {
             semester,
             gpa: student.gpa,
             avatarUrl,
+            email,
+            totalCredits,
             totalRequests,
             pendingReviewCount: pendingCount,
             globalStatus,
