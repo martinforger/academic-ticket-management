@@ -11,9 +11,9 @@ export const mockRequests: Request[] = [
     studentName: 'Alex Johnson',
     gpa: 3.82,
     action: 'Agregar',
-    subject: 'Advanced Algorithms',
+    subject: 'Algoritmos Avanzados',
     nrc: '1234',
-    comments: 'Need this for graduation',
+    comments: 'Necesito esto para graduarme',
     responsible: 'AD',
     response: ''
   },
@@ -26,11 +26,11 @@ export const mockRequests: Request[] = [
     studentName: 'Alex Johnson',
     gpa: 3.82,
     action: 'Eliminar',
-    subject: 'Basic History',
+    subject: 'Historia Básica',
     nrc: '5678',
-    comments: 'Conflict with algo',
+    comments: 'Conflicto con algoritmos',
     responsible: 'AD',
-    response: 'Approved'
+    response: 'Aprobado'
   },
 
   // Sarah Chen - Clear (All Solucionado)
@@ -43,7 +43,7 @@ export const mockRequests: Request[] = [
     studentName: 'Sarah Chen',
     gpa: 3.45,
     action: 'Agregar',
-    subject: 'Database Systems',
+    subject: 'Sistemas de Bases de Datos',
     nrc: '2233',
     comments: '',
     responsible: 'AD',
@@ -58,7 +58,7 @@ export const mockRequests: Request[] = [
     studentName: 'Sarah Chen',
     gpa: 3.45,
     action: 'Agregar',
-    subject: 'Web Development',
+    subject: 'Desarrollo Web',
     nrc: '4455',
     comments: '',
     responsible: 'AD',
@@ -75,11 +75,11 @@ export const mockRequests: Request[] = [
     studentName: 'Michael Ross',
     gpa: 2.90,
     action: 'Agregar',
-    subject: 'Circuit Analysis',
+    subject: 'Análisis de Circuitos',
     nrc: '9988',
-    comments: 'Prerequisite waiver needed',
+    comments: 'Se necesita exención de prerrequisito',
     responsible: 'HM',
-    response: 'Checking with dept'
+    response: 'Consultando con el depto'
   },
 
   // David Kim - Error (No Procede)
@@ -92,11 +92,11 @@ export const mockRequests: Request[] = [
     studentName: 'David Kim',
     gpa: 3.10,
     action: 'Agregar',
-    subject: 'Machine Learning',
+    subject: 'Aprendizaje Automático',
     nrc: '7766',
-    comments: 'Full capacity?',
+    comments: '¿Capacidad completa?',
     responsible: 'AD',
-    response: 'Course is full'
+    response: 'El curso está lleno'
   },
    {
     caseId: '402',
@@ -107,11 +107,11 @@ export const mockRequests: Request[] = [
     studentName: 'David Kim',
     gpa: 3.10,
     action: 'Agregar',
-    subject: 'Data Mining',
+    subject: 'Minería de Datos',
     nrc: '7766',
     comments: '',
     responsible: 'AD',
-    response: 'Schedule conflict'
+    response: 'Conflicto de horario'
   },
 
   // Emma Wilson - Processing
@@ -124,7 +124,7 @@ export const mockRequests: Request[] = [
     studentName: 'Emma Wilson',
     gpa: 3.95,
     action: 'Agregar',
-    subject: 'UX Design',
+    subject: 'Diseño UX',
     nrc: '3344',
     comments: '',
     responsible: '',
@@ -139,7 +139,7 @@ export const mockRequests: Request[] = [
     studentName: 'Emma Wilson',
     gpa: 3.95,
     action: 'Agregar',
-    subject: 'Project Management',
+    subject: 'Gestión de Proyectos',
     nrc: '5566',
     comments: '',
     responsible: '',
@@ -154,10 +154,10 @@ export const mockRequests: Request[] = [
     studentName: 'Emma Wilson',
     gpa: 3.95,
     action: 'Eliminar',
-    subject: 'Old Elective',
+    subject: 'Electiva Antigua',
     nrc: '1111',
     comments: '',
     responsible: 'AD',
-    response: 'Done'
+    response: 'Hecho'
   }
 ];

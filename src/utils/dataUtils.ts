@@ -28,23 +28,23 @@ export function groupRequestsByStudent(requests: Request[]): StudentSummary[] {
         }
 
         // Mock semester and avatar
-        let semester = 'Semester 1';
+        let semester = 'Semestre 1';
         let avatarUrl = '';
         const email = student.studentName.toLowerCase().replace(' ', '.') + '@university.edu';
         const totalCredits = Math.floor(student.gpa * 25); // Mock credits based on GPA roughly
 
         if (student.studentName.includes('Alex')) {
-            semester = 'Semester 7';
+            semester = 'Semestre 7';
             avatarUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuApRrCZzhsXP6EIM4RXv0NA_X2fkOmVYVIu7PhyW8_GBD0pR-WU4nRRR7ipxbenV2-Oo1J4kRFBAVIF-Qh86zX1XMzVbIVx0GDXQY1nCc9A03Lc8T8UATXtDA4O93uu3vUfbJmfkQe809XoppLzZ6FIVrzmKFV9VF30C9z2Qai-GuUUWpklPlPQv9G8gduAjdSC9MG-uU1EN1cqgwP23fTnB4i97AzPVW7RiGfUMOOmNHOqfR2s0Z8LbVJh5XFFOPxQqTivV4FdyODs";
         } else if (student.studentName.includes('Sarah')) {
-            semester = 'Semester 5';
+            semester = 'Semestre 5';
         } else if (student.studentName.includes('Michael')) {
-            semester = 'Semester 3';
+            semester = 'Semestre 3';
             avatarUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuAY487eQ_d1QRQmfWEhE6sZZx7ghkm37jIBfD74fIwwvREeCENw1-EWPJwZSqvxe4Qa3aCNYKY0FCiKD4rr0SYEixp4R4FPTRs0-plcrMMkodbCvXaXjKwm2FFIEoR19hj3VhjGg7eKim96pUbnbO-BQhqE7y7ZwEVsFW4N_YPavUwL4t3J6Pn0VJAlEcs90dllMxg7F4DCSu0uDyqCoeTESMKuauT-doIX6dgsMsaiAxyhUR5vP7A5ocGudE-Q0kFzXzcMRzrSJ-iF";
         } else if (student.studentName.includes('David')) {
-            semester = 'Semester 8';
+            semester = 'Semestre 8';
         } else if (student.studentName.includes('Emma')) {
-            semester = 'Semester 2';
+            semester = 'Semestre 2';
             avatarUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuB9Y23uk1xhPgf4zAPGwZcdKCB-RpbZo-UKE_iuyB5IgzMB2OjFkZUajSqVx8IPj3sLNtWG8e5eNc8jglzPCsS8EcB3e4CKBJ_uWB_zkoiitN9KDZbymVVOhaHTYLlyaiEaojzFcnTO02zaOW7TMcgmhp3_b9iSmLytp3HTAVIFtatXP7q2kUrhTnDHqSW6JQkn-TlF9wdVr-ptsdDkhPSnvnM6xsEmVnXaR3RXsgROLro3nBTBCPeTOJ7CF9xHvk0WvtpKL-8JO56U";
         }
 

@@ -19,7 +19,7 @@ const RequestItem = ({ request }: { request: Request }) => {
     : "bg-rose-100 text-rose-800 dark:bg-rose-900/50 dark:text-rose-200 border-rose-200 dark:border-rose-800";
 
   const icon = isAdd ? 'add_circle' : 'remove_circle';
-  const label = isAdd ? 'ADD COURSE' : 'DROP COURSE';
+  const label = isAdd ? 'AGREGAR CURSO' : 'ELIMINAR CURSO';
 
   // State for form fields - initialized with props
   const [status, setStatus] = useState(request.status);
@@ -27,7 +27,7 @@ const RequestItem = ({ request }: { request: Request }) => {
 
   // Format date
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
+    return new Date(dateStr).toLocaleDateString('es-ES', {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
@@ -61,10 +61,10 @@ const RequestItem = ({ request }: { request: Request }) => {
       <div className="p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left: Student Justification */}
         <div className="lg:col-span-5 flex flex-col gap-2">
-          <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Student Justification</label>
+          <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Justificación del Estudiante</label>
           <div className="bg-gray-50 dark:bg-gray-800/30 p-4 rounded-lg border border-[#e7edf3] dark:border-gray-700 italic text-slate-600 dark:text-slate-300 text-sm leading-relaxed relative min-h-[100px]">
             <span className="material-symbols-outlined absolute top-2 left-2 text-slate-200 dark:text-slate-700 text-4xl -z-0 select-none">format_quote</span>
-            <span className="relative z-10">{request.comments || "No justification provided."}</span>
+            <span className="relative z-10">{request.comments || "No se proporcionó justificación."}</span>
           </div>
         </div>
 
@@ -73,18 +73,18 @@ const RequestItem = ({ request }: { request: Request }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Status Dropdown */}
             <label className="flex flex-col gap-2">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</span>
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Estado</span>
               <div className="relative">
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value as Status)}
                   className="w-full appearance-none rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-[#0d141b] dark:text-white py-2.5 pl-3 pr-10 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                 >
-                  <option value="SOLUCIONADO">Resolved (Solucionado)</option>
-                  <option value="EN REVISIÓN">In Review (En revisión)</option>
-                  <option value="NO PROCEDE">Rejected (No Procede)</option>
-                  <option value="POR REVISAR">Pending (Por Revisar)</option>
-                  <option value="REPETIDO/IGNORADO">Ignored (Repetido)</option>
+                  <option value="SOLUCIONADO">Solucionado</option>
+                  <option value="EN REVISIÓN">En Revisión</option>
+                  <option value="NO PROCEDE">No Procede</option>
+                  <option value="POR REVISAR">Por Revisar</option>
+                  <option value="REPETIDO/IGNORADO">Repetido/Ignorado</option>
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
                   <span className="material-symbols-outlined text-[20px]">expand_more</span>
@@ -95,12 +95,12 @@ const RequestItem = ({ request }: { request: Request }) => {
             {/* Action Type (Only for ADD) */}
             {isAdd && (
               <label className="flex flex-col gap-2">
-                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Action Type</span>
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tipo de Acción</span>
                 <div className="relative">
                   <select className="w-full appearance-none rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-[#0d141b] dark:text-white py-2.5 pl-3 pr-10 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none">
-                    <option value="override">Override Capacity</option>
-                    <option value="waitlist">Add to Waitlist</option>
-                    <option value="regular">Regular Add</option>
+                    <option value="override">Sobrecupo</option>
+                    <option value="waitlist">Agregar a Lista de Espera</option>
+                    <option value="regular">Inscripción Regular</option>
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
                     <span className="material-symbols-outlined text-[20px]">expand_more</span>
@@ -112,12 +112,12 @@ const RequestItem = ({ request }: { request: Request }) => {
 
           {/* Response Text Area */}
           <label className="flex flex-col gap-2 flex-1">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Response to Student</span>
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Respuesta al Estudiante</span>
             <textarea
               value={response}
               onChange={(e) => setResponse(e.target.value)}
               className="w-full rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-[#0d141b] dark:text-white p-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 transition-all hover:border-primary/50 resize-none h-[80px]"
-              placeholder={`Type a reply to ${request.studentName.split(' ')[0]}...`}
+              placeholder={`Escriba una respuesta a ${request.studentName.split(' ')[0]}...`}
             ></textarea>
           </label>
         </div>
@@ -142,8 +142,8 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-[#e7edf3] dark:border-gray-700 bg-white dark:bg-surface-dark shrink-0">
                 <div className="flex flex-col gap-1">
-                    <h2 className="text-xl font-bold text-[#0d141b] dark:text-white leading-tight">Student Request Details</h2>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Reviewing enrollment actions for Fall 2024</p>
+                    <h2 className="text-xl font-bold text-[#0d141b] dark:text-white leading-tight">Detalles de Solicitud del Estudiante</h2>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Revisando acciones de inscripción para Otoño 2024</p>
                 </div>
                 <button
                     onClick={onClose}
@@ -175,7 +175,7 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
                         <div className="flex-1">
                             <div className="flex flex-wrap items-center gap-3 mb-1">
                                 <h3 className="text-xl font-bold text-[#0d141b] dark:text-white">{student.studentName}</h3>
-                                <span className="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">Active</span>
+                                <span className="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">Activo</span>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1 text-sm text-slate-500 dark:text-slate-400">
                                 <p className="flex items-center gap-2">
@@ -184,11 +184,11 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
                                 </p>
                                 <p className="flex items-center gap-2">
                                     <span className="material-symbols-outlined text-[18px]">school</span>
-                                    {student.department} Engineering
+                                    Ingeniería {student.department}
                                 </p>
                                 <p className="flex items-center gap-2">
                                     <span className="material-symbols-outlined text-[18px]">menu_book</span>
-                                    Total Credits: {student.totalCredits}
+                                    Créditos Totales: {student.totalCredits}
                                 </p>
                                 <p className="flex items-center gap-2">
                                     <span className="material-symbols-outlined text-[18px]">alternate_email</span>
@@ -199,7 +199,7 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
                         <div className="flex flex-col gap-2 shrink-0 w-full md:w-auto">
                             <button className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors">
                                 <span className="material-symbols-outlined text-[18px]">history_edu</span>
-                                View Transcript
+                                Ver Historial Académico
                             </button>
                         </div>
                     </div>
@@ -209,10 +209,10 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
                 <div className="flex items-center justify-between mb-4 px-1">
                     <h3 className="text-lg font-bold text-[#0d141b] dark:text-white flex items-center gap-2">
                         <span className="material-symbols-outlined text-primary">timeline</span>
-                        Request Timeline
+                        Cronología de Solicitudes
                     </h3>
                     <span className="text-sm font-medium text-slate-500 dark:text-slate-400 bg-white dark:bg-surface-dark px-3 py-1 rounded-full border border-[#e7edf3] dark:border-gray-700">
-                        {student.requests.length} Requests Pending
+                        {student.requests.length} Solicitudes Pendientes
                     </span>
                 </div>
 
@@ -230,16 +230,16 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
                     onClick={onClose}
                     className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-medium text-sm transition-colors"
                 >
-                    Cancel
+                    Cancelar
                 </button>
                 <div className="flex gap-3">
                     <button className="px-5 py-2.5 rounded-lg border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-slate-200 font-medium text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-2">
                         <span className="material-symbols-outlined text-[18px]">save</span>
-                        Save Draft
+                        Guardar Borrador
                     </button>
                     <button className="px-5 py-2.5 rounded-lg bg-primary text-white font-medium text-sm hover:bg-blue-600 shadow-sm shadow-blue-200 dark:shadow-none transition-all flex items-center gap-2">
                         <span className="material-symbols-outlined text-[18px]">send</span>
-                        Save & Notify Student
+                        Guardar y Notificar al Estudiante
                     </button>
                 </div>
             </div>
