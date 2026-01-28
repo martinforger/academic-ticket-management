@@ -24,8 +24,8 @@ function App() {
             <div className="flex-1 overflow-y-auto p-8 flex items-center justify-center text-slate-500">
                 <div className="text-center">
                     <span className="material-symbols-outlined text-6xl mb-4">construction</span>
-                    <h2 className="text-2xl font-bold mb-2">Work in Progress</h2>
-                    <p>The {activePage} page is under construction.</p>
+                    <h2 className="text-2xl font-bold mb-2">Trabajo en Progreso</h2>
+                    <p>La página {activePage} está en construcción.</p>
                 </div>
             </div>
         );
