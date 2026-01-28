@@ -5,3 +5,16 @@
 body {
     font-family: 'Inter', "Noto Sans", sans-serif;
 }
+
+.tech-grid {
+    background-image:
+        linear-gradient(to right, rgba(19, 127, 236, 0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(19, 127, 236, 0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+}
+
+.dark .tech-grid {
+    background-image:
+        linear-gradient(to right, rgba(19, 127, 236, 0.1) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(19, 127, 236, 0.1) 1px, transparent 1px);
+}
