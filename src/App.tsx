@@ -3,9 +3,15 @@ import { Header } from './components/Header';
 import { NavigationSidebar } from './components/NavigationSidebar';
 import { DashboardOverview } from './components/DashboardOverview';
 import { StudentRecords } from './components/StudentRecords';
+import { LoginPage } from './components/LoginPage';
 
 function App() {
   const [activePage, setActivePage] = useState('overview');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+  };
 
   const renderContent = () => {
     switch (activePage) {
@@ -25,6 +31,10 @@ function App() {
         );
     }
   };
+
+  if (!isAuthenticated) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display">
