@@ -3,6 +3,7 @@ import type { StudentSummary, GlobalStatus } from '../types';
 
 interface StudentTableProps {
   students: StudentSummary[];
+  onStudentClick: (student: StudentSummary) => void;
 }
 
 const getStatusBadge = (status: GlobalStatus) => {
@@ -54,7 +55,7 @@ const getRequestBadge = (student: StudentSummary) => {
     );
 };
 
-export const StudentTable: React.FC<StudentTableProps> = ({ students }) => {
+export const StudentTable: React.FC<StudentTableProps> = ({ students, onStudentClick }) => {
   return (
     <div className="bg-white dark:bg-surface-dark rounded-xl shadow-sm border border-[#e7edf3] dark:border-gray-700 overflow-hidden flex-1 flex flex-col">
       <div className="overflow-x-auto">
@@ -105,17 +106,26 @@ export const StudentTable: React.FC<StudentTableProps> = ({ students }) => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right">
                     {student.globalStatus === 'Error' ? (
-                        <button className="text-primary hover:text-blue-700 dark:hover:text-blue-400 font-semibold text-sm inline-flex items-center gap-1">
+                        <button
+                            onClick={() => onStudentClick(student)}
+                            className="text-primary hover:text-blue-700 dark:hover:text-blue-400 font-semibold text-sm inline-flex items-center gap-1"
+                        >
                             Resolve
                             <span className="material-symbols-outlined text-[18px]">chevron_right</span>
                         </button>
                     ) : student.globalStatus === 'Clear' ? (
-                         <button className="text-gray-400 hover:text-primary dark:hover:text-blue-400 font-semibold text-sm inline-flex items-center gap-1 transition-colors">
+                         <button
+                            onClick={() => onStudentClick(student)}
+                            className="text-gray-400 hover:text-primary dark:hover:text-blue-400 font-semibold text-sm inline-flex items-center gap-1 transition-colors"
+                        >
                             Details
                             <span className="material-symbols-outlined text-[18px]">chevron_right</span>
                         </button>
                     ) : (
-                         <button className="text-primary hover:text-blue-700 dark:hover:text-blue-400 font-semibold text-sm inline-flex items-center gap-1">
+                         <button
+                            onClick={() => onStudentClick(student)}
+                            className="text-primary hover:text-blue-700 dark:hover:text-blue-400 font-semibold text-sm inline-flex items-center gap-1"
+                        >
                             Manage
                             <span className="material-symbols-outlined text-[18px]">chevron_right</span>
                         </button>

@@ -1,12 +1,19 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { StudentTable } from './components/StudentTable';
+import { StudentRequestDetailModal } from './components/StudentRequestDetailModal';
 import { mockRequests } from './data/mockData';
 import { groupRequestsByStudent } from './utils/dataUtils';
+import type { StudentSummary } from './types';
 
 function App() {
   const students = useMemo(() => groupRequestsByStudent(mockRequests), []);
+  const [selectedStudent, setSelectedStudent] = useState<StudentSummary | null>(null);
+
+  const handleStudentClick = (student: StudentSummary) => {
+    setSelectedStudent(student);
+  };
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background-light dark:bg-background-dark text-[#0d141b] dark:text-gray-100">
@@ -48,10 +55,16 @@ function App() {
                 </div>
               </div>
 
-              <StudentTable students={students} />
+              <StudentTable students={students} onStudentClick={handleStudentClick} />
            </div>
         </main>
       </div>
+
+      <StudentRequestDetailModal
+        isOpen={!!selectedStudent}
+        onClose={() => setSelectedStudent(null)}
+        student={selectedStudent}
+      />
     </div>
   );
 }
