@@ -27,6 +27,8 @@ export interface StudentSummary {
   semester: string; // Mocked
   gpa: number;
   avatarUrl: string;
+  email: string;
+  totalCredits: number;
   totalRequests: number;
   pendingReviewCount: number;
   globalStatus: GlobalStatus;
