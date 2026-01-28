@@ -18,14 +18,14 @@ Transformar la vista plana del Excel en una **Vista Centrada en el Estudiante**.
 - **Framework:** React (Vite)
 - **Lenguaje:** TypeScript (Preferible) o JavaScript.
 - **Estilos:** Tailwind CSS.
-- **Manejo de Datos:** Procesamiento de CSV (Parseo de archivos planos a objetos JSON).
+- **Manejo de Datos:** Se obtienen los datos desde una base de datos en Supabase.
 
 ---
 
 ## 3. Lógica de Negocio y Reglas
 
 ### A. Estructura de Datos (Input)
-El sistema se alimenta de un archivo `.csv` o `.xlsx` con las siguientes columnas exactas. La IA debe mapear estas columnas a propiedades del objeto:
+El sistema se alimenta de una base de datos en Supabase con las siguientes columnas exactas. La IA debe mapear estas columnas a propiedades del objeto:
 
 | Columna Excel | Propiedad Sugerida | Descripción |
 | :--- | :--- | :--- |
