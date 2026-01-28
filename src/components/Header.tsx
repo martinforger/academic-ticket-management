@@ -2,45 +2,25 @@ import React from 'react';
 
 export const Header: React.FC = () => {
   return (
-    <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#e7edf3] dark:border-gray-700 bg-surface-light dark:bg-surface-dark px-6 lg:px-10 py-3 shrink-0 z-20">
-      <div className="flex items-center gap-8">
-        <div className="flex items-center gap-4 text-[#0d141b] dark:text-white">
-          <div className="size-8 flex items-center justify-center bg-primary/10 rounded-lg text-primary">
-            <span className="material-symbols-outlined">school</span>
-          </div>
-          <h2 className="text-[#0d141b] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">Academic Admin</h2>
+    <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md px-8 py-4">
+      <div className="flex items-center gap-4 flex-1 max-w-xl">
+        <div className="relative w-full">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+          <input
+            className="w-full pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary text-sm placeholder:text-slate-500 text-slate-900 dark:text-white"
+            placeholder="Search students, requests, or reports..."
+            type="text"
+          />
         </div>
-
-        {/* Search Bar */}
-        <label className="hidden md:flex flex-col min-w-40 !h-10 w-80">
-          <div className="flex w-full flex-1 items-stretch rounded-lg h-full">
-            <div className="text-[#4c739a] dark:text-gray-400 flex border-none bg-[#e7edf3] dark:bg-gray-800 items-center justify-center pl-4 rounded-l-lg border-r-0">
-              <span className="material-symbols-outlined text-[20px]">search</span>
-            </div>
-            <input className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#0d141b] dark:text-white focus:outline-0 focus:ring-0 border-none bg-[#e7edf3] dark:bg-gray-800 focus:border-none h-full placeholder:text-[#4c739a] dark:placeholder:text-gray-500 px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal" placeholder="Search name or ID..." />
-          </div>
-        </label>
       </div>
-
-      <div className="flex flex-1 justify-end gap-6 items-center">
-        <div className="flex gap-2">
-          <button className="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 w-10 hover:bg-[#e7edf3] dark:hover:bg-gray-800 text-[#0d141b] dark:text-gray-200 transition-colors">
-            <span className="material-symbols-outlined">notifications</span>
-          </button>
-          <button className="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 w-10 hover:bg-[#e7edf3] dark:hover:bg-gray-800 text-[#0d141b] dark:text-gray-200 transition-colors">
-            <span className="material-symbols-outlined">settings</span>
-          </button>
-        </div>
-        <div className="flex items-center gap-3 pl-4 border-l border-[#e7edf3] dark:border-gray-700">
-          <div className="hidden lg:block text-right">
-            <p className="text-sm font-bold text-[#0d141b] dark:text-white">Prof. A. Davis</p>
-            <p className="text-xs text-[#4c739a] dark:text-gray-400">Registrar</p>
-          </div>
-          <div
-            className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border-2 border-white dark:border-gray-800 shadow-sm cursor-pointer"
-            style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuBx_frzcxQMS0vMH1VisSqrHgutUaNu4Pcb636lFokQSrBWtjws3uh798j-rXu0AKxM-GrPYzdL4rRBZzDfBEsbRUL5-7fzRiy6xgExmVaCYGqRvQxXOsEiXmeXDHt47MUCMAaYX09a3NFNOO77Kwmis-mPxnpS262K23LLjSR6v79_ehaFI1AfeU0ocIrcyCzVWJSxdTPwxv2S0bedpAF8SaaleOVZPgCHe1sHbWBFbgvfAK9bB2AJ1l8tN_Jbui5R2SRdKy3Ly3QL")' }}
-          ></div>
-        </div>
+      <div className="flex items-center gap-4 ml-4">
+        <button className="relative p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+          <span className="material-symbols-outlined">notifications</span>
+          <span className="absolute top-2 right-2 size-2 bg-red-500 rounded-full border-2 border-white dark:border-background-dark"></span>
+        </button>
+        <button className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+          <span className="material-symbols-outlined">help</span>
+        </button>
       </div>
     </header>
   );

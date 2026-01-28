@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { StudentSummary, Request } from '../types';
+import type { StudentSummary, Request, Status } from '../types';
 
 interface StudentRequestDetailModalProps {
   isOpen: boolean;
@@ -77,7 +77,7 @@ const RequestItem = ({ request }: { request: Request }) => {
               <div className="relative">
                 <select
                   value={status}
-                  onChange={(e) => setStatus(e.target.value as any)}
+                  onChange={(e) => setStatus(e.target.value as Status)}
                   className="w-full appearance-none rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-[#0d141b] dark:text-white py-2.5 pl-3 pr-10 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                 >
                   <option value="SOLUCIONADO">Resolved (Solucionado)</option>
