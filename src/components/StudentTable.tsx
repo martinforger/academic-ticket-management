@@ -12,21 +12,21 @@ const getStatusBadge = (status: GlobalStatus) => {
       return (
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
           <span className="material-symbols-outlined text-[16px]">warning</span>
-          Needs Attention
+          Requiere Atención
         </span>
       );
     case 'Clear':
       return (
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
           <span className="material-symbols-outlined text-[16px]">check_circle</span>
-          Clear
+          Limpio
         </span>
       );
     case 'Processing':
        return (
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
             <span className="material-symbols-outlined text-[16px]">schedule</span>
-            Processing
+            Procesando
         </span>
        );
     case 'Error':
@@ -43,7 +43,7 @@ const getRequestBadge = (student: StudentSummary) => {
     if (student.globalStatus === 'Error') {
          return (
              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200">
-                {student.requests.length} Rejected
+                {student.requests.length} Rechazado
              </span>
          );
     }
@@ -62,11 +62,11 @@ export const StudentTable: React.FC<StudentTableProps> = ({ students, onStudentC
         <table className="w-full text-left border-collapse">
           <thead className="bg-gray-50 dark:bg-gray-800/50 text-[#4c739a] dark:text-gray-400 text-xs uppercase font-bold tracking-wider">
             <tr>
-              <th className="px-6 py-4 border-b border-[#e7edf3] dark:border-gray-700">Student Identity</th>
-              <th className="px-6 py-4 border-b border-[#e7edf3] dark:border-gray-700">Academic Standing</th>
-              <th className="px-6 py-4 border-b border-[#e7edf3] dark:border-gray-700">Requests</th>
-              <th className="px-6 py-4 border-b border-[#e7edf3] dark:border-gray-700">Global Status</th>
-              <th className="px-6 py-4 border-b border-[#e7edf3] dark:border-gray-700 text-right">Action</th>
+              <th className="px-6 py-4 border-b border-[#e7edf3] dark:border-gray-700">Identidad del Estudiante</th>
+              <th className="px-6 py-4 border-b border-[#e7edf3] dark:border-gray-700">Estado Académico</th>
+              <th className="px-6 py-4 border-b border-[#e7edf3] dark:border-gray-700">Solicitudes</th>
+              <th className="px-6 py-4 border-b border-[#e7edf3] dark:border-gray-700">Estado Global</th>
+              <th className="px-6 py-4 border-b border-[#e7edf3] dark:border-gray-700 text-right">Acción</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#e7edf3] dark:divide-gray-700">
@@ -91,13 +91,13 @@ export const StudentTable: React.FC<StudentTableProps> = ({ students, onStudentC
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm font-medium text-[#0d141b] dark:text-gray-200">{student.semester}</div>
-                  <div className="text-xs text-[#4c739a] dark:text-gray-400">GPA: {student.gpa.toFixed(2)}</div>
+                  <div className="text-xs text-[#4c739a] dark:text-gray-400">Promedio: {student.gpa.toFixed(2)}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex flex-col items-start gap-1">
                     {getRequestBadge(student)}
                     <span className="text-xs text-[#4c739a] dark:text-gray-400 pl-1">
-                        {student.globalStatus === 'Error' ? 'Resubmission Req.' : student.pendingReviewCount > 0 ? `${student.pendingReviewCount} Pending Review` : '0 Pending'}
+                        {student.globalStatus === 'Error' ? 'Req. Reenvío' : student.pendingReviewCount > 0 ? `${student.pendingReviewCount} Pendiente de Revisión` : '0 Pendientes'}
                     </span>
                   </div>
                 </td>
@@ -110,7 +110,7 @@ export const StudentTable: React.FC<StudentTableProps> = ({ students, onStudentC
                             onClick={() => onStudentClick(student)}
                             className="text-primary hover:text-blue-700 dark:hover:text-blue-400 font-semibold text-sm inline-flex items-center gap-1"
                         >
-                            Resolve
+                            Resolver
                             <span className="material-symbols-outlined text-[18px]">chevron_right</span>
                         </button>
                     ) : student.globalStatus === 'Clear' ? (
@@ -118,7 +118,7 @@ export const StudentTable: React.FC<StudentTableProps> = ({ students, onStudentC
                             onClick={() => onStudentClick(student)}
                             className="text-gray-400 hover:text-primary dark:hover:text-blue-400 font-semibold text-sm inline-flex items-center gap-1 transition-colors"
                         >
-                            Details
+                            Detalles
                             <span className="material-symbols-outlined text-[18px]">chevron_right</span>
                         </button>
                     ) : (
@@ -126,7 +126,7 @@ export const StudentTable: React.FC<StudentTableProps> = ({ students, onStudentC
                             onClick={() => onStudentClick(student)}
                             className="text-primary hover:text-blue-700 dark:hover:text-blue-400 font-semibold text-sm inline-flex items-center gap-1"
                         >
-                            Manage
+                            Gestionar
                             <span className="material-symbols-outlined text-[18px]">chevron_right</span>
                         </button>
                     )}
@@ -140,11 +140,11 @@ export const StudentTable: React.FC<StudentTableProps> = ({ students, onStudentC
       {/* Pagination */}
       <div className="p-4 border-t border-[#e7edf3] dark:border-gray-700 bg-gray-50 dark:bg-gray-800/30 flex items-center justify-between mt-auto">
         <div className="text-sm text-gray-500 dark:text-gray-400">
-           Showing <span className="font-medium">1</span> to <span className="font-medium">{students.length}</span> of <span className="font-medium">142</span> results
+           Mostrando <span className="font-medium">1</span> a <span className="font-medium">{students.length}</span> de <span className="font-medium">142</span> resultados
         </div>
         <div className="flex gap-2">
-            <button className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-500 dark:text-gray-300 disabled:opacity-50">Previous</button>
-            <button className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-500 dark:text-gray-300">Next</button>
+            <button className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-500 dark:text-gray-300 disabled:opacity-50">Anterior</button>
+            <button className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-500 dark:text-gray-300">Siguiente</button>
         </div>
       </div>
     </div>
