@@ -23,14 +23,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                     <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>school</span>
                 </div>
                 <div className="flex flex-col">
-                    <h1 className="text-lg font-bold leading-none tracking-tight">Computer Engineering School</h1>
-                    <p className="text-xs text-[#4c739a] font-medium uppercase tracking-wider">Academic Registration System</p>
+                    <h1 className="text-lg font-bold leading-none tracking-tight">Escuela de Ingeniería Informática</h1>
+                    <p className="text-xs text-[#4c739a] font-medium uppercase tracking-wider">Sistema de Registro Académico</p>
                 </div>
             </div>
             <div className="flex items-center gap-4">
-                <span className="text-sm font-medium text-[#4c739a] hidden md:block">Need assistance?</span>
+                <span className="text-sm font-medium text-[#4c739a] hidden md:block">¿Necesita ayuda?</span>
                 <button className="bg-primary/10 hover:bg-primary/20 text-primary px-4 py-2 rounded-lg text-sm font-bold transition-colors">
-                    Support
+                    Soporte
                 </button>
             </div>
         </header>
@@ -44,8 +44,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                     <div className="inline-flex items-center justify-center size-14 rounded-full bg-primary/10 text-primary mb-4">
                         <span className="material-symbols-outlined text-3xl">terminal</span>
                     </div>
-                    <h2 className="text-2xl font-bold tracking-tight text-[#0d141b] dark:text-white">Academic Portal Login</h2>
-                    <p className="text-[#4c739a] dark:text-slate-400 mt-2 text-sm">Secure access for students and faculty members</p>
+                    <h2 className="text-2xl font-bold tracking-tight text-[#0d141b] dark:text-white">Inicio de Sesión Académico</h2>
+                    <p className="text-[#4c739a] dark:text-slate-400 mt-2 text-sm">Acceso seguro para estudiantes y profesores</p>
                 </div>
 
                 {/* Form */}
@@ -53,13 +53,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                     {/* Email */}
                     <div className="flex flex-col gap-2">
                         <label className="text-sm font-semibold text-[#0d141b] dark:text-slate-200" htmlFor="email">
-                            Email Address
+                            Correo Electrónico
                         </label>
                         <div className="relative">
                             <input
                                 className="form-input flex w-full rounded-lg text-[#0d141b] dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 border border-[#cfdbe7] dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:border-primary h-12 px-4 text-base font-normal placeholder:text-[#4c739a]/60"
                                 id="email"
-                                placeholder="e.g., student@eng.school.edu"
+                                placeholder="ej., estudiante@ing.escuela.edu"
                                 required
                                 type="email"
                                 value={email}
@@ -72,15 +72,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                     <div className="flex flex-col gap-2">
                         <div className="flex justify-between items-center">
                             <label className="text-sm font-semibold text-[#0d141b] dark:text-slate-200" htmlFor="password">
-                                Password
+                                Contraseña
                             </label>
-                            <a className="text-xs font-bold text-primary hover:underline" href="#">Forgot password?</a>
+                            <a className="text-xs font-bold text-primary hover:underline" href="#">¿Olvidó su contraseña?</a>
                         </div>
                         <div className="flex w-full items-stretch relative">
                             <input
                                 className="form-input flex w-full rounded-lg text-[#0d141b] dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 border border-[#cfdbe7] dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:border-primary h-12 pl-4 pr-10 text-base font-normal placeholder:text-[#4c739a]/60"
                                 id="password"
-                                placeholder="Enter your password"
+                                placeholder="Ingrese su contraseña"
                                 required
                                 type={showPassword ? "text" : "password"}
                                 value={password}
@@ -101,12 +101,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                     {/* Remember Me */}
                     <div className="flex items-center gap-2 py-1">
                         <input className="rounded border-[#cfdbe7] text-primary focus:ring-primary h-4 w-4" id="remember" type="checkbox" />
-                        <label className="text-sm text-[#4c739a] dark:text-slate-400" htmlFor="remember">Remember this device</label>
+                        <label className="text-sm text-[#4c739a] dark:text-slate-400" htmlFor="remember">Recordar este dispositivo</label>
                     </div>
 
                     {/* Submit Button */}
                     <button className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3.5 px-6 rounded-lg transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2" type="submit">
-                        <span className="truncate">Sign In to Dashboard</span>
+                        <span className="truncate">Iniciar Sesión</span>
                         <span className="material-symbols-outlined text-lg">login</span>
                     </button>
                 </form>
@@ -114,7 +114,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 {/* Footer */}
                 <div className="mt-8 pt-6 border-t border-[#e7edf3] dark:border-slate-800 text-center">
                     <p className="text-xs text-[#4c739a] dark:text-slate-500 leading-relaxed">
-                        By signing in, you agree to our <a className="underline" href="#">Terms of Service</a> and <a className="underline" href="#">Privacy Policy</a>. This is a secure institutional system.
+                        Al iniciar sesión, acepta nuestros <a className="underline" href="#">Términos de Servicio</a> y <a className="underline" href="#">Política de Privacidad</a>. Este es un sistema institucional seguro.
                     </p>
                 </div>
             </div>
@@ -133,7 +133,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
                 <div className="flex gap-6 items-center">
                     <div className="h-8 w-px bg-[#e7edf3] dark:bg-slate-800 hidden md:block"></div>
-                    <p className="text-sm text-[#4c739a]">© 2024 Computer Engineering School - Academic Registration Management System</p>
+                    <p className="text-sm text-[#4c739a]">© 2024 Escuela de Ingeniería Informática - Sistema de Gestión de Registro Académico</p>
                 </div>
                 <div className="flex gap-4">
                     <div className="size-8 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-full text-[#4c739a] hover:text-primary cursor-pointer transition-colors">
