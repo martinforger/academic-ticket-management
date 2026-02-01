@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { StudentSummary, Request, Status } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -165,6 +165,54 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
   const [saving, setSaving] = useState(false);
   const isReader = profile?.role === 'lector';
 
+  // Track IDs of requests that were auto-claimed
+  const autoClaimedIdsRef = useRef<number[]>([]);
+
+  // Auto-claim effect: when modal opens, claim all "POR REVISAR" requests
+  useEffect(() => {
+    const autoClaim = async () => {
+      if (!isOpen || !student || isReader || !profile) return;
+
+      const porRevisarRequests = student.requests.filter(r => r.status === 'POR REVISAR');
+      if (porRevisarRequests.length === 0) return;
+
+      const idsToClam = porRevisarRequests.map(r => r.id);
+      autoClaimedIdsRef.current = idsToClam;
+
+      try {
+        // Batch update all POR REVISAR to EN REVISIÓN
+        const { error } = await supabase
+          .from('observaciones')
+          .update({
+            estatus: 'EN REVISIÓN',
+            responsable: profile.initials
+          })
+          .in('id', idsToClam);
+
+        if (error) throw error;
+
+        // Audit log for batch claim
+        await supabase.from('audit_logs').insert({
+          user_id: profile.id,
+          case_id: student.studentId,
+          action: 'BATCH_CLAIM_REQUESTS',
+          details: {
+            description: 'Solicitudes tomadas automáticamente al abrir expediente estudiante',
+            count: idsToClam.length,
+            ids: idsToClam
+          },
+          changes: { status: { old: 'POR REVISAR', new: 'EN REVISIÓN' } }
+        });
+
+      } catch (err) {
+        console.error('Error auto-claiming requests:', err);
+      }
+    };
+
+    autoClaim();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, student?.studentId]);
+
   if (!isOpen || !student) return null;
 
   const handleRequestChange = (reqId: number, changes: Partial<Request>) => {
@@ -172,6 +220,49 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
       ...prev,
       [reqId]: { ...prev[reqId], ...changes }
     }));
+  };
+
+  const handleClose = async () => {
+    // Revert any auto-claimed requests that weren't explicitly changed
+    if (autoClaimedIdsRef.current.length > 0 && !isReader && profile) {
+      // Find IDs that were not changed by the user
+      const unchangedIds = autoClaimedIdsRef.current.filter(id => {
+        const changes = requestChanges[id];
+        // If no changes, or if status wasn't changed from EN REVISIÓN
+        return !changes || !changes.status || changes.status === 'EN REVISIÓN';
+      });
+
+      if (unchangedIds.length > 0) {
+        try {
+          await supabase
+            .from('observaciones')
+            .update({
+              estatus: 'POR REVISAR',
+              responsable: ''
+            })
+            .in('id', unchangedIds);
+
+          // Audit log for unclaim
+          await supabase.from('audit_logs').insert({
+            user_id: profile.id,
+            case_id: student.studentId,
+            action: 'BATCH_UNCLAIM_REQUESTS',
+            details: {
+              description: 'Solicitudes liberadas al cerrar expediente sin resolver',
+              count: unchangedIds.length,
+              ids: unchangedIds
+            },
+            changes: { status: { old: 'EN REVISIÓN', new: 'POR REVISAR' } }
+          });
+        } catch (err) {
+          console.error('Error reverting requests:', err);
+        }
+      }
+    }
+
+    autoClaimedIdsRef.current = [];
+    setRequestChanges({});
+    onClose();
   };
 
   const handleSave = async () => {
@@ -222,6 +313,8 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
 
       await Promise.all(promises);
 
+      // Clear auto-claimed refs since user explicitly saved
+      autoClaimedIdsRef.current = [];
       setRequestChanges({});
       if (onRefresh) onRefresh();
       onClose();
@@ -239,7 +332,7 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
       {/* Backdrop */}
       <div
         className="fixed inset-0 z-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
-        onClick={onClose}
+        onClick={handleClose}
       ></div>
 
       {/* Modal Container */}
@@ -251,7 +344,7 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
             <p className="text-sm text-indigo-600/70 dark:text-indigo-400">Revisando acciones de inscripción para Otoño 2024</p>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors rounded-full p-2 hover:bg-slate-100 dark:hover:bg-slate-700"
           >
             <span className="material-symbols-outlined">close</span>
@@ -323,7 +416,7 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
         {/* Footer Action Bar */}
         <div className="px-6 py-4 border-t border-[#e7edf3] dark:border-gray-700 bg-white dark:bg-surface-dark shrink-0 flex justify-between items-center">
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-medium text-sm transition-colors"
           >
             Cancelar

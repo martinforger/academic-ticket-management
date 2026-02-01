@@ -311,13 +311,15 @@ export const RequestsView: React.FC = () => {
                     const isFirstInGroup = isPartOfGroup && (currentBase !== prevBase);
                     const isLastInGroup = isPartOfGroup && (currentBase !== nextBase);
 
+                    const isInReview = req.status === 'EN REVISIÓN';
+
                     return (
                       <tr
                         key={req.id}
                         onClick={() => setSelectedRequest(req)}
-                        className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors group cursor-pointer"
+                        className={`hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors group cursor-pointer ${isInReview ? 'bg-amber-50/50 dark:bg-amber-900/10' : ''}`}
                       >
-                        <td className="pl-10 pr-4 py-4 whitespace-nowrap w-24 relative">
+                        <td className={`pl-10 pr-4 py-4 whitespace-nowrap w-24 relative ${isInReview ? 'border-l-4 border-amber-400' : ''}`}>
                           {/* Visual Connection Line */}
                           {isPartOfGroup && (
                             <div className="absolute left-5 top-0 bottom-0 flex flex-col items-center">
@@ -330,6 +332,12 @@ export const RequestsView: React.FC = () => {
 
                           <div className="text-[10px] text-slate-400 font-mono mb-0.5">#{req.caseId}</div>
                           <div className="text-[11px] font-bold text-slate-600 dark:text-slate-400 italic leading-tight">{formatDate(req.date)}</div>
+                          {isInReview && req.responsible && (
+                            <div className="mt-1 flex items-center gap-1 text-[9px] font-bold text-amber-700 dark:text-amber-400">
+                              <span className="material-symbols-outlined text-[12px]">person</span>
+                              {req.responsible}
+                            </div>
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-bold text-slate-900 dark:text-white">{req.studentName}</div>
@@ -346,6 +354,12 @@ export const RequestsView: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <StatusBadge status={req.status} />
+                          {isInReview && (
+                            <div className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-[9px] font-bold text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                              <span className="material-symbols-outlined text-[10px] animate-pulse">visibility</span>
+                              Revisando: {req.responsible || '...'}
+                            </div>
+                          )}
                         </td>
                       </tr>
                     );
@@ -438,10 +452,94 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, onClose, onUp
   const [studentResponse, setStudentResponse] = useState(request.studentResponse);
   const [saving, setSaving] = useState(false);
 
+  // Track if request was auto-claimed when opening
+  const wasAutoClaimedRef = React.useRef(false);
+
   const isReader = profile?.role === 'lector';
 
+  // Auto-claim: When opening a "POR REVISAR" request, automatically set to "EN REVISIÓN"
+  useEffect(() => {
+    const autoClaim = async () => {
+      if (isReader || !profile) return;
+
+      // Only auto-claim if the request is "POR REVISAR"
+      if (request.status === 'POR REVISAR') {
+        try {
+          wasAutoClaimedRef.current = true;
+
+          const { error } = await supabase
+            .from('observaciones')
+            .update({
+              estatus: 'EN REVISIÓN',
+              responsable: profile.initials
+            })
+            .eq('id', request.id);
+
+          if (error) throw error;
+
+          // Update local state
+          setStatus('EN REVISIÓN');
+
+          // Audit log for claim
+          await supabase.from('audit_logs').insert({
+            user_id: profile.id,
+            case_id: request.caseId,
+            action: 'CLAIM_REQUEST',
+            details: { description: 'Solicitud tomada automáticamente al abrirla' },
+            changes: { status: { old: 'POR REVISAR', new: 'EN REVISIÓN' } }
+          });
+
+          // DO NOT call onUpdate here - wait until close or save
+        } catch (err) {
+          console.error('Error auto-claiming request:', err);
+        }
+      }
+    };
+
+    autoClaim();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
+
+  const handleClose = async () => {
+    // If the request was auto-claimed and the user didn't change the status
+    // (still EN REVISIÓN), revert to POR REVISAR
+    if (wasAutoClaimedRef.current && status === 'EN REVISIÓN' && !isReader && profile) {
+      try {
+        await supabase
+          .from('observaciones')
+          .update({
+            estatus: 'POR REVISAR',
+            responsable: ''
+          })
+          .eq('id', request.id);
+
+        // Audit log for unclaim
+        await supabase.from('audit_logs').insert({
+          user_id: profile.id,
+          case_id: request.caseId,
+          action: 'UNCLAIM_REQUEST',
+          details: { description: 'Solicitud liberada al cerrar sin resolver' },
+          changes: { status: { old: 'EN REVISIÓN', new: 'POR REVISAR' } }
+        });
+
+        // Update parent component with reverted status
+        onUpdate({ ...request, status: 'POR REVISAR', responsible: '' });
+      } catch (err) {
+        console.error('Error reverting request:', err);
+      }
+    } else if (wasAutoClaimedRef.current && status !== request.status) {
+      // User changed status from EN REVISIÓN to something else
+      // Update parent with new status
+      onUpdate({ ...request, status, responsible: profile?.initials || request.responsible });
+    }
+
+    onClose();
+  };
+
+  const canSave = status !== 'SOLUCIONADO' || (internalResponse.trim() !== '' && studentResponse.trim() !== '');
+
   const handleSave = async () => {
-    if (isReader || !profile) return;
+    if (isReader || !profile || !canSave) return;
     setSaving(true);
     try {
       const updates: any = {
@@ -493,16 +591,32 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, onClose, onUp
     }
   };
 
+  // Get colors based on current status
+  const getStatusColors = () => {
+    switch (status) {
+      case 'POR REVISAR': return { border: 'border-rose-500', bg: 'bg-rose-50/30 dark:bg-rose-900/10', text: 'text-rose-900 dark:text-rose-100', btn: 'hover:bg-rose-100/50 dark:hover:bg-rose-900/40', icon: 'text-rose-600' };
+      case 'EN REVISIÓN': return { border: 'border-amber-500', bg: 'bg-amber-50/30 dark:bg-amber-900/10', text: 'text-amber-900 dark:text-amber-100', btn: 'hover:bg-amber-100/50 dark:hover:bg-amber-900/40', icon: 'text-amber-600' };
+      case 'SOLUCIONADO': return { border: 'border-emerald-500', bg: 'bg-emerald-50/30 dark:bg-emerald-900/10', text: 'text-emerald-900 dark:text-emerald-100', btn: 'hover:bg-emerald-100/50 dark:hover:bg-emerald-900/40', icon: 'text-emerald-600' };
+      case 'NO PROCEDE': return { border: 'border-orange-500', bg: 'bg-orange-50/30 dark:bg-orange-900/10', text: 'text-orange-900 dark:text-orange-100', btn: 'hover:bg-orange-100/50 dark:hover:bg-orange-900/40', icon: 'text-orange-600' };
+      case 'IGNORADO': return { border: 'border-slate-400', bg: 'bg-slate-50/30 dark:bg-slate-800/30', text: 'text-slate-700 dark:text-slate-300', btn: 'hover:bg-slate-100/50 dark:hover:bg-slate-800/40', icon: 'text-slate-500' };
+      case 'REPETIDO': return { border: 'border-purple-500', bg: 'bg-purple-50/30 dark:bg-purple-900/10', text: 'text-purple-900 dark:text-purple-100', btn: 'hover:bg-purple-100/50 dark:hover:bg-purple-900/40', icon: 'text-purple-600' };
+      case 'REVISADO': return { border: 'border-blue-500', bg: 'bg-blue-50/30 dark:bg-blue-900/10', text: 'text-blue-900 dark:text-blue-100', btn: 'hover:bg-blue-100/50 dark:hover:bg-blue-900/40', icon: 'text-blue-600' };
+      default: return { border: 'border-emerald-600', bg: 'bg-emerald-50/30 dark:bg-emerald-900/10', text: 'text-emerald-900 dark:text-emerald-100', btn: 'hover:bg-emerald-100/50 dark:hover:bg-emerald-900/40', icon: 'text-emerald-600' };
+    }
+  };
+
+  const colors = getStatusColors();
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-      <div className="bg-white dark:bg-surface-dark w-full max-w-3xl rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200 border-t-8 border-emerald-600">
-        <div className="flex items-center justify-between p-6 border-b border-emerald-50 dark:border-emerald-900/20 bg-emerald-50/30 dark:bg-emerald-900/10">
-          <h2 className="text-xl font-bold text-emerald-900 dark:text-emerald-100 italic flex items-center gap-2">
+      <div className={`bg-white dark:bg-surface-dark w-full max-w-3xl rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200 border-t-8 ${colors.border} transition-colors`}>
+        <div className={`flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800 ${colors.bg} transition-colors`}>
+          <h2 className={`text-xl font-bold ${colors.text} italic flex items-center gap-2 transition-colors`}>
             <span className="material-symbols-outlined">description</span>
             Ficha de Solicitud #{request.caseId}
           </h2>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-emerald-100/50 dark:hover:bg-emerald-900/40 transition-colors">
-            <span className="material-symbols-outlined text-emerald-600">close</span>
+          <button onClick={handleClose} className={`p-2 rounded-full ${colors.btn} transition-colors`}>
+            <span className={`material-symbols-outlined ${colors.icon}`}>close</span>
           </button>
         </div>
 
@@ -604,31 +718,41 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, onClose, onUp
           </div>
 
           <div>
-            <label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">Respuesta Interna</label>
+            <label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">
+              Respuesta Interna {status === 'SOLUCIONADO' && <span className="text-rose-500">*</span>}
+            </label>
             <textarea
               value={internalResponse}
               disabled={isReader}
               onChange={(e) => setInternalResponse(e.target.value)}
-              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3 text-sm min-h-[80px] disabled:opacity-50 disabled:bg-slate-100"
+              className={`w-full bg-white dark:bg-slate-900 border ${status === 'SOLUCIONADO' && internalResponse.trim() === '' ? 'border-rose-300 dark:border-rose-900' : 'border-slate-200 dark:border-slate-800'} rounded-lg p-3 text-sm min-h-[80px] disabled:opacity-50 disabled:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20`}
               placeholder="Notas para el equipo administrativo..."
             />
           </div>
 
           <div>
-            <label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">Respuesta al Estudiante</label>
+            <label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">
+              Respuesta al Estudiante {status === 'SOLUCIONADO' && <span className="text-rose-500">*</span>}
+            </label>
             <textarea
               value={studentResponse}
               disabled={isReader}
               onChange={(e) => setStudentResponse(e.target.value)}
-              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3 text-sm min-h-[80px] disabled:opacity-50 disabled:bg-slate-100"
+              className={`w-full bg-white dark:bg-slate-900 border ${status === 'SOLUCIONADO' && studentResponse.trim() === '' ? 'border-rose-300 dark:border-rose-900' : 'border-slate-200 dark:border-slate-800'} rounded-lg p-3 text-sm min-h-[80px] disabled:opacity-50 disabled:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20`}
               placeholder="Este mensaje será enviado al estudiante..."
             />
           </div>
+          {status === 'SOLUCIONADO' && (!internalResponse.trim() || !studentResponse.trim()) && (
+            <p className="text-[11px] text-rose-500 font-bold flex items-center gap-1 animate-pulse">
+              <span className="material-symbols-outlined text-[14px]">warning</span>
+              Debes completar ambas respuestas para marcar como SOLUCIONADO
+            </p>
+          )}
         </div>
 
         <div className="p-6 bg-slate-50 dark:bg-slate-800/20 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
           >
             Cancelar
@@ -636,8 +760,8 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, onClose, onUp
           {!isReader && (
             <button
               onClick={handleSave}
-              disabled={saving}
-              className="px-6 py-2 bg-emerald-600 text-white rounded-lg text-sm font-bold hover:bg-emerald-700 transition-colors disabled:opacity-50 shadow-sm shadow-emerald-200 dark:shadow-none"
+              disabled={saving || !canSave}
+              className="px-6 py-2 bg-emerald-600 text-white rounded-lg text-sm font-bold hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:bg-slate-300 dark:disabled:bg-slate-800 shadow-sm shadow-emerald-200 dark:shadow-none"
             >
               {saving ? 'Guardando...' : 'Guardar Cambios'}
             </button>
