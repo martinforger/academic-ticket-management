@@ -20,13 +20,7 @@ export function groupRequestsByStudent(requests: Request[]): StudentSummary[] {
     const semester = student.semester || "N/A";
     const totalCredits = student.credits || 0;
 
-    const email = student.studentName
-      ? student.studentName
-          .toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/\s+/g, ".") + "@correo.unimet.edu.ve"
-      : "sin.correo@unimet.edu.ve";
+    const email = student.contact || "sin.correo@est.ucab.edu.ve";
 
     return {
       studentId: student.studentId,
