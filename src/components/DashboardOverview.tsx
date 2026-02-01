@@ -85,130 +85,77 @@ export const DashboardOverview: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const { data, error } = await supabase
-          .from('observaciones')
-          .select('*');
+        // Run all queries in parallel for better performance
+        const [
+          statsResult,
+          statusResult,
+          deptResult,
+          respResult,
+          volumeResult
+        ] = await Promise.all([
+          supabase.rpc('get_dashboard_stats'),
+          supabase.rpc('get_status_distribution'),
+          supabase.rpc('get_department_distribution'),
+          supabase.rpc('get_top_responsibles', { limit_count: 5 }),
+          supabase.rpc('get_daily_volume', { days_back: 30 })
+        ]);
 
-        if (error) throw error;
+        // 1. Process basic statistics
+        if (statsResult.data) {
+          const s = statsResult.data;
+          const total = s.total || 0;
+          const solved = s.solved || 0;
+          const noProcede = s.no_procede || 0;
+          const uniqueDates = s.unique_dates || 1;
 
-        const requests = data as any[];
-
-        // 1. Basic Statistics
-        const uniqueStudents = new Set(requests.map(r => r.cédula)).size;
-        const active = requests.filter(r => ['POR REVISAR', 'EN REVISIÓN'].includes(r.estatus)).length;
-        const solved = requests.filter(r => r.estatus === 'SOLUCIONADO').length;
-        const noProcede = requests.filter(r => r.estatus === 'NO PROCEDE').length;
-        const total = requests.length;
-        const urgent = requests.filter(r => r.estatus === 'POR REVISAR').length;
-
-        // Action counts
-        const addCount = requests.filter(r => r.acción === 'Agregar').length;
-        const removeCount = requests.filter(r => r.acción === 'Eliminar').length;
-
-        // Calculate daily average (based on date range)
-        const dates = requests.filter(r => r.fecha).map(r => new Date(r.fecha).toISOString().split('T')[0]);
-        const uniqueDates = new Set(dates);
-        const dailyAverage = uniqueDates.size > 0 ? Math.round(total / uniqueDates.size) : 0;
-
-        setStats({
-          totalStudents: uniqueStudents,
-          activeRequests: active,
-          completionRate: total > 0 ? Math.round((solved / total) * 100) : 0,
-          urgentCases: urgent,
-          rejectionRate: total > 0 ? Math.round((noProcede / total) * 100 * 10) / 10 : 0,
-          addCount,
-          removeCount,
-          dailyAverage
-        });
-
-        // 2. Status Distribution
-        const distribution: Record<string, number> = {};
-        requests.forEach(r => {
-          distribution[r.estatus] = (distribution[r.estatus] || 0) + 1;
-        });
-        setStatusDistribution(distribution);
-
-        // 3. Department Distribution
-        const deptCounts: Record<string, number> = {};
-        requests.forEach(r => {
-          const dept = r['Clasif.'];
-          if (dept) {
-            deptCounts[dept] = (deptCounts[dept] || 0) + 1;
-          }
-        });
-
-        const deptStats: DepartmentStats[] = Object.entries(deptCounts)
-          .map(([id, count]) => ({
-            id,
-            name: DEPARTMENT_NAMES[id] || id,
-            count,
-            percentage: Math.round((count / total) * 100),
-            color: DEPARTMENT_COLORS[id] || '#94a3b8'
-          }))
-          .sort((a, b) => b.count - a.count);
-
-        setDepartmentStats(deptStats);
-
-        // 4. Responsible Stats
-        const respCounts: Record<string, { total: number; solved: number }> = {};
-        requests.forEach(r => {
-          const resp = r.responsable?.trim();
-          if (resp && resp.length > 0 && resp.length <= 20) { // Filter valid names
-            if (!respCounts[resp]) {
-              respCounts[resp] = { total: 0, solved: 0 };
-            }
-            respCounts[resp].total++;
-            if (r.estatus === 'SOLUCIONADO') {
-              respCounts[resp].solved++;
-            }
-          }
-        });
-
-        const respStats: ResponsibleStats[] = Object.entries(respCounts)
-          .map(([name, stats]) => ({
-            name,
-            total: stats.total,
-            solved: stats.solved,
-            rate: stats.total > 0 ? Math.round((stats.solved / stats.total) * 100) : 0
-          }))
-          .filter(r => r.total >= 5) // Only show responsibles with 5+ cases
-          .sort((a, b) => b.solved - a.solved)
-          .slice(0, 5);
-
-        setResponsibleStats(respStats);
-
-        // 5. Line Chart (Last 30 Days)
-        const now = new Date();
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(now.getDate() - 30);
-
-        const dailyCounts: Record<string, number> = {};
-        for (let i = 0; i <= 30; i++) {
-          const d = new Date(thirtyDaysAgo);
-          d.setDate(d.getDate() + i);
-          dailyCounts[d.toISOString().split('T')[0]] = 0;
+          setStats({
+            totalStudents: s.unique_students || 0,
+            activeRequests: s.active_requests || 0,
+            completionRate: total > 0 ? Math.round((solved / total) * 100) : 0,
+            urgentCases: s.urgent || 0,
+            rejectionRate: total > 0 ? Math.round((noProcede / total) * 100 * 10) / 10 : 0,
+            addCount: s.add_count || 0,
+            removeCount: s.remove_count || 0,
+            dailyAverage: uniqueDates > 0 ? Math.round(total / uniqueDates) : 0
+          });
         }
 
-        requests.forEach(r => {
-          if (r.fecha) {
-            const dateStr = new Date(r.fecha).toISOString().split('T')[0];
-            if (dailyCounts[dateStr] !== undefined) {
-              dailyCounts[dateStr]++;
-            }
-          }
-        });
+        // 2. Status Distribution
+        if (statusResult.data) {
+          setStatusDistribution(statusResult.data);
+        }
 
-        const sortedDates = Object.keys(dailyCounts).sort();
-        const maxCount = Math.max(...Object.values(dailyCounts), 1);
+        // 3. Department Distribution
+        if (deptResult.data) {
+          const deptStats: DepartmentStats[] = deptResult.data.map((d: any) => ({
+            id: d.id,
+            name: DEPARTMENT_NAMES[d.id] || d.id,
+            count: d.count,
+            percentage: d.percentage,
+            color: DEPARTMENT_COLORS[d.id] || '#94a3b8'
+          }));
+          setDepartmentStats(deptStats);
+        }
 
-        const points = sortedDates.map((date, index) => ({
-          x: (index / 30) * 400,
-          y: 100 - (dailyCounts[date] / maxCount) * 80 - 10
-        }));
+        // 4. Responsible Stats
+        if (respResult.data) {
+          setResponsibleStats(respResult.data || []);
+        }
 
-        setChartData(points);
+        // 5. Line Chart Data
+        if (volumeResult.data) {
+          const dailyData = volumeResult.data as { day: string; count: number }[];
+          const maxCount = Math.max(...dailyData.map(d => d.count), 1);
 
-        // 6. Audit Logs
+          const points = dailyData.map((d, index) => ({
+            x: (index / 30) * 400,
+            y: 100 - (d.count / maxCount) * 80 - 10
+          }));
+
+          setChartData(points);
+        }
+
+        // 6. Audit Logs (only for admins/coordinators)
         if (profile && (profile.role === 'administrador' || profile.role === 'coordinador')) {
           const { data: logs, error: logsError } = await supabase
             .from('audit_logs')
@@ -528,7 +475,7 @@ export const DashboardOverview: React.FC = () => {
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm">
             <h3 className="text-slate-900 dark:text-white font-bold text-lg mb-6 flex items-center gap-2">
               <span className="material-symbols-outlined text-amber-500">emoji_events</span>
-              Top Responsables
+              Top Gestores
             </h3>
             <div className="space-y-3">
               {responsibleStats.map((resp, index) => (
@@ -537,9 +484,9 @@ export const DashboardOverview: React.FC = () => {
                   className="flex items-center gap-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
                 >
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-black ${index === 0 ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/50 dark:text-amber-400' :
-                      index === 1 ? 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300' :
-                        index === 2 ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/50 dark:text-orange-400' :
-                          'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                    index === 1 ? 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300' :
+                      index === 2 ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/50 dark:text-orange-400' :
+                        'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
                     }`}>
                     {index + 1}
                   </div>
@@ -548,17 +495,14 @@ export const DashboardOverview: React.FC = () => {
                       {resp.name}
                     </p>
                     <p className="text-xs text-slate-400">
-                      {resp.solved} solucionados de {resp.total} casos
+                      Responsable de {resp.total} gestiones
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className={`text-lg font-black ${resp.rate >= 80 ? 'text-emerald-500' :
-                        resp.rate >= 60 ? 'text-amber-500' :
-                          'text-rose-500'
-                      }`}>
-                      {resp.rate}%
+                    <p className="text-lg font-black text-primary">
+                      {resp.total}
                     </p>
-                    <p className="text-[10px] text-slate-400 uppercase font-bold">Éxito</p>
+                    <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Casos</p>
                   </div>
                 </div>
               ))}
