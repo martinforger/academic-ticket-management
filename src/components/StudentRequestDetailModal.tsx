@@ -33,7 +33,7 @@ const RequestItem = ({ request, onChange, isReader }: RequestItemProps) => {
   // State for form fields - initialized with props
   const [status, setStatus] = useState(request.status);
   const [internalResponse, setInternalResponse] = useState(request.internalResponse || '');
-  const [response, setResponse] = useState(request.response || '');
+  const [response, setResponse] = useState(request.studentResponse || '');
 
   const handleFieldChange = (field: keyof Request, value: any) => {
     if (field === 'status') setStatus(value);
@@ -169,179 +169,179 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
 
   const handleRequestChange = (reqId: number, changes: Partial<Request>) => {
     setRequestChanges(prev => ({
-        ...prev,
-        [reqId]: { ...prev[reqId], ...changes }
+      ...prev,
+      [reqId]: { ...prev[reqId], ...changes }
     }));
   };
 
   const handleSave = async () => {
     if (Object.keys(requestChanges).length === 0) return;
     if (isReader || !profile) return;
-    
+
     setSaving(true);
     try {
-        const promises = Object.entries(requestChanges).map(async ([reqIdStr, changes]) => {
-            const reqId = parseInt(reqIdStr);
-            console.log(`Updating req ${reqId}`, changes);
+      const promises = Object.entries(requestChanges).map(async ([reqIdStr, changes]) => {
+        const reqId = parseInt(reqIdStr);
+        console.log(`Updating req ${reqId}`, changes);
 
-            // Determine if responsible needs to be updated.
-            // Simplified: if there are changes, we update responsible
-            const updatePayload = {
-                estatus: changes.status,
-                'Respuesta interna': changes.internalResponse,
-                'Respuesta al Estudiante': changes.studentResponse,
-                responsable: profile.initials
-            };
+        // Determine if responsible needs to be updated.
+        // Simplified: if there are changes, we update responsible
+        const updatePayload = {
+          estatus: changes.status,
+          'Respuesta interna': changes.internalResponse,
+          'Respuesta al Estudiante': changes.studentResponse,
+          responsable: profile.initials
+        };
 
-            // Remove undefined 
-            Object.keys(updatePayload).forEach(key => (updatePayload as any)[key] === undefined && delete (updatePayload as any)[key]);
+        // Remove undefined 
+        Object.keys(updatePayload).forEach(key => (updatePayload as any)[key] === undefined && delete (updatePayload as any)[key]);
 
-            const { error } = await supabase
-                .from('observaciones')
-                .update(updatePayload)
-                .eq('id', reqId);
-            
-            if (error) throw error;
-            
-            // Audit Log
-            const originalReq = student.requests.find(r => r.id === reqId);
-            const auditChanges: any = {};
-            if (changes.status && originalReq && changes.status !== originalReq.status) 
-                 auditChanges.status = { old: originalReq.status, new: changes.status };
-            // ... similar for other fields if needed for audit detail
+        const { error } = await supabase
+          .from('observaciones')
+          .update(updatePayload)
+          .eq('id', reqId);
 
-            await supabase.from('audit_logs').insert({
-                user_id: profile.id,
-                case_id: originalReq?.caseId,
-                action: 'UPDATE_REQUEST_BATCH',
-                details: { description: 'Actualización en lote desde vista Estudiante' },
-                changes: auditChanges
-            });
+        if (error) throw error;
 
+        // Audit Log
+        const originalReq = student.requests.find(r => r.id === reqId);
+        const auditChanges: any = {};
+        if (changes.status && originalReq && changes.status !== originalReq.status)
+          auditChanges.status = { old: originalReq.status, new: changes.status };
+        // ... similar for other fields if needed for audit detail
+
+        await supabase.from('audit_logs').insert({
+          user_id: profile.id,
+          case_id: originalReq?.caseId,
+          action: 'UPDATE_REQUEST_BATCH',
+          details: { description: 'Actualización en lote desde vista Estudiante' },
+          changes: auditChanges
         });
 
-        await Promise.all(promises);
-        
-        setRequestChanges({});
-        if (onRefresh) onRefresh();
-        onClose();
-        alert('Cambios guardados correctamente');
+      });
+
+      await Promise.all(promises);
+
+      setRequestChanges({});
+      if (onRefresh) onRefresh();
+      onClose();
+      alert('Cambios guardados correctamente');
     } catch (err) {
-        console.error("Error saving batch:", err);
-        alert('Error al guardar cambios');
+      console.error("Error saving batch:", err);
+      alert('Error al guardar cambios');
     } finally {
-        setSaving(false);
+      setSaving(false);
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex justify-center items-center p-4">
-        {/* Backdrop */}
-        <div
-            className="fixed inset-0 z-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+        onClick={onClose}
+      ></div>
+
+      {/* Modal Container */}
+      <div className="relative z-10 bg-white dark:bg-surface-dark w-full max-w-[1000px] h-full max-h-[90vh] rounded-xl shadow-2xl flex flex-col overflow-hidden animate-fade-in-up border-t-8 border-indigo-600">
+        {/* Modal Header */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-[#e7edf3] dark:border-gray-700 bg-indigo-50/30 dark:bg-indigo-900/10 shrink-0">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-xl font-bold text-indigo-900 dark:text-indigo-100 leading-tight">Detalles de Solicitud del Estudiante</h2>
+            <p className="text-sm text-indigo-600/70 dark:text-indigo-400">Revisando acciones de inscripción para Otoño 2024</p>
+          </div>
+          <button
             onClick={onClose}
-        ></div>
-
-        {/* Modal Container */}
-        <div className="relative z-10 bg-white dark:bg-surface-dark w-full max-w-[1000px] h-full max-h-[90vh] rounded-xl shadow-2xl flex flex-col overflow-hidden animate-fade-in-up border-t-8 border-indigo-600">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-[#e7edf3] dark:border-gray-700 bg-indigo-50/30 dark:bg-indigo-900/10 shrink-0">
-                <div className="flex flex-col gap-1">
-                    <h2 className="text-xl font-bold text-indigo-900 dark:text-indigo-100 leading-tight">Detalles de Solicitud del Estudiante</h2>
-                    <p className="text-sm text-indigo-600/70 dark:text-indigo-400">Revisando acciones de inscripción para Otoño 2024</p>
-                </div>
-                <button
-                    onClick={onClose}
-                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors rounded-full p-2 hover:bg-slate-100 dark:hover:bg-slate-700"
-                >
-                    <span className="material-symbols-outlined">close</span>
-                </button>
-            </div>
-
-            {/* Modal Content (Scrollable) */}
-            <div className="flex-1 overflow-y-auto p-6 bg-slate-50 dark:bg-background-dark">
-                {/* Student Profile Header */}
-                <div className="bg-white dark:bg-surface-dark rounded-xl p-6 shadow-sm border border-[#e7edf3] dark:border-gray-700 mb-6">
-                    <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
-                        <div className="relative shrink-0">
-                            <div className="w-20 h-20 rounded-full bg-slate-200 overflow-hidden border-2 border-white dark:border-gray-600 shadow-sm flex items-center justify-center">
-                                <span className="text-slate-400 text-2xl font-bold">
-                                    {student.studentName.charAt(0)}
-                                </span>
-                            </div>
-                        </div>
-                        <div className="flex-1">
-                            <div className="flex flex-wrap items-center gap-3 mb-1">
-                                <h3 className="text-xl font-bold text-[#0d141b] dark:text-white">{student.studentName}</h3>
-                                <span className="px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 uppercase tracking-wider font-black">Expediente Alumno</span>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1 text-sm text-slate-500 dark:text-slate-400">
-                                <p className="flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-[18px]">badge</span>
-                                    C.I.: {student.studentId}
-                                </p>
-                                <p className="flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-[18px]">menu_book</span>
-                                    Créditos Totales: {student.totalCredits}
-                                </p>
-                                <p className="flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-[18px]">alternate_email</span>
-                                    {student.email.replace(/[,]/g, '').replace(/\.{2,}/g, '.')}
-                                </p>
-                            </div>
-                        </div>
-                        <div className="flex flex-col gap-2 shrink-0 w-full md:w-auto">
-                            {/* Historial Académico button removed */}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Section Header */}
-                <div className="flex items-center justify-between mb-4 px-1">
-                    <h3 className="text-lg font-bold text-[#0d141b] dark:text-white flex items-center gap-2">
-                        <span className="material-symbols-outlined text-primary">timeline</span>
-                        Cronología de Solicitudes
-                    </h3>
-                    <span className="text-sm font-medium text-slate-500 dark:text-slate-400 bg-white dark:bg-surface-dark px-3 py-1 rounded-full border border-[#e7edf3] dark:border-gray-700">
-                        {student.requests.length} Solicitudes Pendientes
-                    </span>
-                </div>
-
-                {/* Timeline Items */}
-                <div className="space-y-4">
-                    {student.requests.map((req, idx) => (
-                        <RequestItem 
-                            key={`${req.nrc}-${idx}`} 
-                            request={req} 
-                            onChange={handleRequestChange}
-                            isReader={isReader}
-                        />
-                    ))}
-                </div>
-            </div>
-
-            {/* Footer Action Bar */}
-            <div className="px-6 py-4 border-t border-[#e7edf3] dark:border-gray-700 bg-white dark:bg-surface-dark shrink-0 flex justify-between items-center">
-                <button
-                    onClick={onClose}
-                    className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-medium text-sm transition-colors"
-                >
-                    Cancelar
-                </button>
-                <div className="flex gap-3">
-                    {!isReader && (
-                    <button 
-                        onClick={handleSave}
-                        disabled={saving || Object.keys(requestChanges).length === 0}
-                        className="px-5 py-2.5 rounded-lg bg-indigo-600 text-white font-medium text-sm hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <span className="material-symbols-outlined text-[18px]">send</span>
-                        {saving ? 'Guardando...' : 'Guardar y Notificar al Estudiante'}
-                    </button>
-                    )}
-                </div>
-            </div>
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors rounded-full p-2 hover:bg-slate-100 dark:hover:bg-slate-700"
+          >
+            <span className="material-symbols-outlined">close</span>
+          </button>
         </div>
+
+        {/* Modal Content (Scrollable) */}
+        <div className="flex-1 overflow-y-auto p-6 bg-slate-50 dark:bg-background-dark">
+          {/* Student Profile Header */}
+          <div className="bg-white dark:bg-surface-dark rounded-xl p-6 shadow-sm border border-[#e7edf3] dark:border-gray-700 mb-6">
+            <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
+              <div className="relative shrink-0">
+                <div className="w-20 h-20 rounded-full bg-slate-200 overflow-hidden border-2 border-white dark:border-gray-600 shadow-sm flex items-center justify-center">
+                  <span className="text-slate-400 text-2xl font-bold">
+                    {student.studentName.charAt(0)}
+                  </span>
+                </div>
+              </div>
+              <div className="flex-1">
+                <div className="flex flex-wrap items-center gap-3 mb-1">
+                  <h3 className="text-xl font-bold text-[#0d141b] dark:text-white">{student.studentName}</h3>
+                  <span className="px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 uppercase tracking-wider font-black">Expediente Alumno</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1 text-sm text-slate-500 dark:text-slate-400">
+                  <p className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[18px]">badge</span>
+                    C.I.: {student.studentId}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[18px]">menu_book</span>
+                    Créditos Totales: {student.totalCredits}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[18px]">alternate_email</span>
+                    {student.email.replace(/[,]/g, '').replace(/\.{2,}/g, '.')}
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2 shrink-0 w-full md:w-auto">
+                {/* Historial Académico button removed */}
+              </div>
+            </div>
+          </div>
+
+          {/* Section Header */}
+          <div className="flex items-center justify-between mb-4 px-1">
+            <h3 className="text-lg font-bold text-[#0d141b] dark:text-white flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">timeline</span>
+              Cronología de Solicitudes
+            </h3>
+            <span className="text-sm font-medium text-slate-500 dark:text-slate-400 bg-white dark:bg-surface-dark px-3 py-1 rounded-full border border-[#e7edf3] dark:border-gray-700">
+              {student.requests.length} Solicitudes Pendientes
+            </span>
+          </div>
+
+          {/* Timeline Items */}
+          <div className="space-y-4">
+            {student.requests.map((req, idx) => (
+              <RequestItem
+                key={`${req.nrc}-${idx}`}
+                request={req}
+                onChange={handleRequestChange}
+                isReader={isReader}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Footer Action Bar */}
+        <div className="px-6 py-4 border-t border-[#e7edf3] dark:border-gray-700 bg-white dark:bg-surface-dark shrink-0 flex justify-between items-center">
+          <button
+            onClick={onClose}
+            className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-medium text-sm transition-colors"
+          >
+            Cancelar
+          </button>
+          <div className="flex gap-3">
+            {!isReader && (
+              <button
+                onClick={handleSave}
+                disabled={saving || Object.keys(requestChanges).length === 0}
+                className="px-5 py-2.5 rounded-lg bg-indigo-600 text-white font-medium text-sm hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span className="material-symbols-outlined text-[18px]">send</span>
+                {saving ? 'Guardando...' : 'Guardar y Notificar al Estudiante'}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
