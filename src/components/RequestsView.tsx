@@ -4,6 +4,7 @@ import type { Request, Status } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import * as XLSX from 'xlsx';
 import { RESPONSES_BY_CATEGORY } from '../data/predefinedResponses';
+import { DEPARTMENT_COLORS, DEPARTMENT_NAMES } from '../constants/departments';
 
 export const RequestsView: React.FC = () => {
 
@@ -16,6 +17,8 @@ export const RequestsView: React.FC = () => {
   // Filter state
   const [selectedDepts, setSelectedDepts] = useState<string[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
+  const [selectedSubject, setSelectedSubject] = useState<string>('All');
+  const [selectedAction, setSelectedAction] = useState<string>('All');
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -60,16 +63,7 @@ export const RequestsView: React.FC = () => {
     }
   };
 
-  const DEPARTMENTS = [
-    { id: 'GE', label: 'General' },
-    { id: 'AT', label: 'Apoyo a la toma de decisiones' },
-    { id: 'TE', label: 'Telematica' },
-    { id: 'IS', label: 'Ingenieria de Software' },
-    { id: 'IN', label: 'Ingles' },
-    { id: 'LP', label: 'Logica y Programacion' },
-    { id: 'MC', label: 'Materias comunes' },
-    { id: 'PP', label: 'Practicas profesionales' },
-  ];
+  const DEPARTMENTS = Object.entries(DEPARTMENT_NAMES).map(([id, label]) => ({ id, label }));
 
   const STATUSES = [
     'POR REVISAR',
@@ -129,6 +123,11 @@ export const RequestsView: React.FC = () => {
     fetchRequests();
   }, []);
 
+  // Unique subjects for filter
+  const subjects = useMemo(() => {
+    return Array.from(new Set(requests.map(r => r.subject).filter(Boolean)));
+  }, [requests]);
+
   const filteredRequests = useMemo(() => {
     return requests.filter(r => {
       // Search term
@@ -153,9 +152,19 @@ export const RequestsView: React.FC = () => {
         return false;
       }
 
+      // Subject filter
+      if (selectedSubject !== 'All' && r.subject !== selectedSubject) {
+        return false;
+      }
+
+      // Action filter
+      if (selectedAction !== 'All' && r.action !== selectedAction) {
+        return false;
+      }
+
       return true;
     });
-  }, [requests, searchTerm, selectedDepts, selectedStatus]);
+  }, [requests, searchTerm, selectedDepts, selectedStatus, selectedSubject, selectedAction]);
 
   // Pagination logic
   const totalPages = Math.ceil(filteredRequests.length / pageSize);
@@ -234,9 +243,13 @@ export const RequestsView: React.FC = () => {
                   onChange={() => handleDeptToggle(dept.id)}
                   className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-primary focus:ring-primary/20"
                 />
-                <span className="text-sm font-medium text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+                <span className="text-sm font-medium text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors flex-1">
                   {dept.label} <span className="text-[10px] opacity-40">({dept.id})</span>
                 </span>
+                <span
+                  className="w-2 h-2 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: DEPARTMENT_COLORS[dept.id] || '#cbd5e1' }}
+                ></span>
               </label>
             ))}
           </div>
@@ -262,12 +275,53 @@ export const RequestsView: React.FC = () => {
           </select>
         </div>
 
-        {(selectedDepts.length > 0 || selectedStatus !== 'All' || searchTerm) && (
+        <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <span className="material-symbols-outlined text-lg">book</span>
+            Materia
+          </h3>
+          <select
+            className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
+            value={selectedSubject}
+            onChange={(e) => {
+              setSelectedSubject(e.target.value);
+              setCurrentPage(1);
+            }}
+          >
+            <option value="All">Todas las materias</option>
+            {subjects.sort().map(s => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <span className="material-symbols-outlined text-lg">touch_app</span>
+            Acción
+          </h3>
+          <select
+            className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
+            value={selectedAction}
+            onChange={(e) => {
+              setSelectedAction(e.target.value);
+              setCurrentPage(1);
+            }}
+          >
+            <option value="All">Todas las acciones</option>
+            <option value="Agregar">Agregar</option>
+            <option value="Eliminar">Eliminar</option>
+          </select>
+        </div>
+
+        {(selectedDepts.length > 0 || selectedStatus !== 'All' || selectedSubject !== 'All' || selectedAction !== 'All' || searchTerm) && (
           <div className="mt-auto pt-6">
             <button
               onClick={() => {
                 setSelectedDepts([]);
                 setSelectedStatus('All');
+                setSelectedSubject('All');
+                setSelectedAction('All');
                 setSearchTerm('');
                 setCurrentPage(1);
               }}
@@ -339,9 +393,15 @@ export const RequestsView: React.FC = () => {
                     <tr
                       key={req.id}
                       onClick={() => setSelectedRequest(req)}
-                      className={`hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer ${isInReview ? 'bg-amber-50/50 dark:bg-amber-900/10' : ''}`}
+                      className={`group hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer ${isInReview ? 'bg-amber-50/50 dark:bg-amber-900/10' : ''}`}
                     >
                       <td className={`pl-8 pr-3 py-3 whitespace-nowrap relative ${isInReview ? 'border-l-4 border-amber-400' : ''}`}>
+                        {/* Department Visual Hint */}
+                        <div
+                          className="absolute left-0 top-0 bottom-0 w-1 opacity-60 group-hover:opacity-100 transition-opacity"
+                          style={{ backgroundColor: DEPARTMENT_COLORS[req.classification] || 'transparent' }}
+                          title={DEPARTMENT_NAMES[req.classification]}
+                        />
                         {/* Visual Connection Line */}
                         {isPartOfGroup && (
                           <div className="absolute left-3 top-0 bottom-0 flex flex-col items-center">
@@ -432,7 +492,7 @@ export const RequestsView: React.FC = () => {
           )
         }
       </div>
-    </div>
+    </div >
   );
 };
 

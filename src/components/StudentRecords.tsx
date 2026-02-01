@@ -16,6 +16,7 @@ export const StudentRecords: React.FC = () => {
   const [selectedDepts, setSelectedDepts] = useState<string[]>([]);
   const [selectedSemester, setSelectedSemester] = useState<string>('All');
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
+  const [selectedSubject, setSelectedSubject] = useState<string>('All');
 
   useEffect(() => {
     const fetchRequests = async () => {
@@ -79,12 +80,21 @@ export const StudentRecords: React.FC = () => {
       if (selectedStatus !== 'All' && r.status !== selectedStatus) {
         return false;
       }
+      // Subject filter
+      if (selectedSubject !== 'All' && r.subject !== selectedSubject) {
+        return false;
+      }
       return true;
     });
-  }, [requests, selectedDepts, selectedSemester, selectedStatus]);
+  }, [requests, selectedDepts, selectedSemester, selectedStatus, selectedSubject]);
 
   // Group by student first, then filter by search term
   const allStudents = useMemo(() => groupRequestsByStudent(filteredRequests), [filteredRequests]);
+
+  // Unique subjects for filter
+  const subjects = useMemo(() => {
+    return Array.from(new Set(requests.map(r => r.subject).filter(Boolean)));
+  }, [requests]);
 
   const students = useMemo(() => {
     if (!searchTerm.trim()) return allStudents;
@@ -110,10 +120,11 @@ export const StudentRecords: React.FC = () => {
     setSelectedDepts([]);
     setSelectedSemester('All');
     setSelectedStatus('All');
+    setSelectedSubject('All');
     setSearchTerm('');
   };
 
-  const hasActiveFilters = selectedDepts.length > 0 || selectedSemester !== 'All' || selectedStatus !== 'All' || searchTerm.trim() !== '';
+  const hasActiveFilters = selectedDepts.length > 0 || selectedSemester !== 'All' || selectedStatus !== 'All' || selectedSubject !== 'All' || searchTerm.trim() !== '';
 
   if (loading) {
     return (
@@ -132,6 +143,9 @@ export const StudentRecords: React.FC = () => {
         onSemesterChange={setSelectedSemester}
         selectedStatus={selectedStatus}
         onStatusChange={setSelectedStatus}
+        selectedSubject={selectedSubject}
+        onSubjectChange={setSelectedSubject}
+        subjects={subjects}
       />
       <div className="flex-1 overflow-y-auto p-6 lg:p-10 bg-background-light dark:bg-background-dark">
         <div className="max-w-[1200px] mx-auto flex flex-col h-full min-h-min">
