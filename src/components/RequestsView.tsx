@@ -4,8 +4,6 @@ import type { Request, Status } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
 export const RequestsView: React.FC = () => {
-  const { profile } = useAuth();
-  const isReader = profile?.role === 'lector';
 
   const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
