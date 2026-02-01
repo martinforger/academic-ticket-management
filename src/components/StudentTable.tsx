@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { StudentSummary } from '../types';
+import { DEPARTMENT_COLORS, DEPARTMENT_NAMES } from '../constants/departments';
 
 interface StudentTableProps {
   students: StudentSummary[];
@@ -7,17 +8,17 @@ interface StudentTableProps {
 }
 
 const getRequestBadge = (student: StudentSummary) => {
-    return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-            {student.totalRequests} Total
-        </span>
-    );
+  return (
+    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+      {student.totalRequests} Total
+    </span>
+  );
 };
 
 export const StudentTable: React.FC<StudentTableProps> = ({ students, onStudentClick }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
-  
+
   // Reset to page 1 if total students change (e.g. after filtering)
   useEffect(() => {
     setCurrentPage(1);
@@ -49,15 +50,28 @@ export const StudentTable: React.FC<StudentTableProps> = ({ students, onStudentC
           </thead>
           <tbody className="divide-y divide-[#e7edf3] dark:divide-gray-700">
             {currentStudents.map((student) => (
-              <tr 
-                key={student.studentId} 
+              <tr
+                key={student.studentId}
                 onClick={() => onStudentClick(student)}
                 className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors cursor-pointer"
               >
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div>
-                    <div className="font-bold text-[#0d141b] dark:text-white">{student.studentName}</div>
-                    <div className="text-sm text-[#4c739a] dark:text-gray-400">C.I.: {student.studentId}</div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex flex-col gap-0.5">
+                      {/* Department Dots */}
+                      <div className="flex gap-1 mb-1">
+                        {Array.from(new Set(student.requests.map(r => r.classification))).map(deptId => (
+                          <span
+                            key={deptId}
+                            className="w-1.5 h-1.5 rounded-full"
+                            style={{ backgroundColor: DEPARTMENT_COLORS[deptId] || '#cbd5e1' }}
+                            title={DEPARTMENT_NAMES[deptId]}
+                          />
+                        ))}
+                      </div>
+                      <div className="font-bold text-[#0d141b] dark:text-white">{student.studentName}</div>
+                      <div className="text-sm text-[#4c739a] dark:text-gray-400">C.I.: {student.studentId}</div>
+                    </div>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -68,7 +82,7 @@ export const StudentTable: React.FC<StudentTableProps> = ({ students, onStudentC
                   <div className="flex flex-col items-start gap-1">
                     {getRequestBadge(student)}
                     <span className="text-xs text-[#4c739a] dark:text-gray-400 pl-1">
-                        {student.pendingReviewCount > 0 ? `${student.pendingReviewCount} Pendiente de Revisión` : '0 Pendientes'}
+                      {student.pendingReviewCount > 0 ? `${student.pendingReviewCount} Pendiente de Revisión` : '0 Pendientes'}
                     </span>
                   </div>
                 </td>
@@ -81,26 +95,26 @@ export const StudentTable: React.FC<StudentTableProps> = ({ students, onStudentC
       {/* Pagination */}
       <div className="p-4 border-t border-[#e7edf3] dark:border-gray-700 bg-gray-50 dark:bg-gray-800/30 flex items-center justify-between mt-auto">
         <div className="text-sm text-gray-500 dark:text-gray-400">
-           Mostrando <span className="font-medium">{students.length > 0 ? startIndex + 1 : 0}</span> a <span className="font-medium">{endIndex}</span> de <span className="font-medium">{students.length}</span> resultados
+          Mostrando <span className="font-medium">{students.length > 0 ? startIndex + 1 : 0}</span> a <span className="font-medium">{endIndex}</span> de <span className="font-medium">{students.length}</span> resultados
         </div>
         <div className="flex gap-2">
-            <button 
-              onClick={handlePrevPage}
-              disabled={currentPage === 1 || students.length === 0}
-              className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-500 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Anterior
-            </button>
-            <div className="flex items-center px-2 text-sm text-gray-600 dark:text-gray-400 font-medium">
-              Página {currentPage} de {totalPages || 1}
-            </div>
-            <button 
-              onClick={handleNextPage}
-              disabled={currentPage === totalPages || students.length === 0}
-              className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-500 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Siguiente
-            </button>
+          <button
+            onClick={handlePrevPage}
+            disabled={currentPage === 1 || students.length === 0}
+            className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-500 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Anterior
+          </button>
+          <div className="flex items-center px-2 text-sm text-gray-600 dark:text-gray-400 font-medium">
+            Página {currentPage} de {totalPages || 1}
+          </div>
+          <button
+            onClick={handleNextPage}
+            disabled={currentPage === totalPages || students.length === 0}
+            className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-500 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Siguiente
+          </button>
         </div>
       </div>
     </div>

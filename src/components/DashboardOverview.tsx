@@ -3,28 +3,7 @@ import { supabase } from '../lib/supabase';
 import type { AuditLog } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
-// Department colors matching the provided color scheme
-const DEPARTMENT_COLORS: Record<string, string> = {
-  'IN': '#0077B6', // Fundamentos de Ingeniería - Blue
-  'LP': '#8BC34A', // Lógica y Programación - Lime Green
-  'IS': '#E91E63', // Ingeniería de Software - Pink/Magenta
-  'TE': '#FF9800', // Telemática - Orange
-  'GE': '#00BCD4', // Formación Gerencial - Teal
-  'MC': '#FFC107', // Materias Comunes / Formación Integral - Yellow
-  'PP': '#9C27B0', // Prácticas Profesionales - Purple
-  'AT': '#673AB7', // Apoyo / Electivas - Deep Purple
-};
-
-const DEPARTMENT_NAMES: Record<string, string> = {
-  'GE': 'General',
-  'AT': 'Apoyo a la toma de decisiones',
-  'TE': 'Telemática',
-  'IS': 'Ingeniería de Software',
-  'IN': 'Inglés',
-  'LP': 'Lógica y Programación',
-  'MC': 'Materias comunes',
-  'PP': 'Prácticas profesionales',
-};
+import { DEPARTMENT_COLORS, DEPARTMENT_NAMES } from '../constants/departments';
 
 const statusColors: Record<string, string> = {
   'SOLUCIONADO': '#22c55e',
