@@ -43,10 +43,10 @@ export const RequestsView: React.FC = () => {
     const fetchRequests = async () => {
       try {
         // Only select the columns we need for the list view
+        // Note: Cannot use .order() with "# de Caso" due to special character
         const { data, error } = await supabase
           .from('observaciones')
-          .select('id, estatus, "Clasif.", "# de Caso", fecha, cédula, estudiante, "acción", "Nombre Asignatura", nrc, uc, "Sem.", "Prom.", autoriza, comentarios, contacto, responsable, "Respuesta interna", "Respuesta al Estudiante"')
-          .order('# de Caso', { ascending: true });
+          .select('id, estatus, "Clasif.", "# de Caso", fecha, cédula, estudiante, "acción", "Nombre Asignatura", nrc, uc, "Sem.", "Prom.", autoriza, comentarios, contacto, responsable, "Respuesta interna", "Respuesta al Estudiante"');
 
         if (error) throw error;
 
@@ -72,6 +72,9 @@ export const RequestsView: React.FC = () => {
           internalResponse: row['Respuesta interna'] || '',
           studentResponse: row['Respuesta al Estudiante'] || ''
         }));
+
+        // Sort by caseId (# de Caso) ascending
+        formattedRequests.sort((a, b) => (a.caseId || '').localeCompare(b.caseId || ''));
 
         setRequests(formattedRequests);
       } catch (err) {
