@@ -868,9 +868,6 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
               <div className="flex-1">
                 <div className="flex flex-wrap items-center gap-3 mb-2">
                   <h3 className="text-lg font-bold text-slate-900 dark:text-white">{request.studentName}</h3>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 uppercase tracking-wider">
-                    Estudiante
-                  </span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-2 text-sm text-slate-500 dark:text-slate-400">
                   <p className="flex items-center gap-1.5">
