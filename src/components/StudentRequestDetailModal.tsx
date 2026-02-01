@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type { StudentSummary, Request, Status } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { RESPONSES_BY_CATEGORY } from '../data/predefinedResponses';
 import { DEPARTMENT_COLORS, DEPARTMENT_NAMES } from '../constants/departments';
+import { useRealtimeLockMultiple } from '../hooks/useRealtimeLock';
+import { LockedBadge } from './LockedBanner';
 
 interface StudentRequestDetailModalProps {
   isOpen: boolean;
@@ -17,9 +19,14 @@ interface RequestItemProps {
   allRequests: Request[];
   onChange: (id: number, changes: Partial<Request>) => void;
   isReader: boolean;
+  isLockedByOther?: boolean;
+  lockedBy?: string | null;
 }
 
-const RequestItem = ({ request, allRequests, onChange, isReader }: RequestItemProps) => {
+const RequestItem = ({ request, allRequests, onChange, isReader, isLockedByOther = false, lockedBy }: RequestItemProps) => {
+  // If locked by another user, treat as read-only
+  const isEffectivelyReadOnly = isReader || isLockedByOther;
+
   const isAdd = request.action === 'Agregar';
   // Indigo-themed accents for Student Detail
   const iconBgClasses = isAdd
@@ -110,6 +117,11 @@ const RequestItem = ({ request, allRequests, onChange, isReader }: RequestItemPr
             </span>
           </div>
         )}
+
+        {/* Locked by another user badge */}
+        {isLockedByOther && lockedBy && (
+          <LockedBadge lockedBy={lockedBy} />
+        )}
       </div>
 
       {/* Content Body */}
@@ -132,7 +144,7 @@ const RequestItem = ({ request, allRequests, onChange, isReader }: RequestItemPr
               <div className="relative">
                 <select
                   value={status}
-                  disabled={isReader}
+                  disabled={isEffectivelyReadOnly}
                   onChange={(e) => handleFieldChange('status', e.target.value as Status)}
                   className="w-full appearance-none rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-[#0d141b] dark:text-white py-2.5 pl-3 pr-10 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none disabled:opacity-50 disabled:bg-slate-100"
                 >
@@ -170,7 +182,7 @@ const RequestItem = ({ request, allRequests, onChange, isReader }: RequestItemPr
             </span>
             <textarea
               value={internalResponse}
-              disabled={isReader}
+              disabled={isEffectivelyReadOnly}
               onChange={(e) => handleFieldChange('internalResponse', e.target.value)}
               className="w-full rounded-lg border border-slate-200 dark:border-gray-600 bg-slate-50 dark:bg-gray-800/50 text-[#0d141b] dark:text-white p-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 transition-all resize-none h-[70px] disabled:opacity-50"
               placeholder="Notas privadas para coordinación..."
@@ -184,7 +196,7 @@ const RequestItem = ({ request, allRequests, onChange, isReader }: RequestItemPr
                 <span className="material-symbols-outlined text-sm">send</span>
                 Respuesta al Estudiante
               </span>
-              {!isReader && (
+              {!isEffectivelyReadOnly && (
                 <select
                   className="text-xs bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors"
                   value=""
@@ -210,7 +222,7 @@ const RequestItem = ({ request, allRequests, onChange, isReader }: RequestItemPr
             </div>
             <textarea
               value={response}
-              disabled={isReader}
+              disabled={isEffectivelyReadOnly}
               onChange={(e) => handleFieldChange('studentResponse', e.target.value)}
               className="w-full rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-[#0d141b] dark:text-white p-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 transition-all hover:border-primary/50 resize-none h-[80px] disabled:opacity-50"
               placeholder={`Escriba una respuesta a ${request.studentName.split(' ')[0]}...`}
@@ -231,41 +243,83 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
   // Track IDs of requests that were auto-claimed
   const autoClaimedIdsRef = useRef<number[]>([]);
 
+  // Prepare data for realtime lock detection
+  const requestIds = useMemo(() =>
+    student?.requests.map(r => r.id) || [],
+    [student?.requests]
+  );
+
+  const initialLockData = useMemo(() => {
+    const map = new Map<number, { status: string; responsible: string }>();
+    student?.requests.forEach(r => {
+      map.set(r.id, { status: r.status, responsible: r.responsible });
+    });
+    return map;
+  }, [student?.requests]);
+
+  // Subscribe to realtime lock changes for all requests
+  const lockStates = useRealtimeLockMultiple(
+    requestIds,
+    profile?.initials || null,
+    initialLockData
+  );
+
+  // Track closing state to prevent reactive auto-claim from triggering during unclaim
+  const isClosingRef = useRef(false);
+
   // Auto-claim effect: when modal opens, claim all "POR REVISAR" requests
+  // Uses atomic updates to prevent race conditions
   useEffect(() => {
     const autoClaim = async () => {
+      // 0. Closing guard
+      if (isClosingRef.current) return;
+
       if (!isOpen || !student || isReader || !profile) return;
 
       const porRevisarRequests = student.requests.filter(r => r.status === 'POR REVISAR');
       if (porRevisarRequests.length === 0) return;
 
       const idsToClam = porRevisarRequests.map(r => r.id);
-      autoClaimedIdsRef.current = idsToClam;
 
       try {
-        // Batch update all POR REVISAR to EN REVISIÓN
-        const { error } = await supabase
+        // ATOMIC UPDATE: Only claim if status is STILL "POR REVISAR" in the database
+        // This prevents race conditions
+        const { data, error } = await supabase
           .from('observaciones')
           .update({
             estatus: 'EN REVISIÓN',
             responsable: profile.initials
           })
-          .in('id', idsToClam);
+          .in('id', idsToClam)
+          .eq('estatus', 'POR REVISAR') // Only update if status is still POR REVISAR
+          .select('id');
 
         if (error) throw error;
 
-        // Audit log for batch claim
-        await supabase.from('audit_logs').insert({
-          user_id: profile.id,
-          case_id: student.studentId,
-          action: 'BATCH_CLAIM_REQUESTS',
-          details: {
-            description: 'Solicitudes tomadas automáticamente al abrir expediente estudiante',
-            count: idsToClam.length,
-            ids: idsToClam
-          },
-          changes: { status: { old: 'POR REVISAR', new: 'EN REVISIÓN' } }
-        });
+        // Only track the IDs that were actually claimed
+        const claimedIds = data?.map(d => d.id) || [];
+        autoClaimedIdsRef.current = claimedIds;
+
+        if (claimedIds.length > 0) {
+          // Audit log for batch claim
+          await supabase.from('audit_logs').insert({
+            user_id: profile.id,
+            case_id: student.studentId,
+            action: 'BATCH_CLAIM_REQUESTS',
+            details: {
+              description: 'Solicitudes tomadas automáticamente al abrir expediente estudiante',
+              count: claimedIds.length,
+              ids: claimedIds
+            },
+            changes: { status: { old: 'POR REVISAR', new: 'EN REVISIÓN' } }
+          });
+        }
+
+        // Log if some requests were already claimed by others
+        const notClaimedIds = idsToClam.filter(id => !claimedIds.includes(id));
+        if (notClaimedIds.length > 0) {
+          console.log('Some requests already claimed by another user:', notClaimedIds);
+        }
 
       } catch (err) {
         console.error('Error auto-claiming requests:', err);
@@ -286,6 +340,8 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
   };
 
   const handleClose = async () => {
+    isClosingRef.current = true;
+
     // Revert any auto-claimed requests that weren't explicitly changed
     if (autoClaimedIdsRef.current.length > 0 && !isReader && profile) {
       // Find IDs that were NOT changed by the user at all (no status change)
@@ -304,7 +360,9 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
               estatus: 'POR REVISAR',
               responsable: ''
             })
-            .in('id', unchangedIds);
+            .in('id', unchangedIds)
+            .eq('estatus', 'EN REVISIÓN') // Logic safety: only revert if still in review
+            .eq('responsable', profile.initials); // Security: only if locked by CURRENT user
 
           // Audit log for unclaim
           await supabase.from('audit_logs').insert({
@@ -474,15 +532,20 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
 
           {/* Timeline Items */}
           <div className="space-y-4">
-            {student.requests.map((req, idx) => (
-              <RequestItem
-                key={`${req.nrc}-${idx}`}
-                request={req}
-                allRequests={student.requests}
-                onChange={handleRequestChange}
-                isReader={isReader}
-              />
-            ))}
+            {student.requests.map((req, idx) => {
+              const lockState = lockStates.get(req.id);
+              return (
+                <RequestItem
+                  key={`${req.nrc}-${idx}`}
+                  request={req}
+                  allRequests={student.requests}
+                  onChange={handleRequestChange}
+                  isReader={isReader}
+                  isLockedByOther={lockState?.isLocked}
+                  lockedBy={lockState?.lockedBy}
+                />
+              );
+            })}
           </div>
         </div>
 

@@ -398,12 +398,15 @@ export const DashboardOverview: React.FC = () => {
           </div>
 
           {/* Donut Chart */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm flex flex-col">
-            <h3 className="text-slate-900 dark:text-white font-bold text-lg mb-6">Distribución de Estado</h3>
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm flex flex-col hover-lift animate-fadeInRight animate-delay-700">
+            <h3 className="text-slate-900 dark:text-white font-bold text-lg mb-6 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary bg-primary/10 p-1.5 rounded-lg text-lg">pie_chart</span>
+              Distribución de Estado
+            </h3>
             <div className="flex-1 flex flex-col justify-center items-center">
-              <div className="relative size-48">
-                <svg viewBox="0 0 100 100" className="size-full transform rotate-0">
-                  <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="8" className="text-slate-100 dark:text-slate-800" />
+              <div className="relative size-52">
+                <svg viewBox="0 0 100 100" className="size-full transform -rotate-90">
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="6" className="text-slate-50 dark:text-slate-800/50" />
                   {getDonutSegments().map((segment, i) => (
                     <path
                       key={i}
@@ -412,27 +415,60 @@ export const DashboardOverview: React.FC = () => {
                       stroke={segment.color}
                       strokeWidth="8"
                       strokeLinecap="round"
-                    />
+                      className="transition-all duration-300 hover:stroke-[10px] cursor-pointer animate-drawLine"
+                      style={{
+                        strokeDasharray: '251.32',
+                        strokeDashoffset: '251.32',
+                        animationDelay: `${i * 150}ms`,
+                        animationDuration: '1s'
+                      }}
+                    >
+                      <title>{segment.status}: {segment.percentage}%</title>
+                    </path>
                   ))}
                 </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                  <p className="text-3xl font-black text-slate-900 dark:text-white">{stats.completionRate}%</p>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Solucionado</p>
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+                  <p className="text-4xl font-black text-slate-900 dark:text-white leading-none">{stats.completionRate}%</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Listo</p>
                 </div>
               </div>
 
-              <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-3 w-full">
-                {Object.entries(statusDistribution).map(([status, count]) => (
-                  <div key={status} className="flex items-center gap-2 min-w-0">
-                    <span
-                      className="size-2.5 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: statusColors[status] || '#e2e8f0' }}
-                    ></span>
-                    <span className="text-[10px] text-slate-600 dark:text-slate-400 font-bold whitespace-nowrap overflow-hidden text-ellipsis">
-                      {status} ({count})
-                    </span>
-                  </div>
-                ))}
+              <div className="mt-8 space-y-2.5 w-full">
+                {Object.entries(statusDistribution)
+                  .sort(([, a], [, b]) => b - a)
+                  .map(([status, count]) => {
+                    const total = Object.values(statusDistribution).reduce((a, b) => a + b, 0);
+                    const percentage = Math.round((count / total) * 100);
+                    return (
+                      <div key={status} className="group flex flex-col gap-1 w-full">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span
+                              className="size-2 rounded-full flex-shrink-0 shadow-sm"
+                              style={{ backgroundColor: statusColors[status] || '#e2e8f0' }}
+                            ></span>
+                            <span className="text-xs text-slate-600 dark:text-slate-400 font-bold truncate group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+                              {status}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-black text-slate-800 dark:text-slate-200">{count}</span>
+                            <span className="text-[10px] text-slate-400 font-medium">({percentage}%)</span>
+                          </div>
+                        </div>
+                        <div className="w-full bg-slate-100 dark:bg-slate-800/50 h-1.5 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-1000 ease-out animate-fadeInLeft"
+                            style={{
+                              width: `${percentage}%`,
+                              backgroundColor: statusColors[status] || '#e2e8f0',
+                              opacity: 0.8
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+                    );
+                  })}
               </div>
             </div>
           </div>
