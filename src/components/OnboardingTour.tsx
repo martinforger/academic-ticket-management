@@ -19,6 +19,7 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     features: [
       'Gestión completa de observaciones de inscripción',
       'Seguimiento en tiempo real de solicitudes',
+      'Sistema de auto-reclamo inteligente',
       'Análisis y métricas del sistema',
       'Control de usuarios y permisos'
     ]
@@ -26,43 +27,45 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
   {
     id: 'dashboard',
     title: 'Resumen Ejecutivo',
-    description: 'Tu centro de comando con todas las métricas importantes de un vistazo.',
+    description: 'Tu centro de comando con todas las métricas importantes de un vistazo, ahora con animaciones dinámicas.',
     icon: 'dashboard',
     color: 'from-emerald-500 to-teal-600',
     features: [
-      'Estadísticas en tiempo real (estudiantes, solicitudes activas)',
-      'Tasa de solución y casos por revisar',
-      'Gráfico de volumen de solicitudes (últimos 30 días)',
+      'Estadísticas en tiempo real con animaciones de entrada',
+      'Tasa de solución, rechazo y promedio diario',
+      'Gráfico de volumen animado (últimos 30 días)',
       'Distribución por departamento con colores oficiales',
       'Ranking de responsables por desempeño',
-      'Registro de auditoría (para coordinadores y admins)'
+      'Registro de auditoría paginado (5 por página)'
     ]
   },
   {
     id: 'students',
     title: 'Gestión de Estudiantes',
-    description: 'Consulta el historial completo de solicitudes por estudiante.',
+    description: 'Consulta el historial completo de solicitudes por estudiante con reclamo automático.',
     icon: 'group',
     color: 'from-violet-500 to-purple-600',
     features: [
       'Búsqueda por cédula o nombre del estudiante',
       'Vista agrupada de todas las solicitudes por persona',
-      'Información de semestre y promedio',
-      'Acceso rápido al detalle de cada caso'
+      '🔄 Auto-reclamo: Al abrir un expediente, las solicitudes "POR REVISAR" se reservan automáticamente',
+      '🔓 Auto-liberación: Si cierras sin guardar, se liberan para otros coordinadores',
+      'Información de semestre, promedio y contacto'
     ]
   },
   {
     id: 'requests',
     title: 'Listado de Solicitudes',
-    description: 'Control individual de cada observación recibida con filtros avanzados.',
+    description: 'Control individual con filtros avanzados y conexiones visuales entre casos relacionados.',
     icon: 'assignment_late',
     color: 'from-amber-500 to-orange-600',
     features: [
-      'Tabla con todas las solicitudes del sistema',
-      'Filtros por departamento y estado',
+      '🔗 Conexiones visuales entre tickets del mismo grupo',
+      'Sidebar de filtros compacta (departamento y estado)',
+      'Indicadores "EN REVISIÓN" con el responsable actual',
+      'Modal de edición con temas de color por estado',
       'Búsqueda por estudiante, materia o número de caso',
-      'Modal de edición con campos de respuesta',
-      'Actualización de estado con registro automático de auditoría'
+      'Exportación a Excel con todos los datos'
     ]
   },
   {
@@ -86,8 +89,22 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     color: 'from-slate-600 to-slate-800',
     features: [
       '👁️ Lector: Solo visualización de datos',
-      '✏️ Coordinador: Edición de solicitudes y acceso a auditoría',
-      '👑 Administrador: Control total, gestión de usuarios'
+      '✏️ Coordinador: Edición de solicitudes, auto-reclamo y acceso a auditoría',
+      '👑 Administrador: Control total, gestión de usuarios y configuración'
+    ]
+  },
+  {
+    id: 'tips',
+    title: 'Consejos y Atajos',
+    description: 'Maximiza tu productividad con estos consejos útiles.',
+    icon: 'lightbulb',
+    color: 'from-yellow-500 to-amber-600',
+    features: [
+      '⌨️ Usa flechas ← → para navegar en este tour',
+      '🖱️ Haz clic en cualquier fila de la tabla para ver detalles',
+      '🔍 El buscador filtra en tiempo real por múltiples campos',
+      '📊 Pasa el cursor sobre las tarjetas para efectos visuales',
+      '❓ El botón de ayuda (esquina inferior derecha) reinicia este tour'
     ]
   }
 ];
@@ -232,10 +249,10 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({ onComplete, onSk
                   key={s.id}
                   onClick={() => goToStep(index)}
                   className={`transition-all duration-300 rounded-full ${index === currentStep
-                      ? 'w-8 h-2 bg-primary'
-                      : index < currentStep
-                        ? 'w-2 h-2 bg-primary/50 hover:bg-primary/70'
-                        : 'w-2 h-2 bg-slate-300 dark:bg-slate-600 hover:bg-slate-400'
+                    ? 'w-8 h-2 bg-primary'
+                    : index < currentStep
+                      ? 'w-2 h-2 bg-primary/50 hover:bg-primary/70'
+                      : 'w-2 h-2 bg-slate-300 dark:bg-slate-600 hover:bg-slate-400'
                     }`}
                   aria-label={`Ir al paso ${index + 1}`}
                 />
@@ -256,8 +273,8 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({ onComplete, onSk
               <button
                 onClick={handleNext}
                 className={`px-6 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2 shadow-lg ${isLastStep
-                    ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:shadow-emerald-500/25 hover:scale-105'
-                    : 'bg-gradient-to-r from-primary to-blue-600 text-white hover:shadow-primary/25 hover:scale-105'
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:shadow-emerald-500/25 hover:scale-105'
+                  : 'bg-gradient-to-r from-primary to-blue-600 text-white hover:shadow-primary/25 hover:scale-105'
                   }`}
               >
                 {isLastStep ? (
