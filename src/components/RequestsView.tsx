@@ -46,7 +46,7 @@ export const RequestsView: React.FC = () => {
         const { data, error } = await supabase
           .from('observaciones')
           .select('id, estatus, "Clasif.", "# de Caso", fecha, cédula, estudiante, "acción", "Nombre Asignatura", nrc, uc, "Sem.", "Prom.", autoriza, comentarios, contacto, responsable, "Respuesta interna", "Respuesta al Estudiante"')
-          .order('fecha', { ascending: false });
+          .order('# de Caso', { ascending: true });
 
         if (error) throw error;
 
