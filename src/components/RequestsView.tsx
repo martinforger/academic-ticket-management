@@ -44,9 +44,10 @@ export const RequestsView: React.FC = () => {
   useEffect(() => {
     const fetchRequests = async () => {
       try {
+        // Only select the columns we need for the list view
         const { data, error } = await supabase
           .from('observaciones')
-          .select('*')
+          .select('id, estatus, "Clasif.", "# de Caso", fecha, cédula, estudiante, "acción", "Nombre Asignatura", nrc, uc, "Sem.", "Prom.", autoriza, comentarios, contacto, responsable, "Respuesta interna", "Respuesta al Estudiante"')
           .order('fecha', { ascending: false });
 
         if (error) throw error;
@@ -90,12 +91,12 @@ export const RequestsView: React.FC = () => {
       // Search term
       if (searchTerm) {
         const lowerSearch = searchTerm.toLowerCase();
-        const matchesSearch = 
-          r.studentName.toLowerCase().includes(lowerSearch) || 
+        const matchesSearch =
+          r.studentName.toLowerCase().includes(lowerSearch) ||
           r.studentId.includes(lowerSearch) ||
           r.subject.toLowerCase().includes(lowerSearch) ||
           r.caseId?.toString().includes(lowerSearch);
-        
+
         if (!matchesSearch) return false;
       }
 
@@ -134,7 +135,7 @@ export const RequestsView: React.FC = () => {
   };
 
   const handleDeptToggle = (deptId: string) => {
-    setSelectedDepts(prev => 
+    setSelectedDepts(prev =>
       prev.includes(deptId) ? prev.filter(id => id !== deptId) : [...prev, deptId]
     );
     setCurrentPage(1);
@@ -154,10 +155,10 @@ export const RequestsView: React.FC = () => {
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-[#0d141b] dark:text-white text-3xl font-black leading-tight tracking-tight">Listado de Solicitudes</h1>
+            <h1 className="text-[#0d141b] dark:text-white text-3xl font-black leading-tight tracking-tight">Observaciones de inscripción - IINF</h1>
             <p className="text-[#4c739a] dark:text-gray-400">Control individual de cada solicitud recibida</p>
           </div>
-          
+
           <div className="relative w-full md:w-96">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
             <input
@@ -185,7 +186,7 @@ export const RequestsView: React.FC = () => {
               <div className="flex flex-col gap-2">
                 {DEPARTMENTS.map(dept => (
                   <label key={dept.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors group">
-                    <input 
+                    <input
                       type="checkbox"
                       checked={selectedDepts.includes(dept.id)}
                       onChange={() => handleDeptToggle(dept.id)}
@@ -204,7 +205,7 @@ export const RequestsView: React.FC = () => {
                 <span className="material-symbols-outlined text-lg">check_circle</span>
                 Estado de Solicitud
               </h3>
-              <select 
+              <select
                 className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                 value={selectedStatus}
                 onChange={(e) => {
@@ -220,7 +221,7 @@ export const RequestsView: React.FC = () => {
             </div>
 
             {(selectedDepts.length > 0 || selectedStatus !== 'All' || searchTerm) && (
-              <button 
+              <button
                 onClick={() => {
                   setSelectedDepts([]);
                   setSelectedStatus('All');
@@ -240,7 +241,7 @@ export const RequestsView: React.FC = () => {
               <table className="w-full text-left border-collapse">
                 <thead className="bg-slate-50 dark:bg-slate-800/50 text-[#4c739a] dark:text-slate-400 text-xs uppercase font-bold tracking-wider">
                   <tr>
-                    <th className="px-6 py-4 border-b border-slate-200 dark:border-slate-800">Caso / Fecha</th>
+                    <th className="px-4 py-4 border-b border-slate-200 dark:border-slate-800 w-24">Caso / Fecha</th>
                     <th className="px-6 py-4 border-b border-slate-200 dark:border-slate-800">Estudiante</th>
                     <th className="px-6 py-4 border-b border-slate-200 dark:border-slate-800">Materia</th>
                     <th className="px-6 py-4 border-b border-slate-200 dark:border-slate-800">Acción Solicitada</th>
@@ -249,14 +250,14 @@ export const RequestsView: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {currentRequests.map((req) => (
-                    <tr 
-                      key={req.id} 
+                    <tr
+                      key={req.id}
                       onClick={() => setSelectedRequest(req)}
                       className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors group cursor-pointer"
                     >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-xs text-slate-400 font-mono mb-1">#{req.caseId}</div>
-                        <div className="text-sm font-medium text-slate-700 dark:text-slate-300">{formatDate(req.date)}</div>
+                      <td className="px-4 py-4 whitespace-nowrap w-24">
+                        <div className="text-[10px] text-slate-400 font-mono mb-0.5">#{req.caseId}</div>
+                        <div className="text-[11px] font-bold text-slate-600 dark:text-slate-400 italic leading-tight">{formatDate(req.date)}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-bold text-slate-900 dark:text-white">{req.studentName}</div>
@@ -291,11 +292,11 @@ export const RequestsView: React.FC = () => {
             <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/10 mt-auto">
               <span className="text-sm text-slate-500 font-medium">
                 Mostrando <span className="text-slate-900 dark:text-white font-bold">{filteredRequests.length > 0 ? startIndex + 1 : 0}</span>-
-                <span className="text-slate-900 dark:text-white font-bold">{Math.min(startIndex + pageSize, filteredRequests.length)}</span> de 
+                <span className="text-slate-900 dark:text-white font-bold">{Math.min(startIndex + pageSize, filteredRequests.length)}</span> de
                 <span className="text-slate-900 dark:text-white font-bold ml-1">{filteredRequests.length}</span>
               </span>
               <div className="flex gap-2">
-                <button 
+                <button
                   disabled={currentPage === 1}
                   onClick={(e) => { e.stopPropagation(); setCurrentPage(p => p - 1); }}
                   className="p-1 px-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-30 text-sm font-bold transition-all shadow-sm"
@@ -305,7 +306,7 @@ export const RequestsView: React.FC = () => {
                 <div className="flex items-center px-4 text-sm font-black text-primary">
                   {currentPage} / {totalPages || 1}
                 </div>
-                <button 
+                <button
                   disabled={currentPage === totalPages || totalPages === 0}
                   onClick={(e) => { e.stopPropagation(); setCurrentPage(p => p + 1); }}
                   className="p-1 px-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-30 text-sm font-bold transition-all shadow-sm"
@@ -319,8 +320,8 @@ export const RequestsView: React.FC = () => {
       </div>
 
       {selectedRequest && (
-        <RequestDetailModal 
-          request={selectedRequest} 
+        <RequestDetailModal
+          request={selectedRequest}
           onClose={() => setSelectedRequest(null)}
           onUpdate={(updatedReq) => {
             setRequests(prev => prev.map(r => r.id === updatedReq.id ? updatedReq : r));
@@ -377,12 +378,12 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, onClose, onUp
       };
 
       // If status changed or response added, update responsible
-      const hasChanges = status !== request.status || 
-                         internalResponse !== request.internalResponse || 
-                         studentResponse !== request.studentResponse;
+      const hasChanges = status !== request.status ||
+        internalResponse !== request.internalResponse ||
+        studentResponse !== request.studentResponse;
 
       if (hasChanges) {
-         updates.responsable = profile.initials;
+        updates.responsable = profile.initials;
       }
 
       // Update Database
@@ -392,21 +393,21 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, onClose, onUp
         .eq('id', request.id);
 
       if (error) throw error;
-      
+
       // Audit Log
       if (hasChanges) {
-          const changes: any = {};
-          if (status !== request.status) changes.status = { old: request.status, new: status };
-          if (internalResponse !== request.internalResponse) changes.internalResponse = { old: request.internalResponse, new: internalResponse };
-          if (studentResponse !== request.studentResponse) changes.studentResponse = { old: request.studentResponse, new: studentResponse };
+        const changes: any = {};
+        if (status !== request.status) changes.status = { old: request.status, new: status };
+        if (internalResponse !== request.internalResponse) changes.internalResponse = { old: request.internalResponse, new: internalResponse };
+        if (studentResponse !== request.studentResponse) changes.studentResponse = { old: request.studentResponse, new: studentResponse };
 
-          await supabase.from('audit_logs').insert({
-              user_id: profile.id,
-              case_id: request.caseId,
-              action: 'UPDATE_REQUEST',
-              details: { description: 'Actualización desde vista de lista solicitudes' },
-              changes: changes
-          });
+        await supabase.from('audit_logs').insert({
+          user_id: profile.id,
+          case_id: request.caseId,
+          action: 'UPDATE_REQUEST',
+          details: { description: 'Actualización desde vista de lista solicitudes' },
+          changes: changes
+        });
       }
 
       onUpdate({ ...request, status, internalResponse, studentResponse, responsible: updates.responsable || request.responsible });
@@ -423,40 +424,40 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, onClose, onUp
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
       <div className="bg-white dark:bg-surface-dark w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200 border-t-8 border-emerald-600">
         <div className="flex items-center justify-between p-6 border-b border-emerald-50 dark:border-emerald-900/20 bg-emerald-50/30 dark:bg-emerald-900/10">
-           <h2 className="text-xl font-bold text-emerald-900 dark:text-emerald-100 italic flex items-center gap-2">
-             <span className="material-symbols-outlined">description</span>
-             Ficha de Solicitud #{request.caseId}
-           </h2>
-           <button onClick={onClose} className="p-2 rounded-full hover:bg-emerald-100/50 dark:hover:bg-emerald-900/40 transition-colors">
-             <span className="material-symbols-outlined text-emerald-600">close</span>
-           </button>
+          <h2 className="text-xl font-bold text-emerald-900 dark:text-emerald-100 italic flex items-center gap-2">
+            <span className="material-symbols-outlined">description</span>
+            Ficha de Solicitud #{request.caseId}
+          </h2>
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-emerald-100/50 dark:hover:bg-emerald-900/40 transition-colors">
+            <span className="material-symbols-outlined text-emerald-600">close</span>
+          </button>
         </div>
 
         <div className="p-8 overflow-y-auto max-h-[70vh] space-y-6">
           <div className="grid grid-cols-2 gap-6">
             <div>
-               <label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">Estudiante</label>
-               <p className="font-bold">{request.studentName}</p>
-               <p className="text-sm text-slate-500">C.I. {request.studentId}</p>
+              <label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">Estudiante</label>
+              <p className="font-bold">{request.studentName}</p>
+              <p className="text-sm text-slate-500">C.I. {request.studentId}</p>
             </div>
             <div>
-               <label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">Materia</label>
-               <p className="font-bold">{request.subject}</p>
-               <p className="text-sm text-slate-500">NRC: {request.nrc}</p>
+              <label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">Materia</label>
+              <p className="font-bold">{request.subject}</p>
+              <p className="text-sm text-slate-500">NRC: {request.nrc}</p>
             </div>
           </div>
 
           <div>
-             <label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">Justificación del Estudiante</label>
-             <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-sm italic border border-slate-100 dark:border-slate-800">
-                "{request.comments || 'Sin comentarios'}"
-             </div>
+            <label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">Justificación del Estudiante</label>
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-sm italic border border-slate-100 dark:border-slate-800">
+              "{request.comments || 'Sin comentarios'}"
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">Estatus</label>
-              <select 
+              <select
                 value={status}
                 disabled={isReader}
                 onChange={(e) => setStatus(e.target.value as Status)}
@@ -509,20 +510,20 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, onClose, onUp
         </div>
 
         <div className="p-6 bg-slate-50 dark:bg-slate-800/20 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
-          <button 
+          <button
             onClick={onClose}
             className="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
           >
             Cancelar
           </button>
           {!isReader && (
-          <button 
-            onClick={handleSave}
-            disabled={saving}
-            className="px-6 py-2 bg-emerald-600 text-white rounded-lg text-sm font-bold hover:bg-emerald-700 transition-colors disabled:opacity-50 shadow-sm shadow-emerald-200 dark:shadow-none"
-          >
-            {saving ? 'Guardando...' : 'Guardar Cambios'}
-          </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="px-6 py-2 bg-emerald-600 text-white rounded-lg text-sm font-bold hover:bg-emerald-700 transition-colors disabled:opacity-50 shadow-sm shadow-emerald-200 dark:shadow-none"
+            >
+              {saving ? 'Guardando...' : 'Guardar Cambios'}
+            </button>
           )}
         </div>
       </div>

@@ -31,12 +31,12 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({ activePage
       <div className="flex flex-col h-full p-3">
         {/* Logo */}
         <div className="flex items-center gap-3 mb-8 px-2">
-          <div className="bg-primary rounded-lg p-2 text-white">
+          <div className="bg-primary rounded-lg p-2 text-white h-full flex items-center">
             <span className="material-symbols-outlined text-2xl">terminal</span>
           </div>
-          <div className="flex flex-col">
-            <h1 className="text-slate-900 dark:text-white text-base font-bold leading-none">Escuela II</h1>
-            <p className="text-slate-500 dark:text-slate-400 text-xs font-medium">Portal de Gestión</p>
+          <div className="flex flex-col gap-1">
+            <h1 className="text-slate-900 dark:text-white text-base font-bold leading-snug">Ingeniería Informática</h1>
+            <p className="text-slate-500 dark:text-slate-400 text-xs font-medium">Gestión de observaciones</p>
           </div>
         </div>
 

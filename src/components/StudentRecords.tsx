@@ -10,7 +10,7 @@ export const StudentRecords: React.FC = () => {
   const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedStudent, setSelectedStudent] = useState<StudentSummary | null>(null);
-  
+
   // Filter state
   const [selectedDepts, setSelectedDepts] = useState<string[]>([]);
   const [selectedSemester, setSelectedSemester] = useState<string>('All');
@@ -19,10 +19,11 @@ export const StudentRecords: React.FC = () => {
   useEffect(() => {
     const fetchRequests = async () => {
       try {
+        // Only select the columns we need
         const { data, error } = await supabase
           .from('observaciones')
-          .select('*')
-          .limit(1000); // Limitamos para evitar sobrecarga inicial
+          .select('id, estatus, "Clasif.", "# de Caso", fecha, cédula, estudiante, "acción", "Nombre Asignatura", nrc, uc, "Sem.", "Prom.", autoriza, comentarios, contacto, responsable, "Respuesta interna", "Respuesta al Estudiante"')
+          .order('fecha', { ascending: false });
 
         if (error) throw error;
 
@@ -85,7 +86,7 @@ export const StudentRecords: React.FC = () => {
   };
 
   const handleDeptChange = (dept: string) => {
-    setSelectedDepts(prev => 
+    setSelectedDepts(prev =>
       prev.includes(dept) ? prev.filter(d => d !== dept) : [...prev, dept]
     );
   };
@@ -100,7 +101,7 @@ export const StudentRecords: React.FC = () => {
 
   return (
     <div className="flex h-full overflow-hidden">
-      <StudentFilters 
+      <StudentFilters
         selectedDepts={selectedDepts}
         onDeptChange={handleDeptChange}
         selectedSemester={selectedSemester}
@@ -109,46 +110,46 @@ export const StudentRecords: React.FC = () => {
         onStatusChange={setSelectedStatus}
       />
       <div className="flex-1 overflow-y-auto p-6 lg:p-10 bg-background-light dark:bg-background-dark">
-         <div className="max-w-[1200px] mx-auto flex flex-col h-full min-h-min">
-            {/* Page Heading */}
-            <div className="flex flex-wrap justify-between gap-3 mb-8 items-end">
-              <div className="flex flex-col gap-2">
-                <h1 className="text-[#0d141b] dark:text-white text-3xl font-black leading-tight tracking-[-0.033em]">Listado de Estudiantes</h1>
-                <p className="text-[#4c739a] dark:text-gray-400 text-base font-normal leading-normal">Consulta y gestión de expedientes académicos por estudiante</p>
-              </div>
-              <div className="flex gap-3">
-                <button className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-white dark:bg-surface-dark border border-[#e7edf3] dark:border-gray-600 text-[#0d141b] dark:text-white text-sm font-bold shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                  <span className="material-symbols-outlined mr-2 text-[20px]">print</span>
-                  <span className="truncate">Imprimir</span>
-                </button>
-                <button className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold shadow-sm hover:bg-blue-600 transition-colors">
-                  <span className="material-symbols-outlined mr-2 text-[20px]">download</span>
-                  <span className="truncate">Exportar Reporte</span>
-                </button>
-              </div>
+        <div className="max-w-[1200px] mx-auto flex flex-col h-full min-h-min">
+          {/* Page Heading */}
+          <div className="flex flex-wrap justify-between gap-3 mb-8 items-end">
+            <div className="flex flex-col gap-2">
+              <h1 className="text-[#0d141b] dark:text-white text-3xl font-black leading-tight tracking-[-0.033em]">Listado de Estudiantes</h1>
+              <p className="text-[#4c739a] dark:text-gray-400 text-base font-normal leading-normal">Consulta y gestión de expedientes académicos por estudiante</p>
             </div>
-
-            {/* Filters Bar (Cleaned up as filters are now in sidebar) */}
-            <div className="mb-6 flex gap-2 overflow-x-auto pb-2 items-center">
-               <div className="text-sm text-gray-500 flex items-center">
-                  Mostrando {students.length} estudiantes
-                  {selectedDepts.length > 0 || selectedSemester !== 'All' || selectedStatus !== 'All' ? (
-                    <button 
-                      onClick={() => {
-                        setSelectedDepts([]);
-                        setSelectedSemester('All');
-                        setSelectedStatus('All');
-                      }}
-                      className="ml-4 text-primary hover:underline text-xs font-bold"
-                    >
-                      Limpiar Filtros
-                    </button>
-                  ) : null}
-              </div>
+            <div className="flex gap-3">
+              <button className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-white dark:bg-surface-dark border border-[#e7edf3] dark:border-gray-600 text-[#0d141b] dark:text-white text-sm font-bold shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                <span className="material-symbols-outlined mr-2 text-[20px]">print</span>
+                <span className="truncate">Imprimir</span>
+              </button>
+              <button className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold shadow-sm hover:bg-blue-600 transition-colors">
+                <span className="material-symbols-outlined mr-2 text-[20px]">download</span>
+                <span className="truncate">Exportar Reporte</span>
+              </button>
             </div>
+          </div>
 
-            <StudentTable students={students} onStudentClick={handleStudentClick} />
-         </div>
+          {/* Filters Bar (Cleaned up as filters are now in sidebar) */}
+          <div className="mb-6 flex gap-2 overflow-x-auto pb-2 items-center">
+            <div className="text-sm text-gray-500 flex items-center">
+              Mostrando {students.length} estudiantes
+              {selectedDepts.length > 0 || selectedSemester !== 'All' || selectedStatus !== 'All' ? (
+                <button
+                  onClick={() => {
+                    setSelectedDepts([]);
+                    setSelectedSemester('All');
+                    setSelectedStatus('All');
+                  }}
+                  className="ml-4 text-primary hover:underline text-xs font-bold"
+                >
+                  Limpiar Filtros
+                </button>
+              ) : null}
+            </div>
+          </div>
+
+          <StudentTable students={students} onStudentClick={handleStudentClick} />
+        </div>
       </div>
 
       <StudentRequestDetailModal
