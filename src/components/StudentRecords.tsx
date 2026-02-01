@@ -4,7 +4,7 @@ import { StudentTable } from './StudentTable';
 import { StudentRequestDetailModal } from './StudentRequestDetailModal';
 import { groupRequestsByStudent } from '../utils/dataUtils';
 import { supabase } from '../lib/supabase';
-import type { Request, StudentSummary } from '../types';
+import type { Request, StudentSummary, Status } from '../types';
 
 export const StudentRecords: React.FC = () => {
   const [requests, setRequests] = useState<Request[]>([]);
@@ -64,6 +64,64 @@ export const StudentRecords: React.FC = () => {
     };
 
     fetchRequests();
+
+    // Subscribe to realtime updates for the observaciones table
+    const channel = supabase
+      .channel('student-records-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'observaciones'
+        },
+        (payload) => {
+          const updatedRow = payload.new as {
+            id: number;
+            estatus: string;
+            responsable: string;
+          };
+
+          // Update requests list
+          setRequests(prev => prev.map(req => {
+            if (req.id === updatedRow.id) {
+              return {
+                ...req,
+                status: updatedRow.estatus as Status,
+                responsible: updatedRow.responsable || ''
+              };
+            }
+            return req;
+          }));
+
+          // Update selectedStudent if it contains the updated request
+          setSelectedStudent(prev => {
+            if (!prev) return null;
+
+            const requestIndex = prev.requests.findIndex(r => r.id === updatedRow.id);
+            if (requestIndex !== -1) {
+              const newRequests = [...prev.requests];
+              newRequests[requestIndex] = {
+                ...newRequests[requestIndex],
+                status: updatedRow.estatus as Status,
+                responsible: updatedRow.responsable || ''
+              };
+
+              // Recalculate summary stats if needed (simplified for now as only status/responsible changed)
+              return {
+                ...prev,
+                requests: newRequests
+              };
+            }
+            return prev;
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const filteredRequests = useMemo(() => {

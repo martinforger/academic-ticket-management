@@ -5,6 +5,8 @@ import { useAuth } from '../contexts/AuthContext';
 import * as XLSX from 'xlsx';
 import { RESPONSES_BY_CATEGORY } from '../data/predefinedResponses';
 import { DEPARTMENT_COLORS, DEPARTMENT_NAMES } from '../constants/departments';
+import { useRealtimeLock } from '../hooks/useRealtimeLock';
+import { LockedBanner } from './LockedBanner';
 
 export const RequestsView: React.FC = () => {
 
@@ -121,6 +123,55 @@ export const RequestsView: React.FC = () => {
     };
 
     fetchRequests();
+
+    // Subscribe to realtime updates for the observaciones table
+    const channel = supabase
+      .channel('requests-list-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'observaciones'
+        },
+        (payload) => {
+          // Update the request in the local state
+          const updatedRow = payload.new as {
+            id: number;
+            estatus: string;
+            responsable: string;
+          };
+
+          setRequests(prev => prev.map(req => {
+            if (req.id === updatedRow.id) {
+              return {
+                ...req,
+                status: updatedRow.estatus as Status,
+                responsible: updatedRow.responsable || ''
+              };
+            }
+            return req;
+          }));
+
+          // Also update selectedRequest if it matches
+          setSelectedRequest(prev => {
+            if (prev && prev.id === updatedRow.id) {
+              return {
+                ...prev,
+                status: updatedRow.estatus as Status,
+                responsible: updatedRow.responsable || ''
+              };
+            }
+            return prev;
+          });
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // Unique subjects for filter
@@ -536,6 +587,32 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
 
   const isReader = profile?.role === 'lector';
 
+  // Realtime lock detection - check if another user has this request in review
+  const lockState = useRealtimeLock(
+    request.id,
+    profile?.initials || null,
+    request.status,
+    request.responsible
+  );
+
+  // Determine if the request is locked by another user
+  // This is true if:
+  // 1. The request was already "EN REVISIÓN" when we opened it AND
+  // 2. The responsible is NOT the current user
+  const wasAlreadyInReviewByOther = React.useMemo(() => {
+    return request.status === 'EN REVISIÓN' &&
+      request.responsible &&
+      profile?.initials &&
+      request.responsible !== profile.initials;
+  }, [request.status, request.responsible, profile?.initials]);
+
+  // Combined lock state: either initial lock or realtime detected lock
+  const isLockedByOther = wasAlreadyInReviewByOther || lockState.isLocked;
+  const lockedByUser = wasAlreadyInReviewByOther ? request.responsible : lockState.lockedBy;
+
+  // If locked by other, treat as read-only
+  const isEffectivelyReadOnly = isReader || isLockedByOther;
+
   // Find the next related case (consecutive middle number)
   const getNextRelatedCase = (): Request | null => {
     if (!request.caseId) return null;
@@ -554,50 +631,91 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
 
   const nextRelatedCase = getNextRelatedCase();
 
-  // Auto-claim: When opening a "POR REVISAR" request, automatically set to "EN REVISIÓN"
+  // Sync local status when request prop updates (e.g. from realtime)
   useEffect(() => {
-    const autoClaim = async () => {
+    setStatus(request.status);
+    setInternalResponse(request.internalResponse);
+    setStudentResponse(request.studentResponse);
+  }, [request.status, request.internalResponse, request.studentResponse]);
+
+  // Track closing state to prevent reactive auto-claim from triggering during unclaim
+  const isClosingRef = React.useRef(false);
+
+  // Auto-claim: When opening a "POR REVISAR" request, automatically set to "EN REVISIÓN"
+  // Skip if already locked by another user
+  // REVISED: Now reactive to request.status changes to handle "A releases -> B claims" flow
+  useEffect(() => {
+    const attemptAutoClaim = async () => {
+      // 0. Closing guard: If we are in the process of closing/unclaiming, DO NOT reclaim
+      if (isClosingRef.current) return;
+
+      console.log('Auto-claim check:', {
+        id: request.id,
+        status: request.status,
+        isLocked: isLockedByOther,
+        wasClaimed: wasAutoClaimedRef.current,
+        initials: profile?.initials
+      });
+
+      // 1. Basic guards: Reader or no profile -> can't claim
       if (isReader || !profile) return;
 
-      // Only auto-claim if the request is "POR REVISAR"
-      if (request.status === 'POR REVISAR') {
-        try {
+      // 2. Lock guard: If locked by another user -> can't claim
+      if (isLockedByOther) return;
+
+      // 3. Status logic: Only claim if it is 'POR REVISAR'
+      // If I already claimed it (wasAutoClaimedRef) and status is EN REVISIÓN, we are good.
+      if (request.status !== 'POR REVISAR') return;
+
+      try {
+        // ATOMIC UPDATE: Only claim if status is STILL "POR REVISAR" in the database
+        // This prevents race conditions where two users try to claim simultaneously
+        const { data, error } = await supabase
+          .from('observaciones')
+          .update({
+            estatus: 'EN REVISIÓN',
+            responsable: profile.initials
+          })
+          .eq('id', request.id)
+          .eq('estatus', 'POR REVISAR') // Only update if status is still POR REVISAR
+          .select('id');
+
+        if (error) throw error;
+
+        // Check if the update actually happened (row was modified)
+        if (data && data.length > 0) {
+          // Successfully claimed
           wasAutoClaimedRef.current = true;
-
-          const { error } = await supabase
-            .from('observaciones')
-            .update({
-              estatus: 'EN REVISIÓN',
-              responsable: profile.initials
-            })
-            .eq('id', request.id);
-
-          if (error) throw error;
-
-          // Update local state
-          setStatus('EN REVISIÓN');
+          setStatus('EN REVISIÓN'); // Update local UI immediately
 
           // Audit log for claim
           await supabase.from('audit_logs').insert({
             user_id: profile.id,
             case_id: request.caseId,
             action: 'CLAIM_REQUEST',
-            details: { description: 'Solicitud tomada automáticamente al abrirla' },
+            details: { description: 'Solicitud tomada automáticamente' },
             changes: { status: { old: 'POR REVISAR', new: 'EN REVISIÓN' } }
           });
-
-          // DO NOT call onUpdate here - wait until close or save
-        } catch (err) {
-          console.error('Error auto-claiming request:', err);
+        } else {
+          // Someone else already claimed it - fetch current state
+          // This might happen if 'A' re-claimed it very fast, or 'C' jumped in
+          console.log('Request already claimed by another user during reactive claim');
         }
+      } catch (err) {
+        console.error('Error auto-claiming request:', err);
       }
     };
 
-    autoClaim();
+    attemptAutoClaim();
+    // Re-run this check when:
+    // 1. Request status changes (e.g. from Realtime update when A releases)
+    // 2. Lock state changes (e.g. A releases lock)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run on mount
+  }, [request.status, isLockedByOther]);
 
   const handleClose = async () => {
+    isClosingRef.current = true;
+
     // If the request was auto-claimed and the user didn't change the status
     // (still EN REVISIÓN), revert to POR REVISAR
     if (wasAutoClaimedRef.current && status === 'EN REVISIÓN' && !isReader && profile) {
@@ -608,7 +726,9 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
             estatus: 'POR REVISAR',
             responsable: ''
           })
-          .eq('id', request.id);
+          .eq('id', request.id)
+          .eq('estatus', 'EN REVISIÓN') // Logic safety: only revert if still in review
+          .eq('responsable', profile.initials); // Security: only if locked by CURRENT user
 
         // Audit log for unclaim
         await supabase.from('audit_logs').insert({
@@ -727,6 +847,13 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
           </div>
         )}
 
+        {/* Locked by another user banner */}
+        {isLockedByOther && lockedByUser && (
+          <div className="px-6 pt-4">
+            <LockedBanner lockedBy={lockedByUser} />
+          </div>
+        )}
+
         <div className="p-8 overflow-y-auto max-h-[70vh] space-y-6">
           {/* Student Profile Header */}
           <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-5 border border-slate-200 dark:border-slate-700">
@@ -825,7 +952,7 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
               <label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">Estatus</label>
               <select
                 value={status}
-                disabled={isReader}
+                disabled={isEffectivelyReadOnly}
                 onChange={(e) => setStatus(e.target.value as Status)}
                 className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-50 disabled:bg-slate-100"
               >
@@ -849,7 +976,7 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
             </label>
             <textarea
               value={internalResponse}
-              disabled={isReader}
+              disabled={isEffectivelyReadOnly}
               onChange={(e) => setInternalResponse(e.target.value)}
               className={`w-full bg-white dark:bg-slate-900 border ${status === 'SOLUCIONADO' && internalResponse.trim() === '' ? 'border-rose-300 dark:border-rose-900' : 'border-slate-200 dark:border-slate-800'} rounded-lg p-3 text-sm min-h-[80px] disabled:opacity-50 disabled:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20`}
               placeholder="Notas para el equipo administrativo..."
@@ -861,7 +988,7 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
               <label className="text-[10px] font-bold uppercase text-slate-500 block">
                 Respuesta al Estudiante {status === 'SOLUCIONADO' && <span className="text-rose-500">*</span>}
               </label>
-              {!isReader && (
+              {!isEffectivelyReadOnly && (
                 <select
                   className="text-xs bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors"
                   value=""
@@ -886,7 +1013,7 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
             </div>
             <textarea
               value={studentResponse}
-              disabled={isReader}
+              disabled={isEffectivelyReadOnly}
               onChange={(e) => setStudentResponse(e.target.value)}
               className={`w-full bg-white dark:bg-slate-900 border ${status === 'SOLUCIONADO' && studentResponse.trim() === '' ? 'border-rose-300 dark:border-rose-900' : 'border-slate-200 dark:border-slate-800'} rounded-lg p-3 text-sm min-h-[80px] disabled:opacity-50 disabled:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20`}
               placeholder="Este mensaje será enviado al estudiante..."
@@ -907,7 +1034,7 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
           >
             Cancelar
           </button>
-          {!isReader && (
+          {!isEffectivelyReadOnly && (
             <button
               onClick={handleSave}
               disabled={saving || !canSave}
