@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import type { Request, Status } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import * as XLSX from 'xlsx';
+import { RESPONSES_BY_CATEGORY } from '../data/predefinedResponses';
 
 export const RequestsView: React.FC = () => {
 
@@ -365,7 +366,7 @@ export const RequestsView: React.FC = () => {
                       </td>
                       <td className="px-4 py-3">
                         <div className="text-sm text-slate-700 dark:text-slate-300 font-medium truncate max-w-[200px]">{req.subject}</div>
-                        <div className="text-[11px] text-slate-500">NRC: {req.nrc}</div>
+                        <div className="text-[11px] text-slate-500">NRC: {req.nrc === 0 ? 'sin nrc sugerido' : req.nrc}</div>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tight bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
@@ -656,7 +657,16 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, onClose, onUp
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-2 text-sm text-slate-500 dark:text-slate-400">
                   <p className="flex items-center gap-1.5">
                     <span className="material-symbols-outlined text-[16px]">badge</span>
-                    C.I.: {request.studentId}
+                    <span
+                      className="hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer transition-colors flex items-center gap-1 group"
+                      title="Copiar cédula"
+                      onClick={() => {
+                        navigator.clipboard.writeText(request.studentId);
+                      }}
+                    >
+                      C.I.: {request.studentId}
+                      <span className="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-100 transition-opacity">content_copy</span>
+                    </span>
                   </p>
                   <p className="flex items-center gap-1.5">
                     <span className="material-symbols-outlined text-[16px]">school</span>
@@ -669,6 +679,10 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, onClose, onUp
                   <p className="flex items-center gap-1.5">
                     <span className="material-symbols-outlined text-[16px]">credit_card</span>
                     UC: {request.credits || 'N/A'}
+                  </p>
+                  <p className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[16px]">alternate_email</span>
+                    {request.contact || 'Sin correo'}
                   </p>
                 </div>
               </div>
@@ -683,7 +697,7 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, onClose, onUp
                 Materia Solicitada
               </label>
               <p className="font-bold text-slate-900 dark:text-white">{request.subject}</p>
-              <p className="text-sm text-slate-500">NRC: {request.nrc} • Clasificación: <span className="font-bold text-primary">{request.classification}</span></p>
+              <p className="text-sm text-slate-500">NRC: {request.nrc === 0 ? 'sin nrc sugerido' : request.nrc} • Clasificación: <span className="font-bold text-primary">{request.classification}</span></p>
             </div>
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
               <label className="text-[10px] font-bold uppercase text-slate-500 mb-2 block flex items-center gap-1">
@@ -746,9 +760,33 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, onClose, onUp
           </div>
 
           <div>
-            <label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">
-              Respuesta al Estudiante {status === 'SOLUCIONADO' && <span className="text-rose-500">*</span>}
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-[10px] font-bold uppercase text-slate-500 block">
+                Respuesta al Estudiante {status === 'SOLUCIONADO' && <span className="text-rose-500">*</span>}
+              </label>
+              {!isReader && (
+                <select
+                  className="text-xs bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors"
+                  value=""
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setStudentResponse(e.target.value);
+                    }
+                  }}
+                >
+                  <option value="">📋 Respuestas predefinidas...</option>
+                  {Object.entries(RESPONSES_BY_CATEGORY).map(([category, responses]) => (
+                    <optgroup key={category} label={category}>
+                      {responses.map((resp) => (
+                        <option key={resp.id} value={resp.text}>
+                          {resp.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              )}
+            </div>
             <textarea
               value={studentResponse}
               disabled={isReader}

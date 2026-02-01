@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import type { StudentSummary, Request, Status } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { RESPONSES_BY_CATEGORY } from '../data/predefinedResponses';
 
 interface StudentRequestDetailModalProps {
   isOpen: boolean;
@@ -61,7 +62,7 @@ const RequestItem = ({ request, onChange, isReader }: RequestItemProps) => {
           </div>
           <div>
             <p className="font-bold text-[#0d141b] dark:text-white text-base">{request.subject}</p>
-            <p className="text-xs text-slate-500 font-mono">#{request.caseId} • NRC: {request.nrc} • <span className="text-primary font-black uppercase">{request.action || 'S/A'}</span></p>
+            <p className="text-xs text-slate-500 font-mono">#{request.caseId} • NRC: {request.nrc === 0 ? 'sin nrc sugerido' : request.nrc} • <span className="text-primary font-black uppercase">{request.action || 'S/A'}</span></p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -141,10 +142,35 @@ const RequestItem = ({ request, onChange, isReader }: RequestItemProps) => {
 
           {/* Response Text Area */}
           <label className="flex flex-col gap-2 flex-1">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-              <span className="material-symbols-outlined text-sm">send</span>
-              Respuesta al Estudiante
-            </span>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm">send</span>
+                Respuesta al Estudiante
+              </span>
+              {!isReader && (
+                <select
+                  className="text-xs bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors"
+                  value=""
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      handleFieldChange('studentResponse', e.target.value);
+                      setResponse(e.target.value);
+                    }
+                  }}
+                >
+                  <option value="">📋 Respuestas predefinidas...</option>
+                  {Object.entries(RESPONSES_BY_CATEGORY).map(([category, responses]) => (
+                    <optgroup key={category} label={category}>
+                      {responses.map((resp) => (
+                        <option key={resp.id} value={resp.text}>
+                          {resp.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              )}
+            </div>
             <textarea
               value={response}
               disabled={isReader}
@@ -367,12 +393,20 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
               <div className="flex-1">
                 <div className="flex flex-wrap items-center gap-3 mb-1">
                   <h3 className="text-xl font-bold text-[#0d141b] dark:text-white">{student.studentName}</h3>
-                  <span className="px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 uppercase tracking-wider font-black">Expediente Alumno</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1 text-sm text-slate-500 dark:text-slate-400">
                   <p className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-[18px]">badge</span>
-                    C.I.: {student.studentId}
+                    <span
+                      className="hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer transition-colors flex items-center gap-1 group"
+                      title="Copiar cédula"
+                      onClick={() => {
+                        navigator.clipboard.writeText(student.studentId);
+                      }}
+                    >
+                      C.I.: {student.studentId}
+                      <span className="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-100 transition-opacity">content_copy</span>
+                    </span>
                   </p>
                   <p className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-[18px]">menu_book</span>
@@ -380,7 +414,7 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
                   </p>
                   <p className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-[18px]">alternate_email</span>
-                    {student.email.replace(/[,]/g, '').replace(/\.{2,}/g, '.')}
+                    {student.email}
                   </p>
                 </div>
               </div>
@@ -429,8 +463,8 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
                 disabled={saving || Object.keys(requestChanges).length === 0}
                 className="px-5 py-2.5 rounded-lg bg-indigo-600 text-white font-medium text-sm hover:bg-indigo-700 shadow-sm shadow-indigo-200 dark:shadow-none transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <span className="material-symbols-outlined text-[18px]">send</span>
-                {saving ? 'Guardando...' : 'Guardar y Notificar al Estudiante'}
+                <span className="material-symbols-outlined text-[18px]">save</span>
+                {saving ? 'Guardando...' : 'Guardar'}
               </button>
             )}
           </div>
