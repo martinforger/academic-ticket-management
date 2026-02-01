@@ -324,9 +324,9 @@ stateDiagram-v2
     POR_REVISAR --> IGNORADO: Sin relevancia
     POR_REVISAR --> REPETIDO: Duplicado detectado
 
-    EN_REVISION --> SOLUCIONADO: Solicitud aprobada y procesada
+    EN_REVISION --> SOLUCIONADO: Aprobada y procesada
     EN_REVISION --> NO_PROCEDE: No cumple requisitos
-    EN_REVISION --> REVISADO: Revisado sin acción específica
+    EN_REVISION --> REVISADO: Revisado sin acción
     EN_REVISION --> POR_REVISAR: Devuelto para más info
 
     SOLUCIONADO --> [*]
@@ -334,12 +334,19 @@ stateDiagram-v2
     REVISADO --> [*]
     IGNORADO --> [*]
     REPETIDO --> [*]
-
-    note right of POR_REVISAR: Estado inicial<br/>Color: Amarillo
-    note right of EN_REVISION: En proceso<br/>Color: Azul
-    note right of SOLUCIONADO: Finalizado OK<br/>Color: Verde
-    note right of NO_PROCEDE: Rechazado<br/>Color: Rojo
 ```
+
+**Leyenda de Estados:**
+| Estado | Color | Descripción |
+|--------|-------|-------------|
+| `POR_REVISAR` | 🟡 Amarillo | Nueva solicitud pendiente |
+| `EN_REVISION` | 🔵 Azul | Siendo evaluada |
+| `SOLUCIONADO` | 🟢 Verde | Resuelta satisfactoriamente |
+| `NO_PROCEDE` | 🔴 Rojo | Rechazada |
+| `REVISADO` | 🩶 Gris | Revisada sin acción específica |
+| `REPETIDO` | ⚪ Gris claro | Duplicado |
+| `IGNORADO` | ⚪ Gris claro | Descartada |
+
 
 ### Flujo de Gestión de Solicitudes
 
