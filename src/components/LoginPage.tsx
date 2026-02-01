@@ -1,17 +1,31 @@
 import React, { useState } from 'react';
+import { supabase } from '../lib/supabase';
 
 interface LoginPageProps {
-  onLogin: () => void;
+  onRegisterClick: () => void;
 }
 
-export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
+export const LoginPage: React.FC<LoginPageProps> = ({ onRegisterClick }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onLogin();
+    setLoading(true);
+    setError(null);
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+    }
   };
 
   return (
@@ -50,6 +64,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
                 {/* Form */}
                 <form className="space-y-5" onSubmit={handleSubmit}>
+                    {error && (
+                        <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm font-medium border border-red-100 dark:border-red-900/30">
+                            {error}
+                        </div>
+                    )}
+                    
                     {/* Email */}
                     <div className="flex flex-col gap-2">
                         <label className="text-sm font-semibold text-[#0d141b] dark:text-slate-200" htmlFor="email">
@@ -59,7 +79,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                             <input
                                 className="form-input flex w-full rounded-lg text-[#0d141b] dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 border border-[#cfdbe7] dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:border-primary h-12 px-4 text-base font-normal placeholder:text-[#4c739a]/60"
                                 id="email"
-                                placeholder="ej., estudiante@ing.escuela.edu"
+                                placeholder="ej., usuario@ejemplo.com"
                                 required
                                 type="email"
                                 value={email}
@@ -98,23 +118,33 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                         </div>
                     </div>
 
-                    {/* Remember Me */}
-                    <div className="flex items-center gap-2 py-1">
-                        <input className="rounded border-[#cfdbe7] text-primary focus:ring-primary h-4 w-4" id="remember" type="checkbox" />
-                        <label className="text-sm text-[#4c739a] dark:text-slate-400" htmlFor="remember">Recordar este dispositivo</label>
-                    </div>
-
                     {/* Submit Button */}
-                    <button className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3.5 px-6 rounded-lg transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2" type="submit">
-                        <span className="truncate">Iniciar Sesión</span>
-                        <span className="material-symbols-outlined text-lg">login</span>
+                    <button 
+                        disabled={loading}
+                        className="w-full bg-primary hover:bg-primary/90 disabled:opacity-50 text-white font-bold py-3.5 px-6 rounded-lg transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2" 
+                        type="submit"
+                    >
+                        {loading ? (
+                            <div className="size-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        ) : (
+                            <>
+                                <span className="truncate">Iniciar Sesión</span>
+                                <span className="material-symbols-outlined text-lg">login</span>
+                            </>
+                        )}
                     </button>
                 </form>
 
                 {/* Footer */}
-                <div className="mt-8 pt-6 border-t border-[#e7edf3] dark:border-slate-800 text-center">
+                <div className="mt-8 pt-6 border-t border-[#e7edf3] dark:border-slate-800 text-center space-y-4">
+                    <p className="text-sm text-[#4c739a] dark:text-slate-400">
+                        ¿No tiene una cuenta?{' '}
+                        <button onClick={onRegisterClick} className="text-primary font-bold hover:underline">
+                            Crear cuenta
+                        </button>
+                    </p>
                     <p className="text-xs text-[#4c739a] dark:text-slate-500 leading-relaxed">
-                        Al iniciar sesión, acepta nuestros <a className="underline" href="#">Términos de Servicio</a> y <a className="underline" href="#">Política de Privacidad</a>. Este es un sistema institucional seguro.
+                        Al iniciar sesión, acepta nuestros <a className="underline" href="#">Términos de Servicio</a> y <a className="underline" href="#">Política de Privacidad</a>.
                     </p>
                 </div>
             </div>
