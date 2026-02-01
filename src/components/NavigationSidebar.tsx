@@ -1,18 +1,30 @@
 import React from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 interface NavigationSidebarProps {
   activePage: string;
   onNavigate: (page: string) => void;
+  user?: any;
 }
 
 export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({ activePage, onNavigate }) => {
+  const { profile, user } = useAuth();
+  
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+  
   const navItems = [
     { id: 'overview', label: 'Resumen', icon: 'dashboard' },
-    { id: 'students', label: 'Expedientes', icon: 'group' },
-    { id: 'registration', label: 'Inscripción', icon: 'assignment' },
-    { id: 'programs', label: 'Programas', icon: 'school' },
-    { id: 'reports', label: 'Reportes', icon: 'bar_chart' },
+    { id: 'students', label: 'Estudiantes', icon: 'group' },
+    { id: 'requests', label: 'Solicitudes', icon: 'assignment_late' },
   ];
+
+  // Add Users menu for admins
+  if (profile?.role === 'administrador') {
+     navItems.push({ id: 'users', label: 'Usuarios', icon: 'manage_accounts' });
+  }
 
   return (
     <aside className="w-64 flex-shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark h-full flex flex-col">
@@ -51,15 +63,25 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({ activePage
 
         {/* Bottom Section */}
         <div className="mt-auto border-t border-slate-100 dark:border-slate-800 pt-4">
-          <button className="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors mb-4 w-full text-left">
-            <span className="material-symbols-outlined">settings</span>
-            <span className="text-sm font-medium">Configuración</span>
+          <button 
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors mb-4 w-full text-left"
+          >
+            <span className="material-symbols-outlined">logout</span>
+            <span className="text-sm font-medium">Cerrar Sesión</span>
           </button>
           <div className="flex items-center gap-3 px-2">
-            <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border border-slate-200 dark:border-slate-700" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAokehNGAMRudGKMooQvgbT-VRNKLRB90aiWU6jGw8wus4F4dYx0A0redzVFaFxmvxBYfEsa7qWGL2EAOmVBit4dlakrrdZionhj7pAFG_3nfkDmopvEq9seFedECeUvodzeX4CXSCmbRjYRmOGngHhWrPibtISYiw1zymZq3Cg3EpUMGoFlBTTPhG3Ufef2P56AAtLE_U3jpCVQDZVO6c-vYvbgQz4rOoH9PC49Z2jyvNGXYAZDJYR_bVxNlnJUYLxt36aqwresirK")' }}></div>
+            <div 
+              className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border border-slate-200 dark:border-slate-700" 
+              style={{ backgroundImage: `url(${user?.user_metadata?.avatar_url || 'https://www.gravatar.com/avatar/?d=mp'})` }}
+            ></div>
             <div className="flex flex-col min-w-0">
-              <p className="text-slate-900 dark:text-white text-sm font-bold truncate">Dr. Aris Thorne</p>
-              <p className="text-slate-500 dark:text-slate-400 text-xs truncate">Decano de Ingeniería</p>
+              <p className="text-slate-900 dark:text-white text-sm font-bold truncate">
+                {user?.user_metadata?.full_name || user?.email || 'Usuario'}
+              </p>
+              <p className="text-slate-500 dark:text-slate-400 text-xs truncate">
+                {user?.email}
+              </p>
             </div>
           </div>
         </div>
