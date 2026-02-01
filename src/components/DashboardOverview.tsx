@@ -16,14 +16,14 @@ const DEPARTMENT_COLORS: Record<string, string> = {
 };
 
 const DEPARTMENT_NAMES: Record<string, string> = {
-  'IN': 'Fundamentos de Ingeniería',
-  'LP': 'Lógica y Programación',
-  'IS': 'Ingeniería de Software',
+  'GE': 'General',
+  'AT': 'Apoyo a la toma de decisiones',
   'TE': 'Telemática',
-  'GE': 'Formación Gerencial',
-  'MC': 'Formación Integral',
-  'PP': 'Prácticas Profesionales',
-  'AT': 'Electivas',
+  'IS': 'Ingeniería de Software',
+  'IN': 'Inglés',
+  'LP': 'Lógica y Programación',
+  'MC': 'Materias comunes',
+  'PP': 'Prácticas profesionales',
 };
 
 const statusColors: Record<string, string> = {
