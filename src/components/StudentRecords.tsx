@@ -150,7 +150,7 @@ export const StudentRecords: React.FC = () => {
       <div className="flex-1 overflow-y-auto p-6 lg:p-10 bg-background-light dark:bg-background-dark">
         <div className="max-w-[1200px] mx-auto flex flex-col h-full min-h-min">
           {/* Page Heading */}
-          <div className="flex flex-wrap justify-between gap-4 mb-6 items-start">
+          <div className="flex flex-wrap justify-between gap-4 mb-6 items-start animate-fadeInUp">
             <div className="flex flex-col gap-1">
               <h1 className="text-[#0d141b] dark:text-white text-3xl font-black leading-tight tracking-[-0.033em]">Listado de Estudiantes</h1>
               <p className="text-[#4c739a] dark:text-gray-400 text-sm font-medium">Consulta y gestión de expedientes académicos por estudiante</p>
@@ -178,7 +178,7 @@ export const StudentRecords: React.FC = () => {
           </div>
 
           {/* Results Info Bar */}
-          <div className="mb-4 flex items-center justify-between bg-white dark:bg-slate-900 rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="mb-4 flex items-center justify-between bg-white dark:bg-slate-900 rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-800 shadow-sm animate-fadeInUp" style={{ animationDelay: '100ms', opacity: 0 }}>
             <div className="flex items-center gap-3">
               <span className="material-symbols-outlined text-primary text-xl">people</span>
               <span className="text-sm text-slate-600 dark:text-slate-400">

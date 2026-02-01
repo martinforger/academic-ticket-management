@@ -13,11 +13,12 @@ interface StudentRequestDetailModalProps {
 
 interface RequestItemProps {
   request: Request;
+  allRequests: Request[];
   onChange: (id: number, changes: Partial<Request>) => void;
   isReader: boolean;
 }
 
-const RequestItem = ({ request, onChange, isReader }: RequestItemProps) => {
+const RequestItem = ({ request, allRequests, onChange, isReader }: RequestItemProps) => {
   const isAdd = request.action === 'Agregar';
   // Indigo-themed accents for Student Detail
   const iconBgClasses = isAdd
@@ -35,6 +36,24 @@ const RequestItem = ({ request, onChange, isReader }: RequestItemProps) => {
   const [status, setStatus] = useState(request.status);
   const [internalResponse, setInternalResponse] = useState(request.internalResponse || '');
   const [response, setResponse] = useState(request.studentResponse || '');
+
+  // Find the next related case (consecutive middle number)
+  const getNextRelatedCase = (): Request | null => {
+    if (!request.caseId) return null;
+    const parts = request.caseId.split('-');
+    if (parts.length !== 3) return null;
+
+    const [prefix, middleStr, suffix] = parts;
+    const middleNum = parseInt(middleStr, 10);
+    if (isNaN(middleNum)) return null;
+
+    const nextMiddle = (middleNum + 1).toString().padStart(2, '0');
+    const nextCaseId = `${prefix}-${nextMiddle}-${suffix}`;
+
+    return allRequests.find(r => r.caseId === nextCaseId) || null;
+  };
+
+  const nextRelatedCase = getNextRelatedCase();
 
   const handleFieldChange = (field: keyof Request, value: any) => {
     if (field === 'status') setStatus(value);
@@ -73,6 +92,16 @@ const RequestItem = ({ request, onChange, isReader }: RequestItemProps) => {
             <span className="material-symbols-outlined text-[14px]">history</span> {formatDate(request.date)}
           </span>
         </div>
+
+        {/* Related Case Indicator */}
+        {nextRelatedCase && (
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg border border-indigo-200 dark:border-indigo-800">
+            <span className="material-symbols-outlined text-indigo-500 text-[16px]">link</span>
+            <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300">
+              Relacionado con #{nextRelatedCase.caseId}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Content Body */}
@@ -441,6 +470,7 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
               <RequestItem
                 key={`${req.nrc}-${idx}`}
                 request={req}
+                allRequests={student.requests}
                 onChange={handleRequestChange}
                 isReader={isReader}
               />

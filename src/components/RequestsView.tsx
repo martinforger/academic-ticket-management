@@ -337,7 +337,7 @@ export const RequestsView: React.FC = () => {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col p-6 lg:p-8 overflow-hidden">
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 animate-fadeInUp">
           <div>
             <h1 className="text-[#0d141b] dark:text-white text-3xl font-black leading-tight tracking-tight mb-1">Solicitudes de Inscripción</h1>
             <p className="text-slate-500 dark:text-slate-400 font-medium text-sm flex items-center gap-2">
@@ -372,7 +372,7 @@ export const RequestsView: React.FC = () => {
         </div>
 
         {/* Table Container */}
-        <div className="flex-1 bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col">
+        <div className="flex-1 bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col animate-fadeInUp" style={{ animationDelay: '100ms', opacity: 0 }}>
           <div className="overflow-x-auto h-full custom-scrollbar">
             <table className="w-full text-left border-collapse">
               <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 text-[11px] uppercase font-bold tracking-wider sticky top-0 z-10 backdrop-blur-sm border-b border-slate-200 dark:border-slate-800">
@@ -393,7 +393,8 @@ export const RequestsView: React.FC = () => {
                     <tr
                       key={req.id}
                       onClick={() => setSelectedRequest(req)}
-                      className={`group hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer ${isInReview ? 'bg-amber-50/50 dark:bg-amber-900/10' : ''}`}
+                      className={`group hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer animate-fadeInUp ${isInReview ? 'bg-amber-50/50 dark:bg-amber-900/10' : ''}`}
+                      style={{ animationDelay: `${index * 40}ms`, opacity: 0 }}
                     >
                       <td className={`pl-8 pr-3 py-3 whitespace-nowrap relative ${isInReview ? 'border-l-4 border-amber-400' : ''}`}>
                         {/* Department Visual Hint */}
@@ -483,6 +484,7 @@ export const RequestsView: React.FC = () => {
           selectedRequest && (
             <RequestDetailModal
               request={selectedRequest!}
+              allRequests={requests}
               onClose={() => setSelectedRequest(null)}
               onUpdate={(updatedReq) => {
                 setRequests(prev => prev.map(r => r.id === updatedReq.id ? updatedReq : r));
@@ -517,11 +519,12 @@ const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
 
 interface DetailModalProps {
   request: Request;
+  allRequests: Request[];
   onClose: () => void;
   onUpdate: (request: Request) => void;
 }
 
-const RequestDetailModal: React.FC<DetailModalProps> = ({ request, onClose, onUpdate }) => {
+const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, onClose, onUpdate }) => {
   const { profile } = useAuth();
   const [status, setStatus] = useState<Status>(request.status);
   const [internalResponse, setInternalResponse] = useState(request.internalResponse);
@@ -532,6 +535,24 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, onClose, onUp
   const wasAutoClaimedRef = React.useRef(false);
 
   const isReader = profile?.role === 'lector';
+
+  // Find the next related case (consecutive middle number)
+  const getNextRelatedCase = (): Request | null => {
+    if (!request.caseId) return null;
+    const parts = request.caseId.split('-');
+    if (parts.length !== 3) return null;
+
+    const [prefix, middleStr, suffix] = parts;
+    const middleNum = parseInt(middleStr, 10);
+    if (isNaN(middleNum)) return null;
+
+    const nextMiddle = (middleNum + 1).toString().padStart(2, '0');
+    const nextCaseId = `${prefix}-${nextMiddle}-${suffix}`;
+
+    return allRequests.find(r => r.caseId === nextCaseId) || null;
+  };
+
+  const nextRelatedCase = getNextRelatedCase();
 
   // Auto-claim: When opening a "POR REVISAR" request, automatically set to "EN REVISIÓN"
   useEffect(() => {
@@ -695,6 +716,16 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, onClose, onUp
             <span className={`material-symbols-outlined ${colors.icon}`}>close</span>
           </button>
         </div>
+
+        {/* Related Case Indicator */}
+        {nextRelatedCase && (
+          <div className={`px-6 py-2 ${colors.bg} border-b border-slate-100 dark:border-slate-800 flex items-center gap-2`}>
+            <span className="material-symbols-outlined text-indigo-500 text-[18px]">link</span>
+            <span className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
+              Esta solicitud está relacionada con el caso <span className="font-bold">#{nextRelatedCase.caseId}</span>
+            </span>
+          </div>
+        )}
 
         <div className="p-8 overflow-y-auto max-h-[70vh] space-y-6">
           {/* Student Profile Header */}

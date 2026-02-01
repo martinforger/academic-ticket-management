@@ -49,11 +49,12 @@ export const StudentTable: React.FC<StudentTableProps> = ({ students, onStudentC
             </tr>
           </thead>
           <tbody className="divide-y divide-[#e7edf3] dark:divide-gray-700">
-            {currentStudents.map((student) => (
+            {currentStudents.map((student, index) => (
               <tr
                 key={student.studentId}
                 onClick={() => onStudentClick(student)}
-                className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors cursor-pointer"
+                className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors cursor-pointer animate-fadeInUp"
+                style={{ animationDelay: `${index * 50}ms`, opacity: 0 }}
               >
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center gap-3">
