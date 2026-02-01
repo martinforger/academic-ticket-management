@@ -65,19 +65,7 @@ function AppContent() {
     );
   }
 
-  if (!session) {
-    if (authView === 'register') {
-      return <RegisterPage onBackToLogin={() => setAuthView('login')} />;
-    }
-    return <LoginPage onRegisterClick={() => setAuthView('register')} />;
-  }
-
-  // Check if user is approved (has a role assigned)
-  if (profile?.role === 'sin_asignar' || !profile?.role) {
-    return <PendingApprovalPage />;
-  }
-
-  // Show onboarding for new users
+  // Show onboarding for new users or when requested
   if (showOnboarding) {
     return (
       <OnboardingTour
@@ -85,6 +73,23 @@ function AppContent() {
         onSkip={skipOnboarding}
       />
     );
+  }
+
+  if (!session) {
+    if (authView === 'register') {
+      return <RegisterPage onBackToLogin={() => setAuthView('login')} />;
+    }
+    return (
+      <LoginPage
+        onRegisterClick={() => setAuthView('register')}
+        onSupportClick={resetOnboarding}
+      />
+    );
+  }
+
+  // Check if user is approved (has a role assigned)
+  if (profile?.role === 'sin_asignar' || !profile?.role) {
+    return <PendingApprovalPage />;
   }
 
   return (
@@ -97,11 +102,11 @@ function AppContent() {
         <button
           onClick={resetOnboarding}
           className="fixed bottom-6 right-6 bg-primary text-white p-3 rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all group z-50"
-          title="Ver tour de ayuda"
+          title="Soporte"
         >
           <span className="material-symbols-outlined text-xl">help</span>
           <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-slate-900 text-white text-xs px-3 py-1.5 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-            Ver tour de ayuda
+            Soporte
           </span>
         </button>
       </main>
