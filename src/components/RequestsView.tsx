@@ -710,7 +710,7 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
         <div className={`flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800 ${colors.bg} transition-colors`}>
           <h2 className={`text-xl font-bold ${colors.text} italic flex items-center gap-2 transition-colors`}>
             <span className="material-symbols-outlined">description</span>
-            Ficha de Solicitud #{request.caseId}
+            Observación #{request.caseId}
           </h2>
           <button onClick={handleClose} className={`p-2 rounded-full ${colors.btn} transition-colors`}>
             <span className={`material-symbols-outlined ${colors.icon}`}>close</span>
@@ -782,13 +782,19 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
 
           {/* Materia and Action Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
+            <div
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 border-l-4"
+              style={{ borderLeftColor: DEPARTMENT_COLORS[request.classification] || 'transparent' }}
+            >
               <label className="text-[10px] font-bold uppercase text-slate-500 mb-2 block flex items-center gap-1">
                 <span className="material-symbols-outlined text-[14px]">menu_book</span>
                 Materia Solicitada
               </label>
               <p className="font-bold text-slate-900 dark:text-white">{request.subject}</p>
-              <p className="text-sm text-slate-500">NRC: {request.nrc === 0 ? 'sin nrc sugerido' : request.nrc} • Clasificación: <span className="font-bold text-primary">{request.classification}</span></p>
+              <p className="text-sm text-slate-500">
+                NRC: {request.nrc === 0 ? 'sin nrc sugerido' : request.nrc} •
+                Departamento: <span className="font-bold text-primary">{DEPARTMENT_NAMES[request.classification] || request.classification}</span>
+              </p>
             </div>
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
               <label className="text-[10px] font-bold uppercase text-slate-500 mb-2 block flex items-center gap-1">

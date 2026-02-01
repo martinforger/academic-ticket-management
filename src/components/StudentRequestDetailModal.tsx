@@ -3,6 +3,7 @@ import type { StudentSummary, Request, Status } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { RESPONSES_BY_CATEGORY } from '../data/predefinedResponses';
+import { DEPARTMENT_COLORS, DEPARTMENT_NAMES } from '../constants/departments';
 
 interface StudentRequestDetailModalProps {
   isOpen: boolean;
@@ -72,7 +73,10 @@ const RequestItem = ({ request, allRequests, onChange, isReader }: RequestItemPr
   };
 
   return (
-    <div className="bg-white dark:bg-surface-dark rounded-xl border border-[#e7edf3] dark:border-gray-700 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+    <div
+      className="bg-white dark:bg-surface-dark rounded-xl border border-[#e7edf3] dark:border-gray-700 overflow-hidden shadow-sm hover:shadow-md transition-shadow border-l-4"
+      style={{ borderLeftColor: DEPARTMENT_COLORS[request.classification] || 'transparent' }}
+    >
       {/* Header Bar */}
       <div className={`flex flex-wrap gap-4 items-center justify-between p-4 border-b border-[#e7edf3] dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-800/50`}>
         <div className="flex items-center gap-3">
@@ -81,7 +85,11 @@ const RequestItem = ({ request, allRequests, onChange, isReader }: RequestItemPr
           </div>
           <div>
             <p className="font-bold text-[#0d141b] dark:text-white text-base">{request.subject}</p>
-            <p className="text-xs text-slate-500 font-mono">#{request.caseId} • NRC: {request.nrc === 0 ? 'sin nrc sugerido' : request.nrc} • <span className="text-primary font-black uppercase">{request.action || 'S/A'}</span></p>
+            <p className="text-xs text-slate-500 font-mono">
+              #{request.caseId} • NRC: {request.nrc === 0 ? 'sin nrc sugerido' : request.nrc} •
+              <span className="text-primary font-black uppercase"> {request.action || 'S/A'}</span> •
+              <span className="font-bold"> {DEPARTMENT_NAMES[request.classification] || request.classification}</span>
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
