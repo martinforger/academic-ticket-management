@@ -120,16 +120,6 @@ export const StudentRecords: React.FC = () => {
               <h1 className="text-[#0d141b] dark:text-white text-3xl font-black leading-tight tracking-[-0.033em]">Listado de Estudiantes</h1>
               <p className="text-[#4c739a] dark:text-gray-400 text-base font-normal leading-normal">Consulta y gestión de expedientes académicos por estudiante</p>
             </div>
-            <div className="flex gap-3">
-              <button className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-white dark:bg-surface-dark border border-[#e7edf3] dark:border-gray-600 text-[#0d141b] dark:text-white text-sm font-bold shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                <span className="material-symbols-outlined mr-2 text-[20px]">print</span>
-                <span className="truncate">Imprimir</span>
-              </button>
-              <button className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold shadow-sm hover:bg-blue-600 transition-colors">
-                <span className="material-symbols-outlined mr-2 text-[20px]">download</span>
-                <span className="truncate">Exportar Reporte</span>
-              </button>
-            </div>
           </div>
 
           {/* Filters Bar (Cleaned up as filters are now in sidebar) */}

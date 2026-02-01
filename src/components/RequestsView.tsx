@@ -2,11 +2,13 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Request, Status } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import * as XLSX from 'xlsx';
 
 export const RequestsView: React.FC = () => {
 
   const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
 
@@ -17,6 +19,45 @@ export const RequestsView: React.FC = () => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 15;
+
+  // Export to Excel function
+  const exportToExcel = async () => {
+    setExporting(true);
+    try {
+      // Fetch ALL data from the observaciones table
+      const { data, error } = await supabase
+        .from('observaciones')
+        .select('*');
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        alert('No hay datos para exportar');
+        return;
+      }
+
+      // Create workbook and worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(data);
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(wb, ws, 'Observaciones');
+
+      // Generate filename with current date
+      const date = new Date().toISOString().split('T')[0];
+      const filename = `observaciones_${date}.xlsx`;
+
+      // Download the file
+      XLSX.writeFile(wb, filename);
+
+      alert(`Archivo "${filename}" descargado exitosamente con ${data.length} registros.`);
+    } catch (err) {
+      console.error('Error exporting to Excel:', err);
+      alert('Error al exportar los datos');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const DEPARTMENTS = [
     { id: 'GE', label: 'General' },
@@ -61,7 +102,7 @@ export const RequestsView: React.FC = () => {
           studentName: row.estudiante || 'Desconocido',
           credits: row.uc || 0,
           semester: row['Sem.'] || '',
-          gpa: row.Prom || 0,
+          gpa: row['Prom.'] || 0,
           authorized: row.autoriza,
           action: row.acción || '',
           subject: row['Nombre Asignatura'] || '',
@@ -160,18 +201,28 @@ export const RequestsView: React.FC = () => {
             <p className="text-[#4c739a] dark:text-gray-400">Control individual de cada solicitud recibida</p>
           </div>
 
-          <div className="relative w-full md:w-96">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
-            <input
-              type="text"
-              placeholder="Buscar por estudiante, C.I., materia o caso..."
-              className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-surface-dark focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setCurrentPage(1);
-              }}
-            />
+          <div className="flex items-center gap-3">
+            <div className="relative w-full md:w-80">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+              <input
+                type="text"
+                placeholder="Buscar por estudiante, C.I., materia o caso..."
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-surface-dark focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+            <button
+              onClick={exportToExcel}
+              disabled={exporting}
+              className="flex items-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              <span className="material-symbols-outlined text-[20px]">download</span>
+              {exporting ? 'Exportando...' : 'Exportar Excel'}
+            </button>
           </div>
         </div>
 
@@ -250,34 +301,55 @@ export const RequestsView: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {currentRequests.map((req) => (
-                    <tr
-                      key={req.id}
-                      onClick={() => setSelectedRequest(req)}
-                      className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors group cursor-pointer"
-                    >
-                      <td className="px-4 py-4 whitespace-nowrap w-24">
-                        <div className="text-[10px] text-slate-400 font-mono mb-0.5">#{req.caseId}</div>
-                        <div className="text-[11px] font-bold text-slate-600 dark:text-slate-400 italic leading-tight">{formatDate(req.date)}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-bold text-slate-900 dark:text-white">{req.studentName}</div>
-                        <div className="text-xs text-slate-500">C.I.: {req.studentId}</div>
-                      </td>
-                      <td className="px-6 py-4 max-w-[220px]">
-                        <div className="text-sm text-slate-700 dark:text-slate-300 font-bold truncate">{req.subject}</div>
-                        <div className="text-xs text-slate-500 font-medium">NRC: {req.nrc}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-tight bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20 transition-all">
-                          {req.action || 'S/A'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <StatusBadge status={req.status} />
-                      </td>
-                    </tr>
-                  ))}
+                  {currentRequests.map((req, index) => {
+                    const getBaseId = (id: string) => id?.split('-')[0] || '';
+                    const currentBase = getBaseId(req.caseId);
+                    const prevBase = index > 0 ? getBaseId(currentRequests[index - 1].caseId) : null;
+                    const nextBase = index < currentRequests.length - 1 ? getBaseId(currentRequests[index + 1].caseId) : null;
+
+                    const isPartOfGroup = (currentBase === prevBase) || (currentBase === nextBase);
+                    const isFirstInGroup = isPartOfGroup && (currentBase !== prevBase);
+                    const isLastInGroup = isPartOfGroup && (currentBase !== nextBase);
+
+                    return (
+                      <tr
+                        key={req.id}
+                        onClick={() => setSelectedRequest(req)}
+                        className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors group cursor-pointer"
+                      >
+                        <td className="pl-10 pr-4 py-4 whitespace-nowrap w-24 relative">
+                          {/* Visual Connection Line */}
+                          {isPartOfGroup && (
+                            <div className="absolute left-5 top-0 bottom-0 flex flex-col items-center">
+                              {/* Line segments - primary blue theme */}
+                              <div className={`w-[2px] bg-primary/30 dark:bg-primary/20 grow ${isFirstInGroup ? 'invisible' : ''}`} />
+                              <div className="w-2.5 h-2.5 rounded-full border-2 border-primary bg-white dark:bg-slate-900 z-10 my-1 shadow-sm" />
+                              <div className={`w-[2px] bg-primary/30 dark:bg-primary/20 grow ${isLastInGroup ? 'invisible' : ''}`} />
+                            </div>
+                          )}
+
+                          <div className="text-[10px] text-slate-400 font-mono mb-0.5">#{req.caseId}</div>
+                          <div className="text-[11px] font-bold text-slate-600 dark:text-slate-400 italic leading-tight">{formatDate(req.date)}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-bold text-slate-900 dark:text-white">{req.studentName}</div>
+                          <div className="text-xs text-slate-500">C.I.: {req.studentId}</div>
+                        </td>
+                        <td className="px-6 py-4 max-w-[220px]">
+                          <div className="text-sm text-slate-700 dark:text-slate-300 font-bold truncate">{req.subject}</div>
+                          <div className="text-xs text-slate-500 font-medium">NRC: {req.nrc}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-tight bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20 transition-all">
+                            {req.action || 'S/A'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <StatusBadge status={req.status} />
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
               {filteredRequests.length === 0 && (
@@ -423,7 +495,7 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, onClose, onUp
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-      <div className="bg-white dark:bg-surface-dark w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200 border-t-8 border-emerald-600">
+      <div className="bg-white dark:bg-surface-dark w-full max-w-3xl rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200 border-t-8 border-emerald-600">
         <div className="flex items-center justify-between p-6 border-b border-emerald-50 dark:border-emerald-900/20 bg-emerald-50/30 dark:bg-emerald-900/10">
           <h2 className="text-xl font-bold text-emerald-900 dark:text-emerald-100 italic flex items-center gap-2">
             <span className="material-symbols-outlined">description</span>
@@ -435,16 +507,69 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, onClose, onUp
         </div>
 
         <div className="p-8 overflow-y-auto max-h-[70vh] space-y-6">
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">Estudiante</label>
-              <p className="font-bold">{request.studentName}</p>
-              <p className="text-sm text-slate-500">C.I. {request.studentId}</p>
+          {/* Student Profile Header */}
+          <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-5 border border-slate-200 dark:border-slate-700">
+            <div className="flex flex-col md:flex-row gap-5 items-start md:items-center">
+              <div className="relative shrink-0">
+                <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/30 overflow-hidden border-2 border-white dark:border-gray-600 shadow-sm flex items-center justify-center">
+                  <span className="text-emerald-600 dark:text-emerald-400 text-xl font-black">
+                    {request.studentName.split(' ').map(n => n[0]).slice(0, 2).join('')}
+                  </span>
+                </div>
+              </div>
+              <div className="flex-1">
+                <div className="flex flex-wrap items-center gap-3 mb-2">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">{request.studentName}</h3>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 uppercase tracking-wider">
+                    Estudiante
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-2 text-sm text-slate-500 dark:text-slate-400">
+                  <p className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[16px]">badge</span>
+                    C.I.: {request.studentId}
+                  </p>
+                  <p className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[16px]">school</span>
+                    Semestre: {request.semester || 'N/A'}
+                  </p>
+                  <p className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[16px]">grade</span>
+                    Promedio: {request.gpa || 'N/A'}
+                  </p>
+                  <p className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[16px]">credit_card</span>
+                    UC: {request.credits || 'N/A'}
+                  </p>
+                </div>
+              </div>
             </div>
-            <div>
-              <label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">Materia</label>
-              <p className="font-bold">{request.subject}</p>
-              <p className="text-sm text-slate-500">NRC: {request.nrc}</p>
+          </div>
+
+          {/* Materia and Action Info */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
+              <label className="text-[10px] font-bold uppercase text-slate-500 mb-2 block flex items-center gap-1">
+                <span className="material-symbols-outlined text-[14px]">menu_book</span>
+                Materia Solicitada
+              </label>
+              <p className="font-bold text-slate-900 dark:text-white">{request.subject}</p>
+              <p className="text-sm text-slate-500">NRC: {request.nrc} • Clasificación: <span className="font-bold text-primary">{request.classification}</span></p>
+            </div>
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
+              <label className="text-[10px] font-bold uppercase text-slate-500 mb-2 block flex items-center gap-1">
+                <span className="material-symbols-outlined text-[14px]">swap_horiz</span>
+                Acción Solicitada
+              </label>
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold ${request.action === 'Agregar'
+                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                : 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'
+                }`}>
+                <span className="material-symbols-outlined text-[18px]">
+                  {request.action === 'Agregar' ? 'add_circle' : 'remove_circle'}
+                </span>
+                {request.action || 'No especificada'}
+              </span>
             </div>
           </div>
 
@@ -469,22 +594,13 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, onClose, onUp
                 ))}
               </select>
             </div>
-            {status !== 'POR REVISAR' ? (
-              <div>
-                <label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">Responsable Gestión</label>
-                <div className="flex items-center gap-2 p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg text-sm font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800">
-                  <span className="material-symbols-outlined text-[18px]">verified_user</span>
-                  {request.responsible || 'Sistema'}
-                </div>
+            <div>
+              <label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">Responsable Gestión</label>
+              <div className="flex items-center gap-2 p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg text-sm font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800">
+                <span className="material-symbols-outlined text-[18px]">verified_user</span>
+                {request.responsible || 'Sin asignar'}
               </div>
-            ) : (
-              <div>
-                <label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">Acción Solicitada</label>
-                <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-sm font-medium">
-                  {request.action}
-                </div>
-              </div>
-            )}
+            </div>
           </div>
 
           <div>
