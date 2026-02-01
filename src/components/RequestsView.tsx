@@ -161,20 +161,44 @@ export const RequestsView: React.FC = () => {
   const startIndex = (currentPage - 1) * pageSize;
   const currentRequests = filteredRequests.slice(startIndex, startIndex + pageSize);
 
-  const formatDate = (dateStr: string) => {
-    try {
-      const date = new Date(dateStr);
-      return new Intl.DateTimeFormat('es-VE', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      }).format(date);
-    } catch (e) {
-      return dateStr;
-    }
-  };
+  // Pre-compute grouping info for current page to avoid calculation in render
+  const groupingInfo = useMemo(() => {
+    const getBaseId = (id: string) => id?.split('-')[0] || '';
+    return currentRequests.map((req, index) => {
+      const currentBase = getBaseId(req.caseId);
+      const prevBase = index > 0 ? getBaseId(currentRequests[index - 1].caseId) : null;
+      const nextBase = index < currentRequests.length - 1 ? getBaseId(currentRequests[index + 1].caseId) : null;
+
+      const isPartOfGroup = (currentBase === prevBase) || (currentBase === nextBase);
+      const isFirstInGroup = isPartOfGroup && (currentBase !== prevBase);
+      const isLastInGroup = isPartOfGroup && (currentBase !== nextBase);
+
+      return { isPartOfGroup, isFirstInGroup, isLastInGroup };
+    });
+  }, [currentRequests]);
+
+  // Pre-format dates for current page
+  const formattedDates = useMemo(() => {
+    const cache: Record<string, string> = {};
+    return currentRequests.map(req => {
+      if (!cache[req.date]) {
+        try {
+          const date = new Date(req.date);
+          cache[req.date] = new Intl.DateTimeFormat('es-VE', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          }).format(date);
+        } catch (e) {
+          cache[req.date] = req.date;
+        }
+      }
+      return cache[req.date];
+    });
+  }, [currentRequests]);
+
 
   const handleDeptToggle = (deptId: string) => {
     setSelectedDepts(prev =>
@@ -192,13 +216,79 @@ export const RequestsView: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-background-light dark:bg-background-dark p-6 lg:p-10">
-      <div className="max-w-[1500px] mx-auto w-full flex flex-col h-full gap-6">
+    <div className="flex-1 flex overflow-hidden bg-background-light dark:bg-background-dark">
+      {/* Sidebar Filters */}
+      <div className="w-56 flex-shrink-0 border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 overflow-y-auto p-4 flex flex-col gap-4 custom-scrollbar">
+        <div>
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <span className="material-symbols-outlined text-lg">filter_alt</span>
+            Departamentos
+          </h3>
+          <div className="flex flex-col gap-1.5">
+            {DEPARTMENTS.map(dept => (
+              <label key={dept.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/50 cursor-pointer transition-colors group">
+                <input
+                  type="checkbox"
+                  checked={selectedDepts.includes(dept.id)}
+                  onChange={() => handleDeptToggle(dept.id)}
+                  className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-primary focus:ring-primary/20"
+                />
+                <span className="text-sm font-medium text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+                  {dept.label} <span className="text-[10px] opacity-40">({dept.id})</span>
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <span className="material-symbols-outlined text-lg">check_circle</span>
+            Estado de Solicitud
+          </h3>
+          <select
+            className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
+            value={selectedStatus}
+            onChange={(e) => {
+              setSelectedStatus(e.target.value);
+              setCurrentPage(1);
+            }}
+          >
+            <option value="All">Todos los estados</option>
+            {STATUSES.map(s => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+        </div>
+
+        {(selectedDepts.length > 0 || selectedStatus !== 'All' || searchTerm) && (
+          <div className="mt-auto pt-6">
+            <button
+              onClick={() => {
+                setSelectedDepts([]);
+                setSelectedStatus('All');
+                setSearchTerm('');
+                setCurrentPage(1);
+              }}
+              className="w-full py-2.5 text-sm font-bold text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all border border-rose-100 dark:border-rose-900/30 flex items-center justify-center gap-2"
+            >
+              <span className="material-symbols-outlined text-sm">filter_alt_off</span>
+              Limpiar filtros
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col p-6 lg:p-8 overflow-hidden">
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
           <div>
-            <h1 className="text-[#0d141b] dark:text-white text-3xl font-black leading-tight tracking-tight">Observaciones de inscripción - IINF</h1>
-            <p className="text-[#4c739a] dark:text-gray-400">Control individual de cada solicitud recibida</p>
+            <h1 className="text-[#0d141b] dark:text-white text-3xl font-black leading-tight tracking-tight mb-1">Solicitudes de Inscripción</h1>
+            <p className="text-slate-500 dark:text-slate-400 font-medium text-sm flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+              Monitoreo en tiempo real de trámites académicos
+            </p>
           </div>
 
           <div className="flex items-center gap-3">
@@ -206,8 +296,8 @@ export const RequestsView: React.FC = () => {
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
               <input
                 type="text"
-                placeholder="Buscar por estudiante, C.I., materia o caso..."
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-surface-dark focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
+                placeholder="Buscar por estudiante, C.I., materia..."
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-sm text-sm"
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
@@ -218,204 +308,129 @@ export const RequestsView: React.FC = () => {
             <button
               onClick={exportToExcel}
               disabled={exporting}
-              className="flex items-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm transition-all shadow-md shadow-emerald-500/10 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
             >
               <span className="material-symbols-outlined text-[20px]">download</span>
-              {exporting ? 'Exportando...' : 'Exportar Excel'}
+              {exporting ? 'Exportando...' : 'Excel'}
             </button>
           </div>
         </div>
 
-        {/* Filters Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 overflow-hidden">
-          {/* Sidebar Filters */}
-          <div className="lg:col-span-3 space-y-6 overflow-y-auto pr-2 custom-scrollbar">
-            <div className="bg-white dark:bg-surface-dark p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                <span className="material-symbols-outlined text-lg">filter_alt</span>
-                Departamentos
-              </h3>
-              <div className="flex flex-col gap-2">
-                {DEPARTMENTS.map(dept => (
-                  <label key={dept.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors group">
-                    <input
-                      type="checkbox"
-                      checked={selectedDepts.includes(dept.id)}
-                      onChange={() => handleDeptToggle(dept.id)}
-                      className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-primary focus:ring-primary/20"
-                    />
-                    <span className="text-sm font-medium text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
-                      {dept.label} <span className="text-[10px] opacity-50">({dept.id})</span>
-                    </span>
-                  </label>
-                ))}
+        {/* Table Container */}
+        <div className="flex-1 bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col">
+          <div className="overflow-x-auto h-full custom-scrollbar">
+            <table className="w-full text-left border-collapse">
+              <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 text-[11px] uppercase font-bold tracking-wider sticky top-0 z-10 backdrop-blur-sm border-b border-slate-200 dark:border-slate-800">
+                <tr>
+                  <th className="px-4 py-3 whitespace-nowrap">Caso / Fecha</th>
+                  <th className="px-4 py-3">Estudiante</th>
+                  <th className="px-4 py-3">Materia</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Acción</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Estado</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {currentRequests.map((req, index) => {
+                  const { isPartOfGroup, isFirstInGroup, isLastInGroup } = groupingInfo[index];
+                  const isInReview = req.status === 'EN REVISIÓN';
+
+                  return (
+                    <tr
+                      key={req.id}
+                      onClick={() => setSelectedRequest(req)}
+                      className={`hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer ${isInReview ? 'bg-amber-50/50 dark:bg-amber-900/10' : ''}`}
+                    >
+                      <td className={`pl-8 pr-3 py-3 whitespace-nowrap relative ${isInReview ? 'border-l-4 border-amber-400' : ''}`}>
+                        {/* Visual Connection Line */}
+                        {isPartOfGroup && (
+                          <div className="absolute left-3 top-0 bottom-0 flex flex-col items-center">
+                            <div className={`w-[2px] bg-primary/30 dark:bg-primary/20 grow ${isFirstInGroup ? 'invisible' : ''}`} />
+                            <div className="w-2 h-2 rounded-full border-2 border-primary bg-white dark:bg-slate-900 z-10 my-0.5" />
+                            <div className={`w-[2px] bg-primary/30 dark:bg-primary/20 grow ${isLastInGroup ? 'invisible' : ''}`} />
+                          </div>
+                        )}
+
+                        <div className="text-[10px] text-slate-400 font-mono mb-0.5">#{req.caseId}</div>
+                        <div className="text-[10px] font-medium text-slate-500 dark:text-slate-400 italic">{formattedDates[index]}</div>
+                        {isInReview && req.responsible && (
+                          <div className="mt-0.5 flex items-center gap-1 text-[9px] font-bold text-amber-700 dark:text-amber-400">
+                            <span className="material-symbols-outlined text-[10px]">person</span>
+                            {req.responsible}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="text-sm font-bold text-slate-900 dark:text-white truncate max-w-[180px]">{req.studentName}</div>
+                        <div className="text-[11px] text-slate-500">C.I.: {req.studentId}</div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="text-sm text-slate-700 dark:text-slate-300 font-medium truncate max-w-[200px]">{req.subject}</div>
+                        <div className="text-[11px] text-slate-500">NRC: {req.nrc}</div>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tight bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                          {req.action || 'S/A'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <StatusBadge status={req.status} />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {filteredRequests.length === 0 && (
+              <div className="flex flex-col items-center justify-center p-20 text-slate-400">
+                <span className="material-symbols-outlined text-6xl mb-4">search_off</span>
+                <p className="text-lg font-bold">No se encontraron solicitudes</p>
+                <p className="text-sm">Prueba ajustando los filtros de búsqueda</p>
               </div>
-            </div>
-
-            <div className="bg-white dark:bg-surface-dark p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                <span className="material-symbols-outlined text-lg">check_circle</span>
-                Estado de Solicitud
-              </h3>
-              <select
-                className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                value={selectedStatus}
-                onChange={(e) => {
-                  setSelectedStatus(e.target.value);
-                  setCurrentPage(1);
-                }}
-              >
-                <option value="All">Todos los estados</option>
-                {STATUSES.map(s => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-            </div>
-
-            {(selectedDepts.length > 0 || selectedStatus !== 'All' || searchTerm) && (
-              <button
-                onClick={() => {
-                  setSelectedDepts([]);
-                  setSelectedStatus('All');
-                  setSearchTerm('');
-                  setCurrentPage(1);
-                }}
-                className="w-full py-2.5 text-sm font-bold text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all border border-rose-100 dark:border-rose-900/30"
-              >
-                Limpiar todos los filtros
-              </button>
             )}
           </div>
 
-          {/* Table Container */}
-          <div className="lg:col-span-9 bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-slate-50 dark:bg-slate-800/50 text-[#4c739a] dark:text-slate-400 text-xs uppercase font-bold tracking-wider">
-                  <tr>
-                    <th className="px-4 py-4 border-b border-slate-200 dark:border-slate-800 w-24">Caso / Fecha</th>
-                    <th className="px-6 py-4 border-b border-slate-200 dark:border-slate-800">Estudiante</th>
-                    <th className="px-6 py-4 border-b border-slate-200 dark:border-slate-800">Materia</th>
-                    <th className="px-6 py-4 border-b border-slate-200 dark:border-slate-800">Acción Solicitada</th>
-                    <th className="px-6 py-4 border-b border-slate-200 dark:border-slate-800">Estado</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {currentRequests.map((req, index) => {
-                    const getBaseId = (id: string) => id?.split('-')[0] || '';
-                    const currentBase = getBaseId(req.caseId);
-                    const prevBase = index > 0 ? getBaseId(currentRequests[index - 1].caseId) : null;
-                    const nextBase = index < currentRequests.length - 1 ? getBaseId(currentRequests[index + 1].caseId) : null;
-
-                    const isPartOfGroup = (currentBase === prevBase) || (currentBase === nextBase);
-                    const isFirstInGroup = isPartOfGroup && (currentBase !== prevBase);
-                    const isLastInGroup = isPartOfGroup && (currentBase !== nextBase);
-
-                    const isInReview = req.status === 'EN REVISIÓN';
-
-                    return (
-                      <tr
-                        key={req.id}
-                        onClick={() => setSelectedRequest(req)}
-                        className={`hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors group cursor-pointer ${isInReview ? 'bg-amber-50/50 dark:bg-amber-900/10' : ''}`}
-                      >
-                        <td className={`pl-10 pr-4 py-4 whitespace-nowrap w-24 relative ${isInReview ? 'border-l-4 border-amber-400' : ''}`}>
-                          {/* Visual Connection Line */}
-                          {isPartOfGroup && (
-                            <div className="absolute left-5 top-0 bottom-0 flex flex-col items-center">
-                              {/* Line segments - primary blue theme */}
-                              <div className={`w-[2px] bg-primary/30 dark:bg-primary/20 grow ${isFirstInGroup ? 'invisible' : ''}`} />
-                              <div className="w-2.5 h-2.5 rounded-full border-2 border-primary bg-white dark:bg-slate-900 z-10 my-1 shadow-sm" />
-                              <div className={`w-[2px] bg-primary/30 dark:bg-primary/20 grow ${isLastInGroup ? 'invisible' : ''}`} />
-                            </div>
-                          )}
-
-                          <div className="text-[10px] text-slate-400 font-mono mb-0.5">#{req.caseId}</div>
-                          <div className="text-[11px] font-bold text-slate-600 dark:text-slate-400 italic leading-tight">{formatDate(req.date)}</div>
-                          {isInReview && req.responsible && (
-                            <div className="mt-1 flex items-center gap-1 text-[9px] font-bold text-amber-700 dark:text-amber-400">
-                              <span className="material-symbols-outlined text-[12px]">person</span>
-                              {req.responsible}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-bold text-slate-900 dark:text-white">{req.studentName}</div>
-                          <div className="text-xs text-slate-500">C.I.: {req.studentId}</div>
-                        </td>
-                        <td className="px-6 py-4 max-w-[220px]">
-                          <div className="text-sm text-slate-700 dark:text-slate-300 font-bold truncate">{req.subject}</div>
-                          <div className="text-xs text-slate-500 font-medium">NRC: {req.nrc}</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-tight bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20 transition-all">
-                            {req.action || 'S/A'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <StatusBadge status={req.status} />
-                          {isInReview && (
-                            <div className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-[9px] font-bold text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                              <span className="material-symbols-outlined text-[10px] animate-pulse">visibility</span>
-                              Revisando: {req.responsible || '...'}
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              {filteredRequests.length === 0 && (
-                <div className="flex flex-col items-center justify-center p-20 text-slate-400">
-                  <span className="material-symbols-outlined text-6xl mb-4">search_off</span>
-                  <p className="text-lg font-bold">No se encontraron solicitudes</p>
-                  <p className="text-sm">Prueba ajustando los filtros de búsqueda</p>
-                </div>
-              )}
-            </div>
-
-            {/* Pagination */}
-            <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/10 mt-auto">
-              <span className="text-sm text-slate-500 font-medium">
-                Mostrando <span className="text-slate-900 dark:text-white font-bold">{filteredRequests.length > 0 ? startIndex + 1 : 0}</span>-
-                <span className="text-slate-900 dark:text-white font-bold">{Math.min(startIndex + pageSize, filteredRequests.length)}</span> de
-                <span className="text-slate-900 dark:text-white font-bold ml-1">{filteredRequests.length}</span>
-              </span>
-              <div className="flex gap-2">
-                <button
-                  disabled={currentPage === 1}
-                  onClick={(e) => { e.stopPropagation(); setCurrentPage(p => p - 1); }}
-                  className="p-1 px-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-30 text-sm font-bold transition-all shadow-sm"
-                >
-                  Anterior
-                </button>
-                <div className="flex items-center px-4 text-sm font-black text-primary">
-                  {currentPage} / {totalPages || 1}
-                </div>
-                <button
-                  disabled={currentPage === totalPages || totalPages === 0}
-                  onClick={(e) => { e.stopPropagation(); setCurrentPage(p => p + 1); }}
-                  className="p-1 px-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-30 text-sm font-bold transition-all shadow-sm"
-                >
-                  Siguiente
-                </button>
+          {/* Pagination */}
+          <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/10 mt-auto">
+            <span className="text-sm text-slate-500 font-medium">
+              Mostrando <span className="text-slate-900 dark:text-white font-bold">{filteredRequests.length > 0 ? startIndex + 1 : 0}</span>-
+              <span className="text-slate-900 dark:text-white font-bold">{Math.min(startIndex + pageSize, filteredRequests.length)}</span> de
+              <span className="text-slate-900 dark:text-white font-bold ml-1">{filteredRequests.length}</span>
+            </span>
+            <div className="flex gap-2">
+              <button
+                disabled={currentPage === 1}
+                onClick={(e) => { e.stopPropagation(); setCurrentPage(p => p - 1); }}
+                className="p-1 px-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-30 text-sm font-bold transition-all shadow-sm"
+              >
+                Anterior
+              </button>
+              <div className="flex items-center px-4 text-sm font-black text-primary">
+                {currentPage} / {totalPages || 1}
               </div>
+              <button
+                disabled={currentPage === totalPages || totalPages === 0}
+                onClick={(e) => { e.stopPropagation(); setCurrentPage(p => p + 1); }}
+                className="p-1 px-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-30 text-sm font-bold transition-all shadow-sm"
+              >
+                Siguiente
+              </button>
             </div>
           </div>
         </div>
-      </div>
 
-      {selectedRequest && (
-        <RequestDetailModal
-          request={selectedRequest}
-          onClose={() => setSelectedRequest(null)}
-          onUpdate={(updatedReq) => {
-            setRequests(prev => prev.map(r => r.id === updatedReq.id ? updatedReq : r));
-            setSelectedRequest(null);
-          }}
-        />
-      )}
+        {
+          selectedRequest && (
+            <RequestDetailModal
+              request={selectedRequest!}
+              onClose={() => setSelectedRequest(null)}
+              onUpdate={(updatedReq) => {
+                setRequests(prev => prev.map(r => r.id === updatedReq.id ? updatedReq : r));
+                setSelectedRequest(null);
+              }}
+            />
+          )
+        }
+      </div>
     </div>
   );
 };

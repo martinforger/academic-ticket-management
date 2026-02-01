@@ -81,6 +81,10 @@ export const DashboardOverview: React.FC = () => {
   const [auditLogs, setAuditLogs] = useState<(AuditLog & { userName?: string })[]>([]);
   const [loading, setLoading] = useState(true);
   const [auditFilter, setAuditFilter] = useState<string>('ALL');
+  const [auditPage, setAuditPage] = useState(1);
+  const [totalAuditLogs, setTotalAuditLogs] = useState(0);
+  const [fetchingLogs, setFetchingLogs] = useState(false);
+  const LOGS_PER_PAGE = 5;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -155,37 +159,6 @@ export const DashboardOverview: React.FC = () => {
           setChartData(points);
         }
 
-        // 6. Audit Logs (only for admins/coordinators)
-        if (profile && (profile.role === 'administrador' || profile.role === 'coordinador')) {
-          const { data: logs, error: logsError } = await supabase
-            .from('audit_logs')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(50);
-
-          if (!logsError && logs) {
-            const userIds = [...new Set(logs.map((l: any) => l.user_id))];
-            if (userIds.length > 0) {
-              const { data: profiles } = await supabase
-                .from('profiles')
-                .select('id, initials, full_name')
-                .in('id', userIds);
-
-              const profileMap = (profiles || []).reduce((acc: any, p: any) => {
-                acc[p.id] = p.full_name || p.initials || '??';
-                return acc;
-              }, {});
-
-              setAuditLogs(logs.map((l: any) => ({
-                ...l,
-                userName: profileMap[l.user_id] || 'Usuario'
-              })));
-            } else {
-              setAuditLogs(logs.map((l: any) => ({ ...l, userName: 'Desconocido' })));
-            }
-          }
-        }
-
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
       } finally {
@@ -195,6 +168,63 @@ export const DashboardOverview: React.FC = () => {
 
     fetchData();
   }, [profile]);
+
+  // Separate effect for Audit Logs to handle pagination/filtering without reloading everything
+  useEffect(() => {
+    const fetchLogs = async () => {
+      if (!profile || (profile.role !== 'administrador' && profile.role !== 'coordinador')) return;
+
+      setFetchingLogs(true);
+      try {
+        const from = (auditPage - 1) * LOGS_PER_PAGE;
+        const to = from + LOGS_PER_PAGE - 1;
+
+        let query = supabase
+          .from('audit_logs')
+          .select('*', { count: 'exact' })
+          .order('created_at', { ascending: false })
+          .range(from, to);
+
+        if (auditFilter !== 'ALL') {
+          query = query.eq('action', auditFilter);
+        }
+
+        const { data: logs, error, count } = await query;
+
+        if (error) throw error;
+
+        if (logs) {
+          setTotalAuditLogs(count || 0);
+
+          const userIds = [...new Set(logs.map((l: any) => l.user_id))];
+          if (userIds.length > 0) {
+            const { data: profiles } = await supabase
+              .from('profiles')
+              .select('id, initials, full_name')
+              .in('id', userIds);
+
+            const profileMap = (profiles || []).reduce((acc: any, p: any) => {
+              acc[p.id] = p.full_name || p.initials || '??';
+              return acc;
+            }, {});
+
+            setAuditLogs(logs.map((l: any) => ({
+              ...l,
+              userName: profileMap[l.user_id] || 'Usuario'
+            })));
+          } else {
+            setAuditLogs(logs.map((l: any) => ({ ...l, userName: 'Desconocido' })));
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching audit logs:', err);
+      } finally {
+        setFetchingLogs(false);
+      }
+    };
+
+    fetchLogs();
+  }, [profile, auditPage, auditFilter]);
 
   const generatePath = () => {
     if (chartData.length === 0) return "";
@@ -237,9 +267,8 @@ export const DashboardOverview: React.FC = () => {
     });
   };
 
-  const filteredAuditLogs = auditFilter === 'ALL'
-    ? auditLogs
-    : auditLogs.filter(log => log.action === auditFilter);
+  // Filters are now handled server-side via useEffect
+  const filteredAuditLogs = auditLogs;
 
   const getActionIcon = (action: string) => {
     switch (action) {
@@ -273,50 +302,50 @@ export const DashboardOverview: React.FC = () => {
     <div className="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark p-8">
       <div className="max-w-[1400px] mx-auto w-full">
         {/* Page Heading */}
-        <div className="mb-8">
+        <div className="mb-8 animate-fadeInUp">
           <h2 className="text-slate-900 dark:text-white text-3xl font-black tracking-tight mb-1">Resumen Ejecutivo</h2>
           <p className="text-slate-500 dark:text-slate-400 font-medium">Métricas de registro académico basadas en la tabla observaciones.</p>
         </div>
 
         {/* Main Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm hover-lift animate-fadeInUp animate-delay-100">
             <div className="flex items-center justify-between mb-4">
               <span className="material-symbols-outlined text-primary bg-primary/10 p-2 rounded-lg">group</span>
             </div>
             <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold uppercase tracking-wider">Estudiantes Únicos</p>
-            <p className="text-3xl font-black text-slate-900 dark:text-white mt-1">{stats.totalStudents.toLocaleString()}</p>
+            <p className="text-3xl font-black text-slate-900 dark:text-white mt-1 animate-countUp">{stats.totalStudents.toLocaleString()}</p>
             <p className="text-slate-400 text-xs mt-2">Registrados en el sistema</p>
           </div>
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm hover-lift animate-fadeInUp animate-delay-200">
             <div className="flex items-center justify-between mb-4">
               <span className="material-symbols-outlined text-amber-500 bg-amber-500/10 p-2 rounded-lg">clinical_notes</span>
             </div>
             <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold uppercase tracking-wider">Solicitudes Activas</p>
-            <p className="text-3xl font-black text-slate-900 dark:text-white mt-1">{stats.activeRequests}</p>
+            <p className="text-3xl font-black text-slate-900 dark:text-white mt-1 animate-countUp">{stats.activeRequests}</p>
             <p className="text-slate-400 text-xs mt-2">En revisión o por revisar</p>
           </div>
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm hover-lift animate-fadeInUp animate-delay-300">
             <div className="flex items-center justify-between mb-4">
               <span className="material-symbols-outlined text-emerald-500 bg-emerald-500/10 p-2 rounded-lg">check_circle</span>
             </div>
             <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold uppercase tracking-wider">Tasa de Solución</p>
-            <p className="text-3xl font-black text-slate-900 dark:text-white mt-1">{stats.completionRate}%</p>
+            <p className="text-3xl font-black text-slate-900 dark:text-white mt-1 animate-countUp">{stats.completionRate}%</p>
             <p className="text-slate-400 text-xs mt-2">Casos solucionados</p>
           </div>
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm ring-1 ring-red-500/20 hover:shadow-md transition-shadow">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm ring-1 ring-red-500/20 hover-lift animate-fadeInUp animate-delay-400">
             <div className="flex items-center justify-between mb-4">
               <span className="material-symbols-outlined text-red-500 bg-red-500/10 p-2 rounded-lg">pending</span>
             </div>
             <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold uppercase tracking-wider">Por Revisar</p>
-            <p className="text-3xl font-black text-slate-900 dark:text-white mt-1">{stats.urgentCases}</p>
+            <p className="text-3xl font-black text-slate-900 dark:text-white mt-1 animate-countUp">{stats.urgentCases}</p>
             <p className="text-slate-400 text-xs mt-2">Requiere atención inmediata</p>
           </div>
         </div>
 
         {/* Secondary Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-gradient-to-br from-rose-50 to-white dark:from-rose-900/20 dark:to-slate-900 border border-rose-200 dark:border-rose-800/30 rounded-xl p-6 shadow-sm">
+          <div className="bg-gradient-to-br from-rose-50 to-white dark:from-rose-900/20 dark:to-slate-900 border border-rose-200 dark:border-rose-800/30 rounded-xl p-6 shadow-sm hover-lift animate-fadeInUp animate-delay-500">
             <div className="flex items-center gap-3 mb-3">
               <span className="material-symbols-outlined text-rose-500 bg-rose-100 dark:bg-rose-900/50 p-2 rounded-lg">block</span>
               <span className="text-sm font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">Tasa de Rechazo</span>
@@ -325,7 +354,7 @@ export const DashboardOverview: React.FC = () => {
             <p className="text-rose-400 dark:text-rose-500 text-xs mt-2">Casos que no proceden</p>
           </div>
 
-          <div className="bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-900/20 dark:to-slate-900 border border-indigo-200 dark:border-indigo-800/30 rounded-xl p-6 shadow-sm">
+          <div className="bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-900/20 dark:to-slate-900 border border-indigo-200 dark:border-indigo-800/30 rounded-xl p-6 shadow-sm hover-lift animate-fadeInUp animate-delay-600">
             <div className="flex items-center gap-3 mb-3">
               <span className="material-symbols-outlined text-indigo-500 bg-indigo-100 dark:bg-indigo-900/50 p-2 rounded-lg">swap_horiz</span>
               <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Tipo de Acción</span>
@@ -343,7 +372,7 @@ export const DashboardOverview: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-cyan-50 to-white dark:from-cyan-900/20 dark:to-slate-900 border border-cyan-200 dark:border-cyan-800/30 rounded-xl p-6 shadow-sm">
+          <div className="bg-gradient-to-br from-cyan-50 to-white dark:from-cyan-900/20 dark:to-slate-900 border border-cyan-200 dark:border-cyan-800/30 rounded-xl p-6 shadow-sm hover-lift animate-fadeInUp animate-delay-700">
             <div className="flex items-center gap-3 mb-3">
               <span className="material-symbols-outlined text-cyan-500 bg-cyan-100 dark:bg-cyan-900/50 p-2 rounded-lg">trending_up</span>
               <span className="text-sm font-bold text-cyan-600 dark:text-cyan-400 uppercase tracking-wider">Promedio Diario</span>
@@ -356,7 +385,7 @@ export const DashboardOverview: React.FC = () => {
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Line Graph */}
-          <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm">
+          <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm hover-lift animate-fadeInLeft animate-delay-700">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-slate-900 dark:text-white font-bold text-lg">Volumen de Solicitudes (30 Días)</h3>
               <div className="flex gap-2">
@@ -372,7 +401,7 @@ export const DashboardOverview: React.FC = () => {
                 <div className="border-t border-slate-100 dark:border-slate-800 w-full h-0"></div>
               </div>
               <svg className="w-full h-full relative z-0" preserveAspectRatio="none" viewBox="0 0 400 100">
-                <path d={generatePath()} fill="none" stroke="#137fec" strokeWidth="2" vectorEffect="non-scaling-stroke"></path>
+                <path d={generatePath()} fill="none" stroke="#137fec" strokeWidth="2" vectorEffect="non-scaling-stroke" className="chart-line"></path>
                 <path d={generateAreaPath()} fill="url(#grad1)" opacity="0.1"></path>
                 <defs>
                   <linearGradient id="grad1" x1="0%" x2="0%" y1="0%" y2="100%">
@@ -527,7 +556,10 @@ export const DashboardOverview: React.FC = () => {
               <div className="flex items-center gap-3">
                 <select
                   value={auditFilter}
-                  onChange={(e) => setAuditFilter(e.target.value)}
+                  onChange={(e) => {
+                    setAuditFilter(e.target.value);
+                    setAuditPage(1); // Reset to first page on filter change
+                  }}
                   className="text-sm border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
                 >
                   <option value="ALL">Todas las acciones</option>
@@ -536,74 +568,103 @@ export const DashboardOverview: React.FC = () => {
                   <option value="UPDATE_USER">Actualización de usuario</option>
                 </select>
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wider hidden sm:inline">
-                  {filteredAuditLogs.length} registros
+                  {totalAuditLogs} registros totales
                 </span>
               </div>
             </div>
 
             {filteredAuditLogs.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-500 font-bold uppercase text-xs">
-                    <tr>
-                      <th className="px-6 py-3">Usuario</th>
-                      <th className="px-6 py-3">Acción</th>
-                      <th className="px-6 py-3">Caso</th>
-                      <th className="px-6 py-3">Detalle</th>
-                      <th className="px-6 py-3 text-right">Fecha</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {filteredAuditLogs.slice(0, 15).map((log) => (
-                      <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                        <td className="px-6 py-3 whitespace-nowrap">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-600 dark:text-slate-300">
-                              {log.userName?.substring(0, 2).toUpperCase()}
-                            </div>
-                            <span className="font-bold text-slate-900 dark:text-gray-200">{log.userName}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-3 whitespace-nowrap">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold ${getActionColor(log.action)}`}>
-                            <span className="material-symbols-outlined text-[16px]">{getActionIcon(log.action)}</span>
-                            {log.action.replace('_', ' ')}
-                          </span>
-                        </td>
-                        <td className="px-6 py-3 whitespace-nowrap">
-                          {log.case_id ? (
-                            <span className="font-mono text-xs bg-slate-100 dark:bg-slate-700/50 px-2 py-1 rounded text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
-                              #{log.case_id}
-                            </span>
-                          ) : (
-                            <span className="text-slate-400">—</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-3 text-slate-600 dark:text-slate-400 max-w-xs">
-                          <div className="truncate">
-                            {log.details?.description || 'Sin descripción'}
-                          </div>
-                          {log.changes && Object.keys(log.changes).length > 0 && (
-                            <div className="mt-1 flex flex-wrap gap-1">
-                              {Object.entries(log.changes).slice(0, 3).map(([key, value]: [string, any]) => (
-                                <span key={key} className="inline-flex items-center text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-500">
-                                  {key}:
-                                  <span className="line-through text-rose-400 mx-1">{String(value.old || '—').substring(0, 15)}</span>
-                                  →
-                                  <span className="text-emerald-500 ml-1">{String(value.new || '—').substring(0, 15)}</span>
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-3 text-right text-slate-500 whitespace-nowrap font-mono text-xs">
-                          {new Intl.DateTimeFormat('es-VE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(log.created_at))}
-                        </td>
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-500 font-bold uppercase text-xs">
+                      <tr>
+                        <th className="px-6 py-3">Usuario</th>
+                        <th className="px-6 py-3">Acción</th>
+                        <th className="px-6 py-3">Caso</th>
+                        <th className="px-6 py-3">Detalle</th>
+                        <th className="px-6 py-3 text-right">Fecha</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className={`divide-y divide-slate-100 dark:divide-slate-800 transition-opacity duration-200 ${fetchingLogs ? 'opacity-50' : 'opacity-100'}`}>
+                      {auditLogs.map((log) => (
+                        <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                          <td className="px-6 py-3 whitespace-nowrap">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-600 dark:text-slate-300">
+                                {log.userName?.substring(0, 2).toUpperCase()}
+                              </div>
+                              <span className="font-bold text-slate-900 dark:text-gray-200">{log.userName}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-3 whitespace-nowrap">
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold ${getActionColor(log.action)}`}>
+                              <span className="material-symbols-outlined text-[16px]">{getActionIcon(log.action)}</span>
+                              {log.action.replace('_', ' ')}
+                            </span>
+                          </td>
+                          <td className="px-6 py-3 whitespace-nowrap">
+                            {log.case_id ? (
+                              <span className="font-mono text-xs bg-slate-100 dark:bg-slate-700/50 px-2 py-1 rounded text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
+                                #{log.case_id}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400">—</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-3 text-slate-600 dark:text-slate-400 max-w-xs">
+                            <div className="truncate">
+                              {log.details?.description || 'Sin descripción'}
+                            </div>
+                            {log.changes && Object.keys(log.changes).length > 0 && (
+                              <div className="mt-1 flex flex-wrap gap-1">
+                                {Object.entries(log.changes).slice(0, 3).map(([key, value]: [string, any]) => (
+                                  <span key={key} className="inline-flex items-center text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-500">
+                                    {key}:
+                                    <span className="line-through text-rose-400 mx-1">{String(value.old || '—').substring(0, 15)}</span>
+                                    →
+                                    <span className="text-emerald-500 ml-1">{String(value.new || '—').substring(0, 15)}</span>
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-3 text-right text-slate-500 whitespace-nowrap font-mono text-xs">
+                            {new Intl.DateTimeFormat('es-VE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(log.created_at))}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination Controls */}
+                {totalAuditLogs > LOGS_PER_PAGE && (
+                  <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    <div className="text-xs text-slate-500 font-medium">
+                      Mostrando <span className="font-bold text-slate-700 dark:text-slate-300">{(auditPage - 1) * LOGS_PER_PAGE + 1}</span> a <span className="font-bold text-slate-700 dark:text-slate-300">{Math.min(auditPage * LOGS_PER_PAGE, totalAuditLogs)}</span> de <span className="font-bold text-slate-700 dark:text-slate-300">{totalAuditLogs}</span> registros
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setAuditPage(p => Math.max(1, p - 1))}
+                        disabled={auditPage === 1 || fetchingLogs}
+                        className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1 text-xs font-bold"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+                        Anterior
+                      </button>
+                      <button
+                        onClick={() => setAuditPage(p => p + 1)}
+                        disabled={auditPage * LOGS_PER_PAGE >= totalAuditLogs || fetchingLogs}
+                        className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1 text-xs font-bold"
+                      >
+                        Siguiente
+                        <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="flex flex-col items-center justify-center py-16 text-slate-400">
                 <span className="material-symbols-outlined text-5xl mb-3">history</span>

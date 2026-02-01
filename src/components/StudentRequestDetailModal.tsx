@@ -61,7 +61,7 @@ const RequestItem = ({ request, onChange, isReader }: RequestItemProps) => {
           </div>
           <div>
             <p className="font-bold text-[#0d141b] dark:text-white text-base">{request.subject}</p>
-            <p className="text-xs text-slate-500 font-mono">NRC: {request.nrc} • <span className="text-primary font-black uppercase">{request.action || 'S/A'}</span></p>
+            <p className="text-xs text-slate-500 font-mono">#{request.caseId} • NRC: {request.nrc} • <span className="text-primary font-black uppercase">{request.action || 'S/A'}</span></p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -225,11 +225,12 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
   const handleClose = async () => {
     // Revert any auto-claimed requests that weren't explicitly changed
     if (autoClaimedIdsRef.current.length > 0 && !isReader && profile) {
-      // Find IDs that were not changed by the user
+      // Find IDs that were NOT changed by the user at all (no status change)
       const unchangedIds = autoClaimedIdsRef.current.filter(id => {
         const changes = requestChanges[id];
-        // If no changes, or if status wasn't changed from EN REVISIÓN
-        return !changes || !changes.status || changes.status === 'EN REVISIÓN';
+        // Revert only if: no changes at all, OR status is still EN REVISIÓN (wasn't changed)
+        // If user changed status to anything else (SOLUCIONADO, NO PROCEDE, etc.), don't revert
+        return !changes || changes.status === undefined || changes.status === 'EN REVISIÓN';
       });
 
       if (unchangedIds.length > 0) {
