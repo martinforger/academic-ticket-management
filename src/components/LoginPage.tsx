@@ -4,9 +4,10 @@ import { supabase } from '../lib/supabase';
 interface LoginPageProps {
     onRegisterClick: () => void;
     onSupportClick: () => void;
+    onForgotPasswordClick: () => void;
 }
 
-export const LoginPage: React.FC<LoginPageProps> = ({ onRegisterClick, onSupportClick }) => {
+export const LoginPage: React.FC<LoginPageProps> = ({ onRegisterClick, onSupportClick, onForgotPasswordClick }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -106,7 +107,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onRegisterClick, onSupport
                                 <label className="text-[10px] font-bold uppercase tracking-widest text-[#4c739a] dark:text-slate-400" htmlFor="password">
                                     Contraseña
                                 </label>
-                                <a className="text-[10px] font-bold text-primary hover:underline" href="#">¿Olvidó su contraseña?</a>
+                                <button
+                                    type="button"
+                                    onClick={onForgotPasswordClick}
+                                    className="text-[10px] font-bold text-primary hover:underline"
+                                >
+                                    ¿Olvidó su contraseña?
+                                </button>
                             </div>
                             <div className="group/input relative">
                                 <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#4c739a] text-xl group-focus-within/input:text-primary transition-colors">lock</span>

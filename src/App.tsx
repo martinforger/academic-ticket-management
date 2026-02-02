@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from './lib/supabase';
 import { NavigationSidebar } from './components/NavigationSidebar';
 import { DashboardOverview } from './components/DashboardOverview';
 import { StudentRecords } from './components/StudentRecords';
@@ -6,6 +7,8 @@ import { RequestsView } from './components/RequestsView';
 import { UserManagement } from './components/UserManagement';
 import { LoginPage } from './components/LoginPage';
 import { RegisterPage } from './components/RegisterPage';
+import { ForgotPasswordPage } from './components/ForgotPasswordPage';
+import { UpdatePasswordPage } from './components/UpdatePasswordPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { OnboardingTour, useOnboarding } from './components/OnboardingTour';
 
@@ -13,9 +16,19 @@ import { PendingApprovalPage } from './components/PendingApprovalPage';
 
 function AppContent() {
   const [activePage, setActivePage] = useState('overview');
-  const [authView, setAuthView] = useState<'login' | 'register'>('login');
+  const [authView, setAuthView] = useState<'login' | 'register' | 'forgot-password' | 'update-password'>('login');
   const { session, loading, profile, error } = useAuth();
   const { showOnboarding, isReady, completeOnboarding, skipOnboarding, resetOnboarding } = useOnboarding();
+
+  // Listen for recovery event
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setAuthView('update-password');
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   const renderContent = () => {
     switch (activePage) {
@@ -75,14 +88,23 @@ function AppContent() {
     );
   }
 
+  // Prioritize update-password view even if session exists (recovery mode)
+  if (authView === 'update-password') {
+    return <UpdatePasswordPage onBackToLogin={() => setAuthView('login')} />;
+  }
+
   if (!session) {
     if (authView === 'register') {
       return <RegisterPage onBackToLogin={() => setAuthView('login')} />;
+    }
+    if (authView === 'forgot-password') {
+      return <ForgotPasswordPage onBackToLogin={() => setAuthView('login')} />;
     }
     return (
       <LoginPage
         onRegisterClick={() => setAuthView('register')}
         onSupportClick={resetOnboarding}
+        onForgotPasswordClick={() => setAuthView('forgot-password')}
       />
     );
   }
