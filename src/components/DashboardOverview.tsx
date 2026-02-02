@@ -249,6 +249,11 @@ export const DashboardOverview: React.FC = () => {
   // Filters are now handled server-side via useEffect
   const filteredAuditLogs = auditLogs;
 
+  const donutSegments = getDonutSegments();
+  const globalCompletionRate = donutSegments
+    .filter(s => s.status !== 'POR REVISAR')
+    .reduce((acc, s) => acc + s.percentage, 0);
+
   const getActionIcon = (action: string) => {
     switch (action) {
       case 'UPDATE_REQUEST': return 'edit_note';
@@ -407,7 +412,7 @@ export const DashboardOverview: React.FC = () => {
               <div className="relative size-52">
                 <svg viewBox="0 0 100 100" className="size-full transform -rotate-90">
                   <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="6" className="text-slate-50 dark:text-slate-800/50" />
-                  {getDonutSegments().map((segment, i) => (
+                  {donutSegments.map((segment, i) => (
                     <path
                       key={i}
                       d={segment.path}
@@ -428,7 +433,9 @@ export const DashboardOverview: React.FC = () => {
                   ))}
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-                  <p className="text-4xl font-black text-slate-900 dark:text-white leading-none">{stats.completionRate}%</p>
+                  <p className="text-4xl font-black text-slate-900 dark:text-white leading-none">
+                    {globalCompletionRate}%
+                  </p>
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Listo</p>
                 </div>
               </div>
