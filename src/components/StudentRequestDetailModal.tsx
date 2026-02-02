@@ -103,6 +103,15 @@ const RequestItem = ({ request, allRequests, onChange, isReader, isLockedByOther
           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${badgeClasses}`}>
             {label}
           </span>
+          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${request.authorized
+            ? 'bg-blue-800 text-white dark:bg-slate-100 dark:text-slate-900'
+            : 'bg-rose-600 text-white dark:bg-rose-500'
+            }`}>
+            <span className="material-symbols-outlined text-[12px]">
+              {request.authorized ? 'check_circle' : 'block'}
+            </span>
+            {request.authorized ? 'AUTORIZA CAMBIOS' : 'NO AUTORIZA CAMBIOS'}
+          </span>
           <span className="text-xs text-slate-400 font-medium flex items-center gap-1">
             <span className="material-symbols-outlined text-[14px]">history</span> {formatDate(request.date)}
           </span>

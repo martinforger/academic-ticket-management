@@ -905,9 +905,10 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
           </div>
 
           {/* Materia and Action Info */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Materia and Action Info */}
+          <div className="grid grid-cols-1 md:grid-cols-10 gap-4">
             <div
-              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 border-l-4"
+              className="md:col-span-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 border-l-4"
               style={{ borderLeftColor: DEPARTMENT_COLORS[request.classification] || 'transparent' }}
             >
               <label className="text-[10px] font-bold uppercase text-slate-500 mb-2 block flex items-center gap-1">
@@ -920,7 +921,7 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
                 Departamento: <span className="font-bold text-primary">{DEPARTMENT_NAMES[request.classification] || request.classification}</span>
               </p>
             </div>
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
+            <div className="md:col-span-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
               <label className="text-[10px] font-bold uppercase text-slate-500 mb-2 block flex items-center gap-1">
                 <span className="material-symbols-outlined text-[14px]">swap_horiz</span>
                 Acción Solicitada
@@ -933,6 +934,21 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
                   {request.action === 'Agregar' ? 'add_circle' : 'remove_circle'}
                 </span>
                 {request.action || 'No especificada'}
+              </span>
+            </div>
+            <div className="md:col-span-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
+              <label className="text-[10px] font-bold uppercase text-slate-500 mb-2 block flex items-center gap-1">
+                <span className="material-symbols-outlined text-[14px]">schedule</span>
+                Cambio de Horario
+              </label>
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold ${request.authorized
+                ? 'bg-blue-800 text-white dark:bg-slate-100 dark:text-slate-900'
+                : 'bg-rose-600 text-white dark:bg-rose-500'
+                }`}>
+                <span className="material-symbols-outlined text-[18px]">
+                  {request.authorized ? 'check_circle' : 'block'}
+                </span>
+                {request.authorized ? 'AUTORIZA' : 'NO AUTORIZA'}
               </span>
             </div>
           </div>
