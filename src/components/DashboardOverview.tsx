@@ -15,6 +15,20 @@ const statusColors: Record<string, string> = {
   'REVISADO': '#14b8a6'
 };
 
+const actionTranslations: Record<string, string> = {
+  'UPDATE_REQUEST': 'Edición de Solicitud',
+  'UPDATE_REQUEST_BATCH': 'Actualización en Lote',
+  'BATCH_CLAIM_REQUESTS': 'Toma Automática',
+  'CLAIM_REQUEST': 'Caso Tomado',
+  'BATCH_UNCLAIM_REQUESTS': 'Liberación en Lote',
+  'UNCLAIM_REQUEST': 'Caso Liberado',
+  'CREATE_USER': 'Nuevo Usuario',
+  'UPDATE_USER': 'Cambio de Perfil',
+  'UPDATE_USER_ROLE': 'Cambio de Rol',
+  'DELETE_USER_PROFILE': 'Usuario Eliminado',
+  'DELETE_USER': 'Usuario Eliminado'
+};
+
 interface DashboardStats {
   totalStudents: number;
   activeRequests: number;
@@ -253,12 +267,18 @@ export const DashboardOverview: React.FC = () => {
   const globalCompletionRate = donutSegments
     .filter(s => s.status !== 'POR REVISAR')
     .reduce((acc, s) => acc + s.percentage, 0);
-
   const getActionIcon = (action: string) => {
     switch (action) {
-      case 'UPDATE_REQUEST': return 'edit_note';
+      case 'UPDATE_REQUEST':
+      case 'UPDATE_REQUEST_BATCH': return 'edit_note';
+      case 'BATCH_CLAIM_REQUESTS':
+      case 'CLAIM_REQUEST': return 'assignment_ind';
+      case 'BATCH_UNCLAIM_REQUESTS':
+      case 'UNCLAIM_REQUEST': return 'assignment_return';
       case 'CREATE_USER': return 'person_add';
-      case 'UPDATE_USER': return 'manage_accounts';
+      case 'UPDATE_USER':
+      case 'UPDATE_USER_ROLE': return 'manage_accounts';
+      case 'DELETE_USER_PROFILE':
       case 'DELETE_USER': return 'person_remove';
       default: return 'history';
     }
@@ -266,9 +286,16 @@ export const DashboardOverview: React.FC = () => {
 
   const getActionColor = (action: string) => {
     switch (action) {
-      case 'UPDATE_REQUEST': return 'text-blue-500 bg-blue-50 dark:bg-blue-900/30';
+      case 'UPDATE_REQUEST':
+      case 'UPDATE_REQUEST_BATCH': return 'text-blue-500 bg-blue-50 dark:bg-blue-900/30';
+      case 'BATCH_CLAIM_REQUESTS':
+      case 'CLAIM_REQUEST': return 'text-indigo-500 bg-indigo-50 dark:bg-indigo-900/30';
+      case 'BATCH_UNCLAIM_REQUESTS':
+      case 'UNCLAIM_REQUEST': return 'text-slate-500 bg-slate-100 dark:bg-slate-800';
       case 'CREATE_USER': return 'text-green-500 bg-green-50 dark:bg-green-900/30';
-      case 'UPDATE_USER': return 'text-amber-500 bg-amber-50 dark:bg-amber-900/30';
+      case 'UPDATE_USER':
+      case 'UPDATE_USER_ROLE': return 'text-amber-500 bg-amber-50 dark:bg-amber-900/30';
+      case 'DELETE_USER_PROFILE':
       case 'DELETE_USER': return 'text-red-500 bg-red-50 dark:bg-red-900/30';
       default: return 'text-slate-500 bg-slate-50 dark:bg-slate-800';
     }
@@ -585,9 +612,12 @@ export const DashboardOverview: React.FC = () => {
                   className="text-sm border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
                 >
                   <option value="ALL">Todas las acciones</option>
-                  <option value="UPDATE_REQUEST">Actualización de solicitud</option>
-                  <option value="CREATE_USER">Creación de usuario</option>
-                  <option value="UPDATE_USER">Actualización de usuario</option>
+                  <option value="UPDATE_REQUEST">Edición de Solicitud</option>
+                  <option value="UPDATE_REQUEST_BATCH">Actualización Masiva</option>
+                  <option value="BATCH_CLAIM_REQUESTS">Toma de Casos</option>
+                  <option value="CREATE_USER">Nuevos Usuarios</option>
+                  <option value="UPDATE_USER_ROLE">Cambios de Rol</option>
+                  <option value="DELETE_USER_PROFILE">Eliminaciones</option>
                 </select>
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wider hidden sm:inline">
                   {totalAuditLogs} registros totales
@@ -622,7 +652,7 @@ export const DashboardOverview: React.FC = () => {
                           <td className="px-6 py-3 whitespace-nowrap">
                             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold ${getActionColor(log.action)}`}>
                               <span className="material-symbols-outlined text-[16px]">{getActionIcon(log.action)}</span>
-                              {log.action.replace('_', ' ')}
+                              {actionTranslations[log.action] || log.action.replace('_', ' ')}
                             </span>
                           </td>
                           <td className="px-6 py-3 whitespace-nowrap">
