@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { SuccessModal } from './SuccessModal';
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
   const [initials, setInitials] = useState(profile?.initials || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -109,8 +111,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
 
       if (data) {
         setProfile(data);
-        onClose();
-        alert('Perfil actualizado correctamente');
+        setShowSuccess(true);
       }
     } catch (err: any) {
       console.error('Error updating profile:', err);
@@ -118,6 +119,11 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSuccessClose = () => {
+    setShowSuccess(false);
+    onClose();
   };
 
   return (
@@ -194,6 +200,13 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
           </div>
         </form>
       </div>
+
+      <SuccessModal
+        isOpen={showSuccess}
+        onClose={handleSuccessClose}
+        title="¡Perfil Actualizado!"
+        message="Tus cambios se han guardado correctamente en el sistema."
+      />
     </div>
   );
 };
