@@ -91,6 +91,22 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
 
       if (updateError) throw updateError;
 
+      // If initials changed, update the 'responsable' field in all observations
+      // assigned to this user. This prevents the lock detection from treating
+      // the user's own observations as locked by "another user".
+      if (trimmedInitials !== profile.initials && profile.initials) {
+        const { error: observacionesError } = await supabase
+          .from('observaciones')
+          .update({ responsable: trimmedInitials })
+          .eq('responsable', profile.initials);
+
+        if (observacionesError) {
+          console.error('Error updating observaciones responsable:', observacionesError);
+          // Don't throw - profile was already updated successfully
+          // Just warn the user
+        }
+      }
+
       if (data) {
         setProfile(data);
         onClose();
