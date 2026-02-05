@@ -273,8 +273,16 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
     initialLockData
   );
 
+
   // Track closing state to prevent reactive auto-claim from triggering during unclaim
   const isClosingRef = useRef(false);
+
+  // Reset closing ref when modal opens - ensures autoclaim works on subsequent opens
+  useEffect(() => {
+    if (isOpen) {
+      isClosingRef.current = false;
+    }
+  }, [isOpen]);
 
   // Auto-claim effect: when modal opens, claim all "POR REVISAR" requests
   // Uses atomic updates to prevent race conditions
@@ -400,6 +408,10 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
     if (Object.keys(requestChanges).length === 0) return;
     if (isReader || !profile) return;
 
+    // IMPORTANT: Set closing flag BEFORE any async operations to prevent
+    // the autoclaim useEffect from re-claiming after we save
+    isClosingRef.current = true;
+
     setSaving(true);
     try {
       const promises = Object.entries(requestChanges).map(async ([reqIdStr, changes]) => {
@@ -408,11 +420,17 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
 
         // Determine if responsible needs to be updated.
         // Simplified: if there are changes, we update responsible
+        // BUT if status is explicitly set to POR REVISAR, we clear responsible
+        let newResponsible = profile.initials;
+        if (changes.status === 'POR REVISAR') {
+          newResponsible = '';
+        }
+
         const updatePayload = {
           obs_estatus: changes.status,
           obs_respuesta_interna: changes.internalResponse,
           obs_respuesta_externa: changes.studentResponse,
-          obs_responsable: profile.initials
+          obs_responsable: newResponsible
         };
 
         // Remove undefined 

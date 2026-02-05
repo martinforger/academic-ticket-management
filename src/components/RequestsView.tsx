@@ -711,6 +711,9 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
   // Track closing state to prevent reactive auto-claim from triggering during unclaim
   const isClosingRef = React.useRef(false);
 
+  // Track if user has explicitly saved - prevents re-claim after save
+  const hasSavedRef = React.useRef(false);
+
   // Auto-claim: When opening a "POR REVISAR" request, automatically set to "EN REVISIÓN"
   // Skip if already locked by another user
   // REVISED: Now reactive to request.status changes to handle "A releases -> B claims" flow
@@ -719,9 +722,14 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
       // 0. Closing guard: If we are in the process of closing/unclaiming, DO NOT reclaim
       if (isClosingRef.current) return;
 
+      // 0.5 Saved guard: If user has explicitly saved, DO NOT reclaim
+      // This prevents the race condition where Realtime arrives after save but before close
+      if (hasSavedRef.current) return;
+
       console.log('Auto-claim check:', {
         id: request.id,
         status: request.status,
+        localStatus: status, // Log local status too
         isLocked: isLockedByOther,
         wasClaimed: wasAutoClaimedRef.current,
         initials: profile?.initials
@@ -734,8 +742,18 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
       if (isLockedByOther) return;
 
       // 3. Status logic: Only claim if it is 'POR REVISAR'
+      // Check BOTH the prop status AND local status - if user has changed local status
+      // to POR REVISAR intentionally, don't autoclaim
       // If I already claimed it (wasAutoClaimedRef) and status is EN REVISIÓN, we are good.
       if (request.status !== 'POR REVISAR') return;
+
+      // 3.5 If local status is POR REVISAR but user has explicitly set it (not first load),
+      // don't autoclaim. This handles cases where user changes from EN REVISIÓN to POR REVISAR
+      // and the realtime update arrives.
+      if (wasAutoClaimedRef.current && status === 'POR REVISAR') {
+        console.log('Skipping autoclaim: user has explicitly set status to POR REVISAR');
+        return;
+      }
 
       try {
         // ATOMIC UPDATE: Only claim if status is STILL "POR REVISAR" in the database
@@ -827,6 +845,18 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
 
   const handleSave = async () => {
     if (isReader || !profile || !canSave) return;
+
+    // IMPORTANT: Set closing flag BEFORE any async operations to prevent
+    // the autoclaim useEffect from re-claiming after we save
+    isClosingRef.current = true;
+
+    // Mark that user has explicitly saved - prevents re-claim from realtime updates
+    hasSavedRef.current = true;
+
+    // Clear autoclaim ref since user explicitly saved - this prevents
+    // handleClose from trying to unclaim a request that user intentionally modified
+    wasAutoClaimedRef.current = false;
+
     setSaving(true);
     try {
       const updates: any = {
@@ -841,7 +871,9 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
         studentResponse !== request.studentResponse;
 
       if (hasChanges) {
-        updates.obs_responsable = profile.initials;
+        // If setting back to POR REVISAR, clear the responsible
+        // Otherwise, set to current user
+        updates.obs_responsable = status === 'POR REVISAR' ? '' : profile.initials;
       }
 
       // Update Database
@@ -868,7 +900,13 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
         });
       }
 
-      onUpdate({ ...request, status, internalResponse, studentResponse, responsible: updates.responsable || request.responsible });
+      onUpdate({
+        ...request,
+        status,
+        internalResponse,
+        studentResponse,
+        responsible: updates.obs_responsable !== undefined ? updates.obs_responsable : request.responsible
+      });
       onClose();
     } catch (err) {
       console.error('Error updating request:', err);
