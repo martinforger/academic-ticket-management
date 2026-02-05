@@ -13,6 +13,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { OnboardingTour, useOnboarding } from './components/OnboardingTour';
 
 import { PendingApprovalPage } from './components/PendingApprovalPage';
+import { UploadProjections } from './components/UploadProjections';
 
 function AppContent() {
   const [activePage, setActivePage] = useState('overview');
@@ -40,6 +41,8 @@ function AppContent() {
         return <RequestsView />;
       case 'users':
         return <UserManagement />;
+      case 'upload-projections':
+        return <UploadProjections />;
       default:
         return (
           <div className="flex-1 overflow-y-auto p-8 flex items-center justify-center text-slate-500">

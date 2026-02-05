@@ -26,6 +26,7 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({ activePage
   // Add Users menu for admins
   if (profile?.role === 'administrador') {
     navItems.push({ id: 'users', label: 'Usuarios', icon: 'manage_accounts' });
+    navItems.push({ id: 'upload-projections', label: 'Datos', icon: 'database' });
   }
 
   return (

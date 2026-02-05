@@ -294,19 +294,19 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
         // ATOMIC UPDATE: Only claim if status is STILL "POR REVISAR" in the database
         // This prevents race conditions
         const { data, error } = await supabase
-          .from('observaciones')
+          .from('observacion')
           .update({
-            estatus: 'EN REVISIÓN',
-            responsable: profile.initials
+            obs_estatus: 'EN REVISIÓN',
+            obs_responsable: profile.initials
           })
-          .in('id', idsToClam)
-          .eq('estatus', 'POR REVISAR') // Only update if status is still POR REVISAR
-          .select('id');
+          .in('obs_id', idsToClam)
+          .eq('obs_estatus', 'POR REVISAR') // Only update if status is still POR REVISAR
+          .select('obs_id');
 
         if (error) throw error;
 
         // Only track the IDs that were actually claimed
-        const claimedIds = data?.map(d => d.id) || [];
+        const claimedIds = data?.map(d => d.obs_id) || [];
         autoClaimedIdsRef.current = claimedIds;
 
         if (claimedIds.length > 0) {
@@ -364,14 +364,14 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
       if (unchangedIds.length > 0) {
         try {
           await supabase
-            .from('observaciones')
+            .from('observacion')
             .update({
-              estatus: 'POR REVISAR',
-              responsable: ''
+              obs_estatus: 'POR REVISAR',
+              obs_responsable: ''
             })
-            .in('id', unchangedIds)
-            .eq('estatus', 'EN REVISIÓN') // Logic safety: only revert if still in review
-            .eq('responsable', profile.initials); // Security: only if locked by CURRENT user
+            .in('obs_id', unchangedIds)
+            .eq('obs_estatus', 'EN REVISIÓN') // Logic safety: only revert if still in review
+            .eq('obs_responsable', profile.initials); // Security: only if locked by CURRENT user
 
           // Audit log for unclaim
           await supabase.from('audit_logs').insert({
@@ -409,19 +409,19 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
         // Determine if responsible needs to be updated.
         // Simplified: if there are changes, we update responsible
         const updatePayload = {
-          estatus: changes.status,
-          'Respuesta interna': changes.internalResponse,
-          'Respuesta al Estudiante': changes.studentResponse,
-          responsable: profile.initials
+          obs_estatus: changes.status,
+          obs_respuesta_interna: changes.internalResponse,
+          obs_respuesta_externa: changes.studentResponse,
+          obs_responsable: profile.initials
         };
 
         // Remove undefined 
         Object.keys(updatePayload).forEach(key => (updatePayload as any)[key] === undefined && delete (updatePayload as any)[key]);
 
         const { error } = await supabase
-          .from('observaciones')
+          .from('observacion')
           .update(updatePayload)
-          .eq('id', reqId);
+          .eq('obs_id', reqId);
 
         if (error) throw error;
 

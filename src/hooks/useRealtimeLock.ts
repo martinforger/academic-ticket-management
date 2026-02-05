@@ -9,9 +9,9 @@ export interface LockState {
 }
 
 interface ObservacionRow {
-  id: number;
-  estatus: string;
-  responsable: string | null;
+  obs_id: number;
+  obs_estatus: string;
+  obs_responsable: string | null;
   [key: string]: unknown;
 }
 
@@ -52,10 +52,10 @@ export function useRealtimeLock(
     if (payload.eventType !== 'UPDATE') return;
     
     const newRow = payload.new as ObservacionRow;
-    if (!newRow || newRow.id !== requestId) return;
+    if (!newRow || newRow.obs_id !== requestId) return;
 
-    const newStatus = newRow.estatus;
-    const newResponsible = newRow.responsable;
+    const newStatus = newRow.obs_estatus;
+    const newResponsible = newRow.obs_responsable;
 
     // Check if it's locked by another user
     const isReviewing = newStatus === 'EN REVISIÓN';
@@ -73,9 +73,9 @@ export function useRealtimeLock(
     if (!requestId) return;
 
     // Create a unique channel name for this request
-    const channelName = `observaciones-lock-${requestId}`;
+    const channelName = `observacion-lock-${requestId}`;
 
-    // Subscribe to changes on the observaciones table for this specific row
+    // Subscribe to changes on the observacion table for this specific row
     const channel = supabase
       .channel(channelName)
       .on(
@@ -83,8 +83,8 @@ export function useRealtimeLock(
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'observaciones',
-          filter: `id=eq.${requestId}`,
+          table: 'observacion',
+          filter: `obs_id=eq.${requestId}`,
         },
         handleChange
       )
@@ -147,10 +147,10 @@ export function useRealtimeLockMultiple(
     if (payload.eventType !== 'UPDATE') return;
     
     const newRow = payload.new as ObservacionRow;
-    if (!newRow || !requestIds.includes(newRow.id)) return;
+    if (!newRow || !requestIds.includes(newRow.obs_id)) return;
 
-    const newStatus = newRow.estatus;
-    const newResponsible = newRow.responsable;
+    const newStatus = newRow.obs_estatus;
+    const newResponsible = newRow.obs_responsable;
 
     const isReviewing = newStatus === 'EN REVISIÓN';
     const isOtherUser = newResponsible && currentUserInitials && 
@@ -158,7 +158,7 @@ export function useRealtimeLockMultiple(
 
     setLockStates(prev => {
       const updated = new Map(prev);
-      updated.set(newRow.id, {
+      updated.set(newRow.obs_id, {
         isLocked: isReviewing && !!isOtherUser,
         lockedBy: isReviewing && isOtherUser ? newResponsible : null,
         status: newStatus,
@@ -170,9 +170,9 @@ export function useRealtimeLockMultiple(
   useEffect(() => {
     if (requestIds.length === 0) return;
 
-    // Subscribe to all changes on observaciones table
+    // Subscribe to all changes on observacion table
     // We filter client-side since Supabase doesn't support IN filters in realtime
-    const channelName = `observaciones-lock-batch-${requestIds.join('-').substring(0, 50)}`;
+    const channelName = `observacion-lock-batch-${requestIds.join('-').substring(0, 50)}`;
 
     const channel = supabase
       .channel(channelName)
@@ -181,7 +181,7 @@ export function useRealtimeLockMultiple(
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'observaciones',
+          table: 'observacion',
         },
         handleChange
       )
@@ -204,3 +204,4 @@ export function useRealtimeLockMultiple(
 
   return lockStates;
 }
+

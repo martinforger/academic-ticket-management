@@ -21,38 +21,62 @@ export const StudentRecords: React.FC = () => {
   useEffect(() => {
     const fetchRequests = async () => {
       try {
-        // Only select the columns we need
-        // Note: Cannot use .order() with "# de Caso" due to special character
+        // Fetch from normalized tables with joins
         const { data, error } = await supabase
-          .from('observaciones')
-          .select('id, estatus, "Clasif.", "# de Caso", fecha, cédula, estudiante, "acción", "Nombre Asignatura", nrc, uc, "Sem.", "Prom.", autoriza, comentarios, contacto, responsable, "Respuesta interna", "Respuesta al Estudiante"');
+          .from('observacion')
+          .select(`
+            obs_id,
+            obs_estatus,
+            obs_clasificacion,
+            obs_num_caso,
+            obs_fecha,
+            obs_autoriza,
+            obs_accion,
+            obs_nrc_solicitado,
+            obs_comentarios,
+            obs_contacto,
+            obs_responsable,
+            obs_respuesta_interna,
+            obs_respuesta_externa,
+            estudiante (
+              est_cedula,
+              est_nombre,
+              est_ubic_sem,
+              est_promedio,
+              est_creditos_acum,
+              est_correo
+            ),
+            materia (
+              mat_nombre
+            )
+          `);
 
         if (error) throw error;
 
         // Transformar datos de Supabase a nuestro tipo Request
         const formattedRequests: Request[] = (data || []).map((row: any) => ({
-          id: row.id,
-          status: row.estatus,
-          classification: row['Clasif.'],
-          caseId: row['# de Caso'],
-          date: row.fecha,
-          studentId: row['cédula']?.toString() || '',
-          studentName: row.estudiante || 'Desconocido',
-          credits: row.uc || 0,
-          semester: row['Sem.'] || '',
-          gpa: row['Prom.'] || 0,
-          authorized: row.autoriza,
-          action: row['acción'] || '',
-          subject: row['Nombre Asignatura'] || '',
-          nrc: row.nrc || 0,
-          comments: row.comentarios || '',
-          contact: row.contacto || '',
-          responsible: row.responsable || '',
-          internalResponse: row['Respuesta interna'] || '',
-          studentResponse: row['Respuesta al Estudiante'] || ''
+          id: row.obs_id,
+          status: row.obs_estatus,
+          classification: row.obs_clasificacion,
+          caseId: row.obs_num_caso,
+          date: row.obs_fecha,
+          studentId: row.estudiante?.est_cedula?.toString() || '',
+          studentName: row.estudiante?.est_nombre || 'Desconocido',
+          credits: row.estudiante?.est_creditos_acum || 0,
+          semester: row.estudiante?.est_ubic_sem || '',
+          gpa: row.estudiante?.est_promedio || 0,
+          authorized: row.obs_autoriza,
+          action: row.obs_accion || '',
+          subject: row.materia?.mat_nombre || '',
+          nrc: row.obs_nrc_solicitado || 0,
+          comments: row.obs_comentarios || '',
+          contact: row.obs_contacto || '',
+          responsible: row.obs_responsable || '',
+          internalResponse: row.obs_respuesta_interna || '',
+          studentResponse: row.obs_respuesta_externa || ''
         }));
 
-        // Sort by caseId (# de Caso) ascending
+        // Sort by caseId (obs_num_caso) ascending
         formattedRequests.sort((a, b) => (a.caseId || '').localeCompare(b.caseId || ''));
 
         setRequests(formattedRequests);
@@ -65,7 +89,7 @@ export const StudentRecords: React.FC = () => {
 
     fetchRequests();
 
-    // Subscribe to realtime updates for the observaciones table
+    // Subscribe to realtime updates for the observacion table
     const channel = supabase
       .channel('student-records-updates')
       .on(
@@ -73,22 +97,22 @@ export const StudentRecords: React.FC = () => {
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'observaciones'
+          table: 'observacion'
         },
         (payload) => {
           const updatedRow = payload.new as {
-            id: number;
-            estatus: string;
-            responsable: string;
+            obs_id: number;
+            obs_estatus: string;
+            obs_responsable: string;
           };
 
           // Update requests list
           setRequests(prev => prev.map(req => {
-            if (req.id === updatedRow.id) {
+            if (req.id === updatedRow.obs_id) {
               return {
                 ...req,
-                status: updatedRow.estatus as Status,
-                responsible: updatedRow.responsable || ''
+                status: updatedRow.obs_estatus as Status,
+                responsible: updatedRow.obs_responsable || ''
               };
             }
             return req;
@@ -98,13 +122,13 @@ export const StudentRecords: React.FC = () => {
           setSelectedStudent(prev => {
             if (!prev) return null;
 
-            const requestIndex = prev.requests.findIndex(r => r.id === updatedRow.id);
+            const requestIndex = prev.requests.findIndex(r => r.id === updatedRow.obs_id);
             if (requestIndex !== -1) {
               const newRequests = [...prev.requests];
               newRequests[requestIndex] = {
                 ...newRequests[requestIndex],
-                status: updatedRow.estatus as Status,
-                responsible: updatedRow.responsable || ''
+                status: updatedRow.obs_estatus as Status,
+                responsible: updatedRow.obs_responsable || ''
               };
 
               // Recalculate summary stats if needed (simplified for now as only status/responsible changed)

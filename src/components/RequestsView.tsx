@@ -30,10 +30,34 @@ export const RequestsView: React.FC = () => {
   const exportToExcel = async () => {
     setExporting(true);
     try {
-      // Fetch ALL data from the observaciones table
+      // Fetch ALL data from the normalized tables with joins
       const { data, error } = await supabase
-        .from('observaciones')
-        .select('*');
+        .from('observacion')
+        .select(`
+          obs_id,
+          obs_estatus,
+          obs_clasificacion,
+          obs_num_caso,
+          obs_fecha,
+          obs_autoriza,
+          obs_accion,
+          obs_nrc_solicitado,
+          obs_comentarios,
+          obs_contacto,
+          obs_responsable,
+          obs_respuesta_interna,
+          obs_respuesta_externa,
+          estudiante (
+            est_cedula,
+            est_nombre,
+            est_ubic_sem,
+            est_promedio,
+            est_creditos_acum
+          ),
+          materia (
+            mat_nombre
+          )
+        `);
 
       if (error) throw error;
 
@@ -42,9 +66,32 @@ export const RequestsView: React.FC = () => {
         return;
       }
 
+      // Flatten data for Excel export
+      const flattenedData = data.map((row: any) => ({
+        'ID': row.obs_id,
+        'Estatus': row.obs_estatus,
+        'Clasificación': row.obs_clasificacion,
+        '# de Caso': row.obs_num_caso,
+        'Fecha': row.obs_fecha,
+        'Cédula': row.estudiante?.est_cedula,
+        'Estudiante': row.estudiante?.est_nombre,
+        'Semestre': row.estudiante?.est_ubic_sem,
+        'Promedio': row.estudiante?.est_promedio,
+        'Créditos': row.estudiante?.est_creditos_acum,
+        'Materia': row.materia?.mat_nombre,
+        'Acción': row.obs_accion,
+        'NRC': row.obs_nrc_solicitado,
+        'Autoriza': row.obs_autoriza,
+        'Comentarios': row.obs_comentarios,
+        'Contacto': row.obs_contacto,
+        'Responsable': row.obs_responsable,
+        'Respuesta Interna': row.obs_respuesta_interna,
+        'Respuesta Estudiante': row.obs_respuesta_externa
+      }));
+
       // Create workbook and worksheet
       const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(data);
+      const ws = XLSX.utils.json_to_sheet(flattenedData);
 
       // Add worksheet to workbook
       XLSX.utils.book_append_sheet(wb, ws, 'Observaciones');
@@ -80,38 +127,61 @@ export const RequestsView: React.FC = () => {
   useEffect(() => {
     const fetchRequests = async () => {
       try {
-        // Only select the columns we need for the list view
-        // Note: Cannot use .order() with "# de Caso" due to special character
+        // Fetch from normalized tables with joins
         const { data, error } = await supabase
-          .from('observaciones')
-          .select('id, estatus, "Clasif.", "# de Caso", fecha, cédula, estudiante, "acción", "Nombre Asignatura", nrc, uc, "Sem.", "Prom.", autoriza, comentarios, contacto, responsable, "Respuesta interna", "Respuesta al Estudiante"');
+          .from('observacion')
+          .select(`
+            obs_id,
+            obs_estatus,
+            obs_clasificacion,
+            obs_num_caso,
+            obs_fecha,
+            obs_autoriza,
+            obs_accion,
+            obs_nrc_solicitado,
+            obs_comentarios,
+            obs_contacto,
+            obs_responsable,
+            obs_respuesta_interna,
+            obs_respuesta_externa,
+            estudiante (
+              est_cedula,
+              est_nombre,
+              est_ubic_sem,
+              est_promedio,
+              est_creditos_acum
+            ),
+            materia (
+              mat_nombre
+            )
+          `);
 
         if (error) throw error;
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const formattedRequests: Request[] = (data || []).map((row: any) => ({
-          id: row.id,
-          status: row.estatus,
-          classification: row['Clasif.'],
-          caseId: row['# de Caso'],
-          date: row.fecha,
-          studentId: row['cédula']?.toString() || '',
-          studentName: row.estudiante || 'Desconocido',
-          credits: row.uc || 0,
-          semester: row['Sem.'] || '',
-          gpa: row['Prom.'] || 0,
-          authorized: row.autoriza,
-          action: row.acción || '',
-          subject: row['Nombre Asignatura'] || '',
-          nrc: row.nrc || 0,
-          comments: row.comentarios || '',
-          contact: row.contacto || '',
-          responsible: row.responsable || '',
-          internalResponse: row['Respuesta interna'] || '',
-          studentResponse: row['Respuesta al Estudiante'] || ''
+          id: row.obs_id,
+          status: row.obs_estatus,
+          classification: row.obs_clasificacion,
+          caseId: row.obs_num_caso,
+          date: row.obs_fecha,
+          studentId: row.estudiante?.est_cedula?.toString() || '',
+          studentName: row.estudiante?.est_nombre || 'Desconocido',
+          credits: row.estudiante?.est_creditos_acum || 0,
+          semester: row.estudiante?.est_ubic_sem || '',
+          gpa: row.estudiante?.est_promedio || 0,
+          authorized: row.obs_autoriza,
+          action: row.obs_accion || '',
+          subject: row.materia?.mat_nombre || '',
+          nrc: row.obs_nrc_solicitado || 0,
+          comments: row.obs_comentarios || '',
+          contact: row.obs_contacto || '',
+          responsible: row.obs_responsable || '',
+          internalResponse: row.obs_respuesta_interna || '',
+          studentResponse: row.obs_respuesta_externa || ''
         }));
 
-        // Sort by caseId (# de Caso) ascending
+        // Sort by caseId (obs_num_caso) ascending
         formattedRequests.sort((a, b) => (a.caseId || '').localeCompare(b.caseId || ''));
 
         setRequests(formattedRequests);
@@ -124,7 +194,7 @@ export const RequestsView: React.FC = () => {
 
     fetchRequests();
 
-    // Subscribe to realtime updates for the observaciones table
+    // Subscribe to realtime updates for the observacion table
     const channel = supabase
       .channel('requests-list-updates')
       .on(
@@ -132,22 +202,22 @@ export const RequestsView: React.FC = () => {
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'observaciones'
+          table: 'observacion'
         },
         (payload) => {
           // Update the request in the local state
           const updatedRow = payload.new as {
-            id: number;
-            estatus: string;
-            responsable: string;
+            obs_id: number;
+            obs_estatus: string;
+            obs_responsable: string;
           };
 
           setRequests(prev => prev.map(req => {
-            if (req.id === updatedRow.id) {
+            if (req.id === updatedRow.obs_id) {
               return {
                 ...req,
-                status: updatedRow.estatus as Status,
-                responsible: updatedRow.responsable || ''
+                status: updatedRow.obs_estatus as Status,
+                responsible: updatedRow.obs_responsable || ''
               };
             }
             return req;
@@ -155,11 +225,11 @@ export const RequestsView: React.FC = () => {
 
           // Also update selectedRequest if it matches
           setSelectedRequest(prev => {
-            if (prev && prev.id === updatedRow.id) {
+            if (prev && prev.id === updatedRow.obs_id) {
               return {
                 ...prev,
-                status: updatedRow.estatus as Status,
-                responsible: updatedRow.responsable || ''
+                status: updatedRow.obs_estatus as Status,
+                responsible: updatedRow.obs_responsable || ''
               };
             }
             return prev;
@@ -671,14 +741,14 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
         // ATOMIC UPDATE: Only claim if status is STILL "POR REVISAR" in the database
         // This prevents race conditions where two users try to claim simultaneously
         const { data, error } = await supabase
-          .from('observaciones')
+          .from('observacion')
           .update({
-            estatus: 'EN REVISIÓN',
-            responsable: profile.initials
+            obs_estatus: 'EN REVISIÓN',
+            obs_responsable: profile.initials
           })
-          .eq('id', request.id)
-          .eq('estatus', 'POR REVISAR') // Only update if status is still POR REVISAR
-          .select('id');
+          .eq('obs_id', request.id)
+          .eq('obs_estatus', 'POR REVISAR') // Only update if status is still POR REVISAR
+          .select('obs_id');
 
         if (error) throw error;
 
@@ -721,14 +791,14 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
     if (wasAutoClaimedRef.current && status === 'EN REVISIÓN' && !isReader && profile) {
       try {
         await supabase
-          .from('observaciones')
+          .from('observacion')
           .update({
-            estatus: 'POR REVISAR',
-            responsable: ''
+            obs_estatus: 'POR REVISAR',
+            obs_responsable: ''
           })
-          .eq('id', request.id)
-          .eq('estatus', 'EN REVISIÓN') // Logic safety: only revert if still in review
-          .eq('responsable', profile.initials); // Security: only if locked by CURRENT user
+          .eq('obs_id', request.id)
+          .eq('obs_estatus', 'EN REVISIÓN') // Logic safety: only revert if still in review
+          .eq('obs_responsable', profile.initials); // Security: only if locked by CURRENT user
 
         // Audit log for unclaim
         await supabase.from('audit_logs').insert({
@@ -760,9 +830,9 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
     setSaving(true);
     try {
       const updates: any = {
-        estatus: status,
-        'Respuesta interna': internalResponse,
-        'Respuesta al Estudiante': studentResponse
+        obs_estatus: status,
+        obs_respuesta_interna: internalResponse,
+        obs_respuesta_externa: studentResponse
       };
 
       // If status changed or response added, update responsible
@@ -771,14 +841,14 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
         studentResponse !== request.studentResponse;
 
       if (hasChanges) {
-        updates.responsable = profile.initials;
+        updates.obs_responsable = profile.initials;
       }
 
       // Update Database
       const { error } = await supabase
-        .from('observaciones')
+        .from('observacion')
         .update(updates)
-        .eq('id', request.id);
+        .eq('obs_id', request.id);
 
       if (error) throw error;
 
