@@ -28,6 +28,21 @@ const RequestItem = ({ request, allRequests, onChange, isReader, isLockedByOther
   const isEffectivelyReadOnly = isReader || isLockedByOther;
 
   const isAdd = request.action === 'Agregar';
+
+  // Detect potential section change (Add + Drop same subject)
+  const isPotentialSectionChange = useMemo(() => {
+    // If Add, look for Drop. If Drop, look for Add.
+    const targetAction = request.action === 'Agregar' ? 'Eliminar' : (request.action === 'Eliminar' ? 'Agregar' : null);
+
+    if (!targetAction) return false;
+
+    return allRequests.some(r =>
+      r.action === targetAction &&
+      r.subject === request.subject &&
+      r.id !== request.id
+    );
+  }, [request.action, request.subject, allRequests, request.id]);
+
   // Indigo-themed accents for Student Detail
   const iconBgClasses = isAdd
     ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
@@ -123,6 +138,16 @@ const RequestItem = ({ request, allRequests, onChange, isReader, isLockedByOther
             <span className="material-symbols-outlined text-indigo-500 text-[16px]">link</span>
             <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300">
               Relacionado con #{nextRelatedCase.caseId}
+            </span>
+          </div>
+        )}
+
+        {/* Potential Section Change Indicator */}
+        {isPotentialSectionChange && (
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/30 rounded-lg border border-amber-200 dark:border-amber-800" title="El estudiante solicitó ELIMINAR y AGREGAR esta misma materia, lo que sugiere un cambio de sección.">
+            <span className="material-symbols-outlined text-amber-600 text-[16px]">swap_horiz</span>
+            <span className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase">
+              Posible cambio de sección
             </span>
           </div>
         )}

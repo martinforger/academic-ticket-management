@@ -34,7 +34,6 @@ export const StudentRecords: React.FC = () => {
             obs_accion,
             obs_nrc_solicitado,
             obs_comentarios,
-            obs_contacto,
             obs_responsable,
             obs_respuesta_interna,
             obs_respuesta_externa,
@@ -70,7 +69,7 @@ export const StudentRecords: React.FC = () => {
           subject: row.materia?.mat_nombre || '',
           nrc: row.obs_nrc_solicitado || 0,
           comments: row.obs_comentarios || '',
-          contact: row.obs_contacto || '',
+          contact: row.estudiante?.est_correo || '',
           responsible: row.obs_responsable || '',
           internalResponse: row.obs_respuesta_interna || '',
           studentResponse: row.obs_respuesta_externa || ''

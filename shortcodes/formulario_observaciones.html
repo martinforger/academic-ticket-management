@@ -1,0 +1,810 @@
+<!-- 
+FRAGMENTO DE FORMULARIO - VERSIÓN 7 PASOS (DINÁMICO)
+-->
+
+<meta charset="UTF-8">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+    /* Estilos base funcionales */
+    .obs-form-container {
+        font-family: inherit;
+        width: 100%;
+        overflow: hidden;
+        position: relative;
+    }
+
+    /* MODIFICADO: Ahora el slider tiene ancho 700% para 7 pasos */
+    .obs-form-slider {
+        display: flex;
+        width: 700%;
+        transition: transform 0.5s ease;
+    }
+
+    /* MODIFICADO: Cada sección es el 14.28% del ancho total (100% / 7) */
+    .form-section {
+        width: 14.2857%;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    .student-data-container {
+        border: 1px solid #ddd;
+        padding: 15px;
+        margin-top: 15px;
+        background: #fdfdfd;
+        display: none;
+    }
+
+    .data-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 5px;
+    }
+
+    .data-row:last-child {
+        border-bottom: none;
+    }
+
+    .data-label {
+        font-weight: bold;
+        color: #555;
+    }
+
+    .data-value {
+        color: #000;
+    }
+
+    .error-container {
+        margin-top: 15px;
+        padding: 10px;
+        background-color: #ffe6e6;
+        border: 1px solid #ffcccc;
+        color: #cc0000;
+        display: none;
+    }
+
+    .search-row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .search-input {
+        flex-grow: 1;
+        padding: 8px;
+    }
+
+    .btn-disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* Estilos para el paso dinámico - ESTRUCTURA SOLA */
+    .request-row {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .req-select {
+        flex-grow: 1;
+    }
+
+    .btn-action {
+        cursor: pointer;
+    }
+</style>
+
+<div class="obs-form-container">
+
+    <!-- Contenedor del Slide (Índices: 0 a 6) -->
+    <div id="obs-form-slider" class="obs-form-slider">
+
+        <!-- [0] PASO 1: BÚSQUEDA -->
+        <div class="form-section">
+            <h3>Paso 1: Identificación del Estudiante</h3>
+            <p>Ingrese su número de cédula para consultar sus datos.</p>
+            <div class="search-row">
+                <input type="text" id="input-cedula" class="search-input" placeholder="Ej: 12345678"
+                    onkeypress="handleEnter(event)">
+                <button type="button" onclick="buscarEstudiante()">Buscar</button>
+            </div>
+            <div id="student-error" class="error-container"></div>
+            <div id="student-result" class="student-data-container">
+                <div class="data-row">
+                    <span class="data-label" id="lbl-cedula">Cédula</span>
+                    <span class="data-value" id="val-cedula"></span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label" id="lbl-nombre">Nombre</span>
+                    <span class="data-value" id="val-nombre"></span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label" id="lbl-correo">Correo</span>
+                    <span class="data-value" id="val-correo"></span>
+                </div>
+                <div class="data-row" id="row-carrera">
+                    <span class="data-label" id="lbl-carrera">Carrera</span>
+                    <span class="data-value" id="val-carrera"></span>
+                </div>
+            </div>
+
+            <!-- FORMULARIO NUEVO ESTUDIANTE -->
+            <div id="new-student-form" class="student-data-container" style="display:none;">
+                <p><strong>Estudiante no encontrado.</strong><br>Por favor ingrese sus datos para registrarse:</p>
+                <div style="margin-bottom:10px;">
+                    <label style="display:block; font-weight:bold; margin-bottom:5px;">Nombre Completo:</label>
+                    <input type="text" id="new-nombre" class="search-input" style="width:100%" placeholder="Nombre y Apellido">
+                </div>
+                <div style="margin-bottom:10px;">
+                    <label style="display:block; font-weight:bold; margin-bottom:5px;">Correo Electrónico:</label>
+                    <input type="email" id="new-correo" class="search-input" style="width:100%" placeholder="correo@ejemplo.com">
+                </div>
+                <div style="text-align: right; margin-top:15px;">
+                     <button type="button" onclick="registrarEstudiante()">Registrar y Continuar</button>
+                </div>
+            </div>
+
+            <!-- FORMULARIO ACTUALIZAR CORREO -->
+            <div id="update-email-form" class="student-data-container" style="display:none; border-color: #fca5a5; background: #fff5f5;">
+                <p><strong>Falta información de contacto.</strong><br>El estudiante existe pero no tiene correo registrado. Por favor ingréselo:</p>
+                <div style="margin-bottom:10px;">
+                    <label style="display:block; font-weight:bold; margin-bottom:5px;">Correo Electrónico:</label>
+                    <input type="email" id="update-correo" class="search-input" style="width:100%" placeholder="correo@ejemplo.com">
+                </div>
+                <div style="text-align: right; margin-top:15px;">
+                     <button type="button" onclick="actualizarCorreo()">Actualizar y Continuar</button>
+                </div>
+            </div>
+            <br>
+            <div style="text-align: right;">
+                <button type="button" id="btn-step1-next" onclick="slide(1)" disabled
+                    class="btn-disabled">Continuar</button>
+            </div>
+        </div>
+
+        <!-- [1] PASO 2: SELECCIÓN DE TIPO -->
+        <div class="form-section">
+            <h3>¿Qué deseas hacer?</h3>
+            <div style="margin-bottom: 20px;">
+                <div style="margin-bottom: 10px;">
+                    <label style="display: flex; align-items: start; gap: 10px; cursor: pointer;">
+                        <input type="radio" name="tipo_solicitud" value="nrc" onchange="validateStep2()">
+                        <span>Quiero agregar o eliminar NRCs y dejar comentarios al respecto.</span>
+                    </label>
+                </div>
+                <div>
+                    <label style="display: flex; align-items: start; gap: 10px; cursor: pointer;">
+                        <input type="radio" name="tipo_solicitud" value="observacion" onchange="validateStep2()">
+                        <span>Solo quiero dejar una observación que no está asociada a la adición o eliminación de
+                            NRCs.</span>
+                    </label>
+                </div>
+            </div>
+            <div style="text-align: right; display: flex; justify-content: space-between;">
+                <button type="button" onclick="slide(0)">Atrás</button>
+                <button type="button" id="btn-next-step-2" onclick="goToNextStep2()" disabled
+                    class="btn-disabled">Continuar</button>
+            </div>
+        </div>
+
+        <!-- [2] PASO 3-A: AUTORIZACIÓN (Ruta NRC) -->
+        <div class="form-section">
+            <h3>🔏 Autorización de modificación de inscripción</h3>
+            <p>Si deseas agregar asignaturas, estás se inscribirán en un NRC con cupos disponibles. Es posible que para
+                realizar la inscripción se requiera hacer alguna modificación en el horario (p. ej. por conflicto de
+                hora entre la asignatura solicitada y las previamente inscritas por ti).</p>
+            <p>Si para llevar a cabo los ajustes que solicitas es necesario alterar tu solicitud original de
+                inscripción, <strong>¿autorizas a la Escuela a aplicar los cambios necesarios?</strong></p>
+            <p>Al autorizar a la Escuela a llevar a cabo los ajustes, podrías terminar con un horario distinto al
+                original, pero incluyendo la asignatura en el NRC solicitado. Obviamente, si solicitas la eliminación de
+                un NRC en particular esta consideración no aplica.</p>
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 10px;">
+                    <input type="radio" name="autorizacion_nrc" value="si" onchange="validateStep3A()">
+                    Sí, autorizo los cambios.
+                </label>
+                <label style="display: block;">
+                    <input type="radio" name="autorizacion_nrc" value="no" onchange="validateStep3A()">
+                    No, no autorizo (esto podría limitar la inscripción).
+                </label>
+            </div>
+            <div style="text-align: right; display: flex; justify-content: space-between;">
+                <button type="button" onclick="slide(1)">Atrás</button>
+                <button type="button" id="btn-step3a-next" onclick="slide(3)" disabled
+                    class="btn-disabled">Continuar</button>
+            </div>
+        </div>
+
+        <!-- [3] PASO 3-B: INFORMACIÓN (Ruta NRC) -->
+        <div class="form-section">
+            <h3>📌 Antes de iniciar...</h3>
+            <p>Recuerda: en el caso de agregar asignaturas, tu inscripción no puede representar más de 40 créditos. Las
+                solicitudes que hagan que excedas de esta cantidad serán desestimadas.</p>
+            <p>Toma en cuenta que si deseas eliminar todas las asignaturas, quedarás como estudiante sin inscripción, y
+                por lo tanto tu estatus, al finalizar el semestre pasará a ser "inactivo". De ocurrir esto, en un
+                futuro, cuando decidas retomar tus estudios en la Universidad deberás realizar el proceso de
+                reincorporación.</p>
+            <p>Si para agregar una asignatura se debe modificar el NRC originalmente solicitado, pero no lo autorizaste
+                de manera explícita en el paso anterior, intentaremos llevar a cabo el ajuste, pero no podemos
+                garantizar que podamos realizarlo. Al mismo tiempo, si los NRCs con cupos disponibles no son compatibles
+                con tu horario, pero no autorizaste a realizar ajustes adicionales, dejaremos tu solicitud original de
+                inscripción en línea sin modificación alguna.</p>
+            <div style="text-align: right; display: flex; justify-content: space-between;">
+                <button type="button" onclick="slide(2)">Atrás</button>
+                <button type="button" onclick="slide(4)">Continuar</button>
+            </div>
+        </div>
+
+        <!-- [4] PASO 4: SOLICITUDES (Ruta NRC - Dinámico) -->
+        <div class="form-section">
+            <h3>Solicitudes de Modificación de Inscripción</h3>
+            <p>Seleccione las asignaturas y la acción que desea realizar.</p>
+
+            <div id="requests-container">
+                <!-- Fila inicial (siempre visible) -->
+                <div class="request-row" id="row-0">
+                    <!-- Dropdown Asignaturas -->
+                    <select class="req-select subject-select" name="asignatura[]" style="width:30%;">
+                        <option value="">Cargando asignaturas...</option>
+                    </select>
+
+                    <!-- Dropdown Acción -->
+                    <select class="req-select action-select" name="accion[]" style="width:20%;">
+                        <option value="agregar">Agregar</option>
+                        <option value="eliminar">Eliminar</option>
+                    </select>
+
+                    <!-- INPUT NRC SUGERIDO -->
+                    <input type="text" class="search-input nrc-input" name="nrc_sugerido[]" placeholder="NRC Sugerido (Opcional)" style="width:25%;" maxlength="5">
+
+                    <!-- Botón oculto para mantener alineación -->
+                    <button type="button" class="btn-action"
+                        style="visibility: hidden; pointer-events: none;">x</button>
+                </div>
+            </div>
+
+            <div style="margin-top: 10px;">
+                <button type="button" onclick="addRequestRow()">Añadir asignatura</button>
+            </div>
+
+            <!-- COMENTARIO FINAL (Step 4) -->
+            <div style="margin-top:20px; border-top: 1px solid #eee; padding-top:15px;">
+                <label style="display: block; margin-bottom: 8px; font-weight:bold;">Comentarios Finales de la Solicitud:</label>
+                <textarea id="final-comments-nrc" style="width: 100%; height: 100px; padding: 10px; box-sizing: border-box; font-family: inherit;" placeholder="Indique aquí cualquier consideración adicional sobre su horario o materias..."></textarea>
+            </div>
+
+            <!-- COMENTARIO FINAL (Step 4) -->
+            <div style="margin-top:20px; border-top: 1px solid #eee; padding-top:15px;">
+                <label style="display: block; margin-bottom: 8px; font-weight:bold;">Comentarios Finales de la Solicitud:</label>
+                <textarea id="final-comments-nrc" style="width: 100%; height: 100px; padding: 10px; box-sizing: border-box; font-family: inherit;" placeholder="Indique aquí cualquier consideración adicional sobre su horario o materias..."></textarea>
+            </div>
+
+            <div style="text-align: right; display: flex; justify-content: space-between; margin-top:20px;">
+                <button type="button" onclick="slide(3)">Atrás</button>
+                <button type="button" onclick="slide(6)">Continuar</button>
+            </div>
+        </div>
+
+        <!-- [5] PASO 5: OBSERVACIONES (Ruta Observación) -->
+        <div class="form-section">
+            <h3>Observaciones</h3>
+            <p>En caso que hayas tenido algún problema o situación inesperada durante el proceso de inscripción en
+                línea, aquí puedes dejar tus observaciones.</p>
+            <div style="margin-bottom: 20px;">
+                <p style="margin-top: 0;"><strong>⚠️ ATENCIÓN</strong></p>
+                <p>En esta sección solo podrás dejar una observación que NO implique la posibilidad de que agreguemos o
+                    eliminemos ningún NRC a tu solicitud original de inscripción en línea (p. ej. "trabajo en las
+                    tardes, por favor intenten no cambiar el horario de los NRCs que solicité inscribir").</p>
+                <p style="margin-bottom: 0;"><em>Si deseas agregar o eliminar NRCs, regresa a la sección anterior de
+                        este formulario y selecciona la opción "Quiero agregar o eliminar NRCs y dejar observaciones al
+                        respecto".</em></p>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px;">Mensaje:</label>
+                <textarea name="mensaje_obs"
+                    style="width: 100%; height: 150px; padding: 10px; box-sizing: border-box; font-family: inherit;"></textarea>
+            </div>
+            <div style="text-align: right; display: flex; justify-content: space-between;">
+                <button type="button" onclick="slide(1)">Atrás</button>
+                <button type="button" onclick="slide(6)">Continuar</button>
+            </div>
+        </div>
+
+        <!-- [6] PASO 6: CONFIRMACIÓN (Común) -->
+        <div class="form-section">
+            <h3>Confirmación</h3>
+            <p>Sus datos han sido validados. Presione enviar para finalizar su solicitud.</p>
+            <div style="text-align: right; display: flex; justify-content: space-between;">
+                <button type="button" onclick="goBackFromStepConfirmation()">Atrás</button>
+                <button type="button" onclick="submitForm()">Enviar Solicitud</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // --- SUPABASE CONFIG ---
+    // Usamos var para evitar "Identifier has already been declared" en caso de reinyección del script
+    var SUPABASE_URL = 'https://zmvecicbbxbpuhbnexiz.supabase.co';
+    var SUPABASE_KEY = 'sb_publishable_tLbqOISGtoE-_0lEsqxuXQ_YYRaT59G';
+    
+    // Use a namespaces variable for the client instance
+    var sbClient;
+
+    // Inicialización segura
+    // Intentamos usar la librería global 'supabase'
+    if (typeof sbClient === 'undefined') {
+        if (window.supabase && window.supabase.createClient) {
+             sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        } else if (typeof createClient !== 'undefined') {
+             // Fallback si createClient está en el scope global
+             sbClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+        } else {
+             // Listener por si carga diferida
+             document.addEventListener('DOMContentLoaded', () => {
+                 if(window.supabase && window.supabase.createClient) {
+                    sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                    loadAllSubjects(); // Reintentar carga
+                 }
+             });
+        }
+    }
+
+    // --- CONSTANTES ---
+    const MSG = {
+        invalidSsn: "Por favor, introduce un número de cédula válido (solo números).",
+        notFound: "Estudiante no encontrado. Por favor regístrate abajo.",
+        generalError: "Ocurrió un error de conexión. Por favor, intenta de nuevo más tarde.",
+        serverError: "El servidor respondió con un error. Intenta más tarde.",
+        missingFields: "Por favor complete todos los campos requeridos."
+    };
+
+    const LABELS = {
+        cedula: "Cédula",
+        nombre: "Nombre",
+        carrera: "Carrera",
+        correo: "Correo"
+    };
+
+    // --- ESTADO ---
+    let studentData = null; // { est_id, est_cedula, est_nombre, ... }
+    let selectedRoute = null; // 'nrc' o 'observacion'
+    let rowCount = 1;
+    let allSubjects = []; // Lista completa de materias
+    let projectedSubjectIds = []; // IDs de materias proyectadas
+    let currentLogicalStep = 0;
+
+    // Etiquetas iniciales
+    if(document.getElementById('lbl-cedula')) document.getElementById('lbl-cedula').textContent = LABELS.cedula;
+    if(document.getElementById('lbl-nombre')) document.getElementById('lbl-nombre').textContent = LABELS.nombre;
+    if(document.getElementById('lbl-carrera')) document.getElementById('lbl-carrera').textContent = LABELS.carrera;
+    if(document.getElementById('lbl-correo')) document.getElementById('lbl-correo').textContent = LABELS.correo;
+
+    // --- INIT ---
+    // Cargar materias al inicio para tenerlas listas
+    loadAllSubjects();
+
+    async function loadAllSubjects() {
+        try {
+            if(!sbClient) return; 
+            // Usando RPC
+            const { data, error } = await sbClient.rpc('get_all_subjects');
+            
+            if (error) throw error;
+            allSubjects = data || [];
+        } catch (err) {
+            console.error("Error cargando materias:", err);
+        }
+    }
+
+    // --- LÓGICA PASO 1 (BÚSQUEDA) ---
+    async function buscarEstudiante() {
+        const input = document.getElementById('input-cedula');
+        const cedula = input.value.trim();
+        const errorContainer = document.getElementById('student-error');
+        const resultContainer = document.getElementById('student-result');
+        const newStudentContainer = document.getElementById('new-student-form');
+        const updateEmailContainer = document.getElementById('update-email-form');
+        const nextBtn = document.getElementById('btn-step1-next');
+
+        // Reset UI
+        errorContainer.style.display = 'none';
+        resultContainer.style.display = 'none';
+        newStudentContainer.style.display = 'none';
+        updateEmailContainer.style.display = 'none';
+        nextBtn.disabled = true;
+        nextBtn.classList.add('btn-disabled');
+        studentData = null;
+        projectedSubjectIds = [];
+
+        if (!cedula || isNaN(cedula)) {
+            showError(MSG.invalidSsn);
+            return;
+        }
+
+        if (!sbClient) {
+             console.error("Supabase client not initialized");
+             showError(MSG.generalError);
+             return;
+        }
+
+        try {
+            // Usando RPC
+            const { data, error } = await sbClient.rpc('get_student_by_cedula', { p_cedula: cedula });
+
+            if (error) {
+                console.error(error);
+                showError(MSG.serverError);
+                return;
+            }
+            
+            // RPC retorna un array (rows), tomamos el primero si existe
+            const student = (data && data.length > 0) ? data[0] : null;
+
+            if (student) {
+                // Estudiante Encontrado
+                studentData = student; // Guardamos temporalmente
+                
+                // VALIDAR SI TIENE CORREO
+                if (!student.est_correo || student.est_correo.trim() === '') {
+                     updateEmailContainer.style.display = 'block';
+                } else {
+                     showStudentData(student);
+                     loadProjection(student.est_id);
+                }
+            } else {
+                // Estudiante No Encontrado -> Mostrar formulario de registro
+                newStudentContainer.style.display = 'block';
+            }
+        } catch (err) {
+            console.error(err);
+            showError(MSG.generalError);
+        }
+    }
+
+    async function actualizarCorreo() {
+        if (!sbClient || !studentData) return;
+        const correo = document.getElementById('update-correo').value.trim();
+
+        if (!correo) {
+            alert(MSG.missingFields);
+            return;
+        }
+
+        try {
+            // Usando RPC
+            const { data, error } = await sbClient.rpc('update_student_email', { 
+                p_est_id: studentData.est_id,
+                p_correo: correo
+            });
+
+            if (error) throw error;
+            
+            // data es array
+            const updated = data && data.length > 0 ? data[0] : null;
+            if(!updated) throw new Error("No se pudo actualizar");
+
+            alert("Correo actualizado exitosamente.");
+            document.getElementById('update-email-form').style.display = 'none';
+            studentData.est_correo = updated.est_correo; // actualizar local
+            showStudentData(updated); 
+            loadProjection(updated.est_id);
+
+        } catch (err) {
+            console.error("Error actualizando correo:", err);
+            alert("Error al actualizar: " + err.message);
+        }
+    }
+
+    async function registrarEstudiante() {
+        if (!sbClient) return;
+        const cedula = document.getElementById('input-cedula').value.trim();
+        const nombre = document.getElementById('new-nombre').value.trim();
+        const correo = document.getElementById('new-correo').value.trim();
+
+        if (!cedula || !nombre || !correo) {
+            alert(MSG.missingFields);
+            return;
+        }
+
+        try {
+            // Usando RPC
+            const { data, error } = await sbClient.rpc('register_student', {
+                p_cedula: cedula,
+                p_nombre: nombre,
+                p_correo: correo
+            });
+
+            if (error) throw error;
+            
+            const newStudent = data && data.length > 0 ? data[0] : null;
+            if(!newStudent) throw new Error("No se pudo registrar");
+
+            alert("Estudiante registrado exitosamente.");
+            document.getElementById('new-student-form').style.display = 'none';
+            showStudentData(newStudent);
+            
+            projectedSubjectIds = [];
+
+        } catch (err) {
+            console.error("Error registrando:", err);
+            alert("Error al registrar: " + err.message);
+        }
+    }
+
+    async function loadProjection(estId) {
+        if (!sbClient) return;
+        try {
+            // Usando RPC
+            const { data, error } = await sbClient.rpc('get_student_projections', { p_est_id: estId });
+            // .select('mat_id') ya no va, el RPC devuelve filas completas
+            
+            if (error) throw error;
+            projectedSubjectIds = data.map(p => p.mat_id);
+        } catch (err) {
+            console.error("Error cargando proyección:", err);
+            projectedSubjectIds = [];
+        }
+    }
+
+    function showStudentData(data) {
+        studentData = data;
+        document.getElementById('val-cedula').textContent = data.est_cedula;
+        document.getElementById('val-nombre').textContent = data.est_nombre;
+        document.getElementById('val-correo').textContent = data.est_correo || '-';
+        
+        const rowCarrera = document.getElementById('row-carrera');
+        if (data.est_cod_programa) {
+            document.getElementById('val-carrera').textContent = data.est_cod_programa;
+            rowCarrera.style.display = 'flex';
+        } else {
+            rowCarrera.style.display = 'none';
+        }
+
+        document.getElementById('student-result').style.display = 'block';
+
+        const nextBtn = document.getElementById('btn-step1-next');
+        nextBtn.disabled = false;
+        nextBtn.classList.remove('btn-disabled');
+    }
+
+    function showError(htmlMsg) {
+        const errorContainer = document.getElementById('student-error');
+        errorContainer.innerHTML = htmlMsg;
+        errorContainer.style.display = 'block';
+    }
+
+    function handleEnter(e) {
+        if (e.key === 'Enter') buscarEstudiante();
+    }
+
+    // --- LÓGICA PASO 2 (SELECCIÓN) ---
+    function validateStep2() {
+        const radionrc = document.querySelector('input[name="tipo_solicitud"][value="nrc"]');
+        const radioobs = document.querySelector('input[name="tipo_solicitud"][value="observacion"]');
+        const nextBtn = document.getElementById('btn-next-step-2');
+
+        if (radionrc && radionrc.checked) selectedRoute = 'nrc';
+        if (radioobs && radioobs.checked) selectedRoute = 'observacion';
+
+        if (selectedRoute) {
+            nextBtn.disabled = false;
+            nextBtn.classList.remove('btn-disabled');
+        }
+    }
+
+    function goToNextStep2() {
+        if (selectedRoute === 'nrc') {
+            updateSelectsOptions(); // Construir selects antes de mostrar
+            slide(2); 
+        } else if (selectedRoute === 'observacion') {
+            slide(5);
+        }
+    }
+
+    // --- LÓGICA PASO 3-A (AUTORIZACIÓN) ---
+    function validateStep3A() {
+        const radioSi = document.querySelector('input[name="autorizacion_nrc"][value="si"]');
+        const radioNo = document.querySelector('input[name="autorizacion_nrc"][value="no"]');
+        const nextBtn = document.getElementById('btn-step3a-next');
+
+        if ((radioSi && radioSi.checked) || (radioNo && radioNo.checked)) {
+            nextBtn.disabled = false;
+            nextBtn.classList.remove('btn-disabled');
+        }
+    }
+
+    // --- LÓGICA PASO 4 (DINÁMICO - MATERIAS) ---
+    function generateSubjectOptionsHTML() {
+        let html = '<option value="">Seleccionar Asignatura...</option>';
+        
+        // GRUPO 1: Proyección (Si existe)
+        if (projectedSubjectIds.length > 0) {
+            html += '<optgroup label="Materias Proyectadas (Semestre actual)">';
+            // Filtrar materias que están en projectedSubjectIds
+            const projSubjects = allSubjects.filter(m => projectedSubjectIds.includes(m.mat_id));
+            projSubjects.forEach(sub => {
+                html += `<option value="${sub.mat_id}">${sub.mat_nombre} (${sub.mat_semestre})</option>`;
+            });
+            html += '</optgroup>';
+        }
+
+        // GRUPO 2: Todas las materias (Agrupadas por semestre)
+        // Obtener semestres únicos ordenados
+        const semesters = [...new Set(allSubjects.map(s => s.mat_semestre))].sort();
+        
+        semesters.forEach(sem => {
+            const subjectsInSem = allSubjects.filter(s => s.mat_semestre === sem);
+            if (subjectsInSem.length > 0) {
+                html += `<optgroup label="Semestre ${sem}">`;
+                subjectsInSem.forEach(sub => {
+                    html += `<option value="${sub.mat_id}">${sub.mat_nombre}</option>`;
+                });
+                html += '</optgroup>';
+            }
+        });
+
+        return html;
+    }
+
+    function updateSelectsOptions() {
+        const selects = document.querySelectorAll('.subject-select');
+        const optionsHTML = generateSubjectOptionsHTML();
+        selects.forEach(sel => {
+            const currentVal = sel.value;
+            sel.innerHTML = optionsHTML;
+            sel.value = currentVal; // Intentar mantener selección si existe
+        });
+    }
+
+    function addRequestRow() {
+        const container = document.getElementById('requests-container');
+        const originalRow = document.getElementById('row-0');
+
+        // Clonar fila
+        const newRow = originalRow.cloneNode(true);
+        newRow.id = ''; 
+
+        // Limpiar selección
+        const select = newRow.querySelector('.subject-select');
+        if(select) {
+            select.innerHTML = generateSubjectOptionsHTML(); 
+            select.selectedIndex = 0;
+        }
+        
+        const actionSelect = newRow.querySelector('.action-select');
+        if(actionSelect) actionSelect.selectedIndex = 0;
+
+        const nrcInput = newRow.querySelector('.nrc-input');
+        if(nrcInput) nrcInput.value = '';
+
+        // Botón eliminar
+        const btn = newRow.querySelector('.btn-action');
+        if (btn) {
+            btn.style.visibility = 'visible';
+            btn.style.pointerEvents = 'auto';
+            btn.textContent = 'x'; 
+            btn.onclick = function () { removeRow(this); };
+        }
+
+        container.appendChild(newRow);
+    }
+
+    function removeRow(btn) {
+        const row = btn.parentNode;
+        row.parentNode.removeChild(row);
+    }
+
+    // --- NAVEGACIÓN ---
+    function goBackFromStepConfirmation() {
+        if (selectedRoute === 'nrc') slide(4);
+        else slide(5);
+    }
+
+    function slide(targetStepIndex) {
+        const slider = document.getElementById('obs-form-slider');
+        const sections = document.querySelectorAll('.form-section');
+
+        sections[targetStepIndex].style.display = 'block';
+
+        const start = Math.min(currentLogicalStep, targetStepIndex);
+        const end = Math.max(currentLogicalStep, targetStepIndex);
+
+        for (let i = start + 1; i < end; i++) {
+            sections[i].style.display = 'none';
+        }
+
+        let visualIndex = 0;
+        for (let i = 0; i < targetStepIndex; i++) {
+            if (sections[i].style.display !== 'none') visualIndex++;
+        }
+
+        const percentage = -(visualIndex * 14.2857);
+        slider.style.transform = 'translateX(' + percentage + '%)';
+        currentLogicalStep = targetStepIndex;
+    }
+
+    async function submitForm() {
+        if (!studentData) return alert("Faltan datos del estudiante");
+        if (!sbClient) return alert("Error de conexión");
+
+        // Preparar Datos
+        let autoriza = false;
+        let comentarios = "Sin comentarios.";
+        let solicitudes = [];
+
+        if (selectedRoute === 'nrc') {
+            // Obtener autorización
+            const radioSi = document.querySelector('input[name="autorizacion_nrc"][value="si"]');
+            autoriza = radioSi ? radioSi.checked : false;
+
+            // Obtener Comentario Final
+            const finalComm = document.getElementById('final-comments-nrc');
+            if(finalComm && finalComm.value.trim() !== "") comentarios = finalComm.value.trim();
+
+            // Obtener Filas de Solicitudes
+            const rows = document.querySelectorAll('.request-row');
+            rows.forEach(row => {
+               const selSub = row.querySelector('.subject-select');
+               const inputNrc = row.querySelector('.nrc-input');
+               const selAct = row.querySelector('.action-select');
+               
+               if(selSub && selSub.value) {
+                   solicitudes.push({
+                       mat_id: parseInt(selSub.value),
+                       nrc_solicitado: inputNrc ? inputNrc.value.trim() : "",
+                       accion: selAct ? selAct.value : "agregar" 
+                   });
+               }
+            });
+
+            if(solicitudes.length === 0) {
+                return alert("Por favor seleccione al menos una asignatura o cambie a 'Solo Observación'.");
+            }
+
+        } else {
+            // Ruta Observación (Step 5)
+            // Aquí el comentario viene del textarea 'mensaje_obs'
+            const msgObs = document.querySelector('textarea[name="mensaje_obs"]');
+            if(msgObs) comentarios = msgObs.value.trim();
+            if(!comentarios) return alert("Por favor escriba su observación.");
+            
+            // Enviamos un item 'dummy' para que se genere 1 caso
+            solicitudes.push({
+                mat_id: null,
+                nrc_solicitado: null,
+                accion: "observacion"
+            });
+        }
+        
+        // Deshabilitar botón
+        const btnSend = document.querySelector('button[onclick="submitForm()"]');
+        if(btnSend) { btnSend.disabled = true; btnSend.textContent = "Enviando..."; }
+
+        try {
+            const { error } = await sbClient.rpc('create_observation_batch', {
+                p_est_id: studentData.est_id,
+                p_autoriza: autoriza,
+                p_comentarios: comentarios,
+                p_solicitudes: solicitudes 
+            });
+
+            if (error) throw error;
+            
+            alert("Solicitud enviada exitosamente. Gracias.");
+            location.reload(); // Recargar para limpiar
+
+        } catch (err) {
+            console.error("Error enviando:", err);
+            alert("Error al enviar solicitud: " + err.message);
+            if(btnSend) { btnSend.disabled = false; btnSend.textContent = "Enviar Solicitud"; }
+        }
+    }
+</script>
