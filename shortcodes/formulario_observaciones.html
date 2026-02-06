@@ -20,9 +20,11 @@ FRAGMENTO DE FORMULARIO - VERSIÓN PREMIUM (UCAB STYLE)
         --ucab-red: #dc2626;
         --border-radius: 4px;
         --transition-speed: 0.3s;
+    }
 
-        /* Base styles only for this container */
-        font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
+    /* Base styles only for this container */
+    .obs-form-container {
+        font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
         width: 100%;
         max-width: 850px;
         margin: 20px auto;
@@ -32,19 +34,19 @@ FRAGMENTO DE FORMULARIO - VERSIÓN PREMIUM (UCAB STYLE)
         overflow: hidden;
         border: 1px solid #e1e4e8 !important;
         position: relative;
-        color: #333; /* Default text color */
+        color: #333;
         box-sizing: border-box;
-        text-align: left; /* Reset text align */
-        font-size: 16px; /* Explicit base size */
-        line-height: 1.5; /* Explicit line height */
+        text-align: left;
+        font-size: 16px;
+        line-height: 1.5;
     }
     
-    /* Ensure all children use border-box and inherit font */
-    .obs-form-container * {
+    /* Ensure all form elements use border-box */
+    .obs-form-container input,
+    .obs-form-container select,
+    .obs-form-container textarea,
+    .obs-form-container button {
         box-sizing: border-box !important;
-        font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
     }
 
     /* Header Styling with forced high specificity */
@@ -107,110 +109,149 @@ FRAGMENTO DE FORMULARIO - VERSIÓN PREMIUM (UCAB STYLE)
         background: transparent !important;
     }
 
-    /* Typography scoped with resets */
-    .obs-form-container h3 {
-        display: block !important;
-        color: var(--ucab-dark-gray) !important;
-        font-weight: 700 !important;
-        margin: 0 0 15px 0 !important;
-        padding: 0 0 10px 0 !important;
-        font-size: 1.4rem !important;
-        border-bottom: 2px solid #f0f0f0 !important;
-        line-height: 1.3 !important;
-        text-transform: none !important;
-        letter-spacing: normal !important;
-        text-align: left !important;
-        background: transparent !important;
+    /* Typography scoped only to direct children of form sections to avoid affecting boxes or other nested components */
+    .obs-form-container .form-section > h3 {
+        color: var(--ucab-dark-gray);
+        font-weight: 700;
+        margin: 0 0 15px 0;
+        padding: 0 0 10px 0;
+        font-size: 1.4rem;
+        border-bottom: 2px solid #f0f0f0;
+        line-height: 1.3;
+        text-transform: none;
+        letter-spacing: normal;
+        text-align: left;
+        background: transparent;
     }
-    .obs-form-container p {
-        display: block !important;
-        color: var(--ucab-gray-text) !important;
-        line-height: 1.6 !important;
-        margin: 0 0 15px 0 !important;
-        padding: 0 !important;
-        font-size: 1rem !important;
+    .obs-form-container .form-section > p {
+        color: var(--ucab-gray-text);
+        line-height: 1.6;
+        margin: 0 0 15px 0;
+        padding: 0;
+        font-size: 1rem;
     }
-    .obs-form-container strong {
-        color: var(--ucab-blue) !important;
-        font-weight: 600 !important; 
+    .obs-form-container .form-section strong {
+        color: inherit;
+        font-weight: 700; 
     }
 
-    /* Inputs & Controls scoped */
+    /* Inputs & Controls scoped - UPDATED */
     .obs-form-container .search-row {
         display: flex !important;
-        gap: 15px !important;
+        gap: 12px !important;
         align-items: center !important;
         margin-bottom: 20px !important;
     }
+    
     .obs-form-container .search-input, 
     .obs-form-container select, 
     .obs-form-container textarea {
         display: block !important;
         width: 100% !important;
         max-width: 100% !important;
-        padding: 12px 15px !important;
-        border: 1px solid #ccd0d5 !important;
-        border-radius: var(--border-radius) !important;
+        padding: 10px 14px !important;
+        border: 2px solid #c5c4c4 !important;
+        border-radius: 4px !important;
         font-family: inherit !important;
-        font-size: 1rem !important; /* Force readable font size */
-        line-height: 1.5 !important;
+        font-size: 1rem !important;
+        line-height: normal !important;
         transition: all var(--transition-speed);
-        background: #fff !important;
+        background-color: #eeeeee !important;
         margin: 0 !important;
-        color: #333 !important;
+        color: #333333 !important;
         box-shadow: none !important;
-        height: auto !important;
+        height: 48px !important;
+        -webkit-appearance: auto !important; /* Re-enable for better cross-browser arrow */
+        appearance: auto !important;
     }
+
+    .obs-form-container .search-input::placeholder,
+    .obs-form-container select::placeholder,
+    .obs-form-container textarea::placeholder {
+        color: #999999 !important;
+    }
+
+    .obs-form-container .search-row > input {
+        flex: 1 !important;
+    }
+    
+    .obs-form-container textarea {
+        height: auto !important;
+        min-height: 120px !important;
+    }
+
     .obs-form-container .search-input:focus, 
     .obs-form-container select:focus, 
     .obs-form-container textarea:focus {
         border-color: var(--ucab-blue) !important;
-        box-shadow: 0 0 0 3px rgba(0, 113, 187, 0.15) !important;
         outline: none !important;
+        background-color: #fff !important;
+        color: #333 !important;
     }
 
-    /* Buttons scoped */
-    .obs-form-container button {
+    /* Buttons scoped - UPDATED to match image and snippet */
+    .obs-form-container button:not(.btn-action) {
         cursor: pointer !important;
         padding: 10px 24px !important;
-        border-radius: var(--border-radius) !important;
+        border-radius: 3px !important;
         font-size: 1rem !important;
         font-weight: 600 !important;
         transition: all var(--transition-speed);
-        border: none !important;
+        border: 2px solid var(--ucab-blue) !important;
+        background-color: #ffffff !important;
+        color: var(--ucab-blue) !important;
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
         gap: 8px !important;
-        line-height: 1.2 !important;
+        line-height: 1.64em !important;
         text-transform: none !important;
         text-decoration: none !important;
         height: auto !important;
         width: auto !important;
     }
-    .obs-form-container button[type="button"]:not(.btn-action):not(.btn-secondary) {
+
+    /* Primary buttons (blue theme) */
+    .obs-form-container button[type="button"]:not(.btn-action):not(.btn-secondary),
+    .obs-form-container button[type="submit"]:not(.btn-action):not(.btn-secondary),
+    .obs-form-container .search-row button {
+        background-color: #ffffff !important;
+        color: var(--ucab-blue) !important;
+        border: 2px solid var(--ucab-blue) !important;
+    }
+
+    .obs-form-container button:hover:not(:disabled):not(.btn-action) {
         background-color: var(--ucab-blue) !important;
+        color: #ffffff !important;
+        border-color: var(--ucab-blue) !important;
+        transform: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Specialty buttons override logic */
+    .obs-form-container button[style*="background"]:not(:hover) {
+        border-color: transparent !important;
         color: white !important;
     }
-    .obs-form-container button:hover:not(:disabled):not(.btn-action):not(.btn-secondary) {
-        background-color: var(--ucab-dark-blue) !important;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
-    }
+
     .obs-form-container button.btn-secondary {
         background-color: transparent !important;
         color: #666 !important;
-        border: 1px solid #ccc !important;
+        border: 2px solid #ccc !important;
     }
     .obs-form-container button.btn-secondary:hover {
         background-color: #f5f5f5 !important;
         color: #333 !important;
+        border-color: #999 !important;
     }
+    
     .obs-form-container button:disabled, 
     .obs-form-container .btn-disabled {
-        opacity: 0.6 !important;
+        opacity: 0.5 !important;
         cursor: not-allowed !important;
-        background-color: #a0c4e3 !important;
+        background-color: #f7fafc !important;
+        border-color: #cbd5e0 !important;
+        color: #a0aec0 !important;
         pointer-events: none !important;
     }
 
@@ -230,7 +271,7 @@ FRAGMENTO DE FORMULARIO - VERSIÓN PREMIUM (UCAB STYLE)
         padding: 10px 20px !important;
         border-bottom: 1px solid #e1e4e8 !important;
         font-weight: 600 !important;
-        color: var(--ucab-dark-blue) !important;
+        color: var(--ucab-dark-gray) !important;
         font-size: 0.9rem !important;
         text-transform: uppercase !important;
         letter-spacing: 0.5px !important;
@@ -263,22 +304,7 @@ FRAGMENTO DE FORMULARIO - VERSIÓN PREMIUM (UCAB STYLE)
         overflow-wrap: anywhere !important;
     }
 
-    /* Alerts scoped */
-    .obs-form-container .alert-box {
-        background-color: #fff9e6 !important;
-        border-left: 5px solid var(--ucab-yellow) !important;
-        padding: 15px 20px !important;
-        margin: 15px 0 !important;
-        border-radius: 4px !important;
-        display: flex !important;
-        align-items: flex-start !important;
-        gap: 15px !important;
-    }
-    .obs-form-container .alert-icon {
-        color: var(--ucab-yellow) !important;
-        font-size: 1.5rem !important;
-        line-height: 1 !important;
-    }
+    /* Error container remains as it is used for dynamic validation errors */
     .obs-form-container .error-container {
         background-color: #fef2f2 !important;
         border: 1px solid #fecaca !important;
@@ -334,14 +360,14 @@ FRAGMENTO DE FORMULARIO - VERSIÓN PREMIUM (UCAB STYLE)
     /* Request Rows scoped */
     .obs-form-container .request-row {
         background: #f8f9fa !important;
-        padding: 15px !important;
+        padding: 12px 15px !important;
         border-radius: 6px !important;
         border: 1px solid #eee !important;
         display: flex !important;
-        gap: 10px !important;
-        align-items: center !important;
-        flex-wrap: wrap !important;
-        margin-bottom: 10px !important;
+        gap: 12px !important;
+        align-items: flex-end !important; /* Align everything to the bottom of the column */
+        flex-wrap: nowrap !important;
+        margin-bottom: 15px !important;
         transition: background 0.2s;
     }
     .obs-form-container .request-row:hover {
@@ -350,24 +376,51 @@ FRAGMENTO DE FORMULARIO - VERSIÓN PREMIUM (UCAB STYLE)
         box-shadow: 0 2px 5px rgba(0,0,0,0.05) !important;
     }
     .obs-form-container .btn-action {
-        width: 30px !important;
-        height: 30px !important;
-        min-width: 30px !important;
+        width: 48px !important;
+        height: 48px !important;
+        min-width: 48px !important;
         padding: 0 !important;
-        border-radius: 50% !important;
-        background: #fee2e2 !important;
-        color: #dc2626 !important;
+        border-radius: 4px !important;
+        background: #fff5f5 !important;
+        color: #c4151c !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        font-size: 1.2rem !important;
-        line-height: 1 !important;
         transition: all 0.2s;
-        border: 1px solid #fca5a5 !important;
+        border: 2px solid #c4151c !important;
+        cursor: pointer !important;
     }
     .obs-form-container .btn-action:hover {
-        background: #dc2626 !important;
+        background: #c4151c !important;
         color: white !important;
+    }
+
+    /* Blue Version for "Add" button Visual Language */
+    .obs-form-container .btn-add-row {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        padding: 0 20px !important;
+        height: 48px !important;
+        border-radius: 4px !important;
+        background: #f0f7ff !important;
+        color: #0071bb !important;
+        border: 2px solid #0071bb !important;
+        font-weight: 700 !important;
+        cursor: pointer !important;
+        transition: all 0.2s !important;
+        font-size: 0.95rem !important;
+    }
+    .obs-form-container .btn-add-row:hover {
+        background: #0071bb !important;
+        color: white !important;
+    }
+    .obs-form-container .btn-add-row svg,
+    .obs-form-container .btn-action svg {
+        width: 20px !important;
+        height: 20px !important;
+        stroke-width: 2.5 !important;
     }
 
     /* Animations namespaced */
@@ -405,24 +458,24 @@ FRAGMENTO DE FORMULARIO - VERSIÓN PREMIUM (UCAB STYLE)
     }
 
     /* Success Message Styles */
-    .obs-success-message {
+    .obs-form-container .obs-success-message {
         padding: 50px !important;
         text-align: center !important;
         animation: obsFadeIn 0.5s ease;
     }
-    .obs-success-icon {
+    .obs-form-container .obs-success-icon {
         width: 80px !important;
         height: 80px !important;
         margin-bottom: 20px !important;
         display: inline-block !important;
     }
-    .obs-success-title {
+    .obs-form-container .obs-success-title {
         color: var(--ucab-dark-gray) !important;
         font-size: 1.8rem !important;
         margin-bottom: 10px !important;
         font-weight: 700 !important;
     }
-    .obs-success-text {
+    .obs-form-container .obs-success-text {
         font-size: 1.1rem !important;
         color: #555 !important;
         line-height: 1.6 !important;
@@ -461,14 +514,16 @@ FRAGMENTO DE FORMULARIO - VERSIÓN PREMIUM (UCAB STYLE)
             flex-direction: column !important;
             align-items: stretch !important;
             padding: 15px !important;
+            gap: 15px !important;
         }
         .obs-form-container .request-row > div {
             width: 100% !important;
             min-width: 100% !important;
         }
         .obs-form-container .btn-action {
-            align-self: flex-end !important;
-            margin-top: -30px !important;
+            width: 100% !important;
+            height: 44px !important;
+            margin-top: 5px !important;
         }
         .obs-form-container .form-footer {
             flex-direction: column-reverse !important;
@@ -494,7 +549,7 @@ FRAGMENTO DE FORMULARIO - VERSIÓN PREMIUM (UCAB STYLE)
 
 <div class="obs-form-container">
     <div class="form-header">
-        <h2>Solicitud de Inscripción</h2>
+        <h2>Modificación de Inscripción</h2>
         <div class="step-indicator" id="step-indicator">Paso 1 de 6</div>
     </div>
 
@@ -586,14 +641,14 @@ FRAGMENTO DE FORMULARIO - VERSIÓN PREMIUM (UCAB STYLE)
                     <label class="radio-card">
                         <input type="radio" name="tipo_solicitud" value="nrc" onchange="validateStep2()">
                         <div>
-                            <div style="font-weight:600; color:var(--ucab-blue); margin-bottom:4px;">Gestión de NRCs</div>
+                            <div style="font-weight:700; color:var(--ucab-dark-gray); margin-bottom:4px;">Gestión de NRCs</div>
                             <span>Quiero agregar o eliminar NRCs y dejar comentarios al respecto.</span>
                         </div>
                     </label>
                     <label class="radio-card">
                         <input type="radio" name="tipo_solicitud" value="observacion" onchange="validateStep2()">
                         <div>
-                            <div style="font-weight:600; color:var(--ucab-blue); margin-bottom:4px;">Solo Observación</div>
+                            <div style="font-weight:700; color:var(--ucab-dark-gray); margin-bottom:4px;">Solo Observación</div>
                             <span>Solo quiero dejar una observación general (no modifica NRCs).</span>
                         </div>
                     </label>
@@ -609,12 +664,12 @@ FRAGMENTO DE FORMULARIO - VERSIÓN PREMIUM (UCAB STYLE)
             <div class="form-section">
                 <h3>Autorización de cambios</h3>
                 
-                <div class="alert-box">
-                    <div class="alert-icon">⚠️</div>
-                    <div>
-                        <strong style="display:block; margin-bottom:5px;">Importante sobre su horario</strong>
-                        <p style="margin:0; font-size:0.95rem; color:#444;">Si deseas agregar asignaturas, estas se inscribirán en un NRC con cupos disponibles. Esto podría requerir modificar tu horario actual.</p>
-                    </div>
+                <div style="margin-bottom: 20px;">
+                    [box type="warning"]<strong>Importante sobre su horario:</strong> 
+                    
+                    Si deseas agregar asignaturas, estas se inscribirán en un NRC con cupos disponibles. Esto podría requerir modificar tu horario actual.
+                    
+                    [/box]
                 </div>
 
                 <p>Si para llevar a cabo los ajustes que solicitas es necesario alterar tu solicitud original de
@@ -641,17 +696,23 @@ FRAGMENTO DE FORMULARIO - VERSIÓN PREMIUM (UCAB STYLE)
             <!-- [3] PASO 3-B: INFORMACIÓN (Ruta NRC) -->
             <div class="form-section">
                 <h3>Antes de iniciar...</h3>
-                <div style="display:grid; gap:15px;">
-                     <div style="background:#f0f9ff; padding:15px; border-radius:6px; border-left:4px solid var(--ucab-blue);">
-                         <strong>Límite de Créditos</strong>
-                         <p style="margin:5px 0 0 0; font-size:0.9rem;">Tu inscripción no puede superar los <strong>40 créditos</strong>. Solicitudes excedentes serán desestimadas.</p>
-                     </div>
-                     <div style="background:#fff5f5; padding:15px; border-radius:6px; border-left:4px solid #dc2626;">
-                        <strong>Eliminación Total</strong>
-                        <p style="margin:5px 0 0 0; font-size:0.9rem;">Si eliminas todas las asignaturas, pasarás a estatus "Inactivo" y deberás solicitar reincorporación futura.</p>
+                <div style="display:grid; gap:15px; margin-bottom: 20px;">
+                    <div style="margin-bottom: 10px;">
+                        [box type="info"]<strong>Límite de Créditos:</strong> 
+                        
+                        Tu inscripción no puede superar los 40 créditos. Solicitudes excedentes serán desestimadas.
+                        
+                        [/box]
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        [box type="alert"]<strong>Eliminación Total:</strong> 
+                        
+                        Si eliminas todas las asignaturas, pasarás a estatus "Inactivo" y deberás solicitar reincorporación futura.
+                        
+                        [/box]
                     </div>
                 </div>
-                <p style="margin-top:20px;">
+                <p id="msg-autorizacion-dinamico" style="margin-top:20px;">
                     Si no autorizaste cambios de horario explícitamente, intentaremos realizar el ajuste solicitado, pero si no es posible sin afectar otras materias, mantendremos tu inscripción original.
                 </p>
                 <div class="form-footer">
@@ -668,37 +729,39 @@ FRAGMENTO DE FORMULARIO - VERSIÓN PREMIUM (UCAB STYLE)
                 <div id="requests-container">
                     <!-- Fila inicial (siempre visible) -->
                     <div class="request-row" id="row-0">
-                        <div style="flex-grow:1; min-width:200px;">
-                            <label style="font-size:0.8rem; font-weight:600; color:#777; margin-bottom:4px; display:block;">Asignatura</label>
-                            <select class="req-select subject-select" name="asignatura[]">
-                                <option value="">Cargando asignaturas...</option>
-                            </select>
-                        </div>
-                        
-                        <div style="width:120px;">
-                            <label style="font-size:0.8rem; font-weight:600; color:#777; margin-bottom:4px; display:block;">Acción</label>
-                            <select class="req-select action-select" name="accion[]">
+                        <div style="width: 140px; flex-shrink: 0;">
+                            <label style="font-size:0.8rem; font-weight:600; color:#777; margin-bottom:6px; display:block;">1. Acción</label>
+                            <select class="req-select action-select" name="accion[]" onchange="updateNrcPlaceholder(this)">
                                 <option value="agregar">Agregar</option>
                                 <option value="eliminar">Eliminar</option>
                             </select>
                         </div>
-    
-                        <div style="width:120px;">
-                            <label style="font-size:0.8rem; font-weight:600; color:#777; margin-bottom:4px; display:block;">NRC (Opcional)</label>
+
+                        <div style="flex-grow:1; min-width:180px;">
+                            <label style="font-size:0.8rem; font-weight:600; color:#777; margin-bottom:6px; display:block;">2. Asignatura</label>
+                            <select class="req-select subject-select" name="asignatura[]">
+                                <option value="">Seleccionar Asignatura...</option>
+                            </select>
+                        </div>
+                        
+                        <div style="width: 150px; flex-shrink: 0;">
+                            <label class="nrc-label" style="font-size:0.8rem; font-weight:600; color:#777; margin-bottom:6px; display:block;">3. NRC sugerido</label>
                             <input type="text" class="search-input nrc-input" name="nrc_sugerido[]" 
                                    placeholder="Ej: 12345" maxlength="5" 
                                    oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 5)">
                         </div>
     
-                        <!-- Botón oculto para mantener alineación -->
-                        <div style="display:flex; align-items:flex-end; height:62px;">
-                             <button type="button" class="btn-action" style="visibility: hidden; pointer-events: none;">&times;</button>
-                        </div>
+                        <button type="button" class="btn-action" style="visibility: hidden; pointer-events: none;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                        </button>
                     </div>
                 </div>
     
-                <div style="margin-top: 15px;">
-                    <button type="button" class="btn-secondary" onclick="addRequestRow()" style="width:100%; border-style:dashed;">+ Añadir otra asignatura</button>
+                <div style="margin-top: 20px;">
+                    <button type="button" class="btn-add-row" onclick="addRequestRow()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        <span>Añadir otra asignatura</span>
+                    </button>
                 </div>
     
                 <!-- COMENTARIO FINAL (Step 4) -->
@@ -718,9 +781,12 @@ FRAGMENTO DE FORMULARIO - VERSIÓN PREMIUM (UCAB STYLE)
             <div class="form-section">
                 <h3>Observaciones Generales</h3>
                 
-                <div class="alert-box">
-                    <div class="alert-icon">ℹ️</div>
-                    <p style="margin:0; font-size:0.95rem;">Aquí puedes explicar situaciones especiales (ej: trabajo, viajes) que NO impliquen agregar/eliminar materias específicas. Para cambios de materias, usa la opción anterior.</p>
+                <div style="margin-bottom: 20px;">
+                    [box type="info"]<strong>IMPORTANTE:</strong> 
+                    
+                    Aquí puedes explicar situaciones especiales (ej: trabajo, viajes) que NO impliquen agregar/eliminar materias específicas. Para cambios de materias, usa la opción anterior.
+                    
+                    [/box]
                 </div>
 
                 <div style="margin-bottom: 20px;">
@@ -739,14 +805,14 @@ FRAGMENTO DE FORMULARIO - VERSIÓN PREMIUM (UCAB STYLE)
                 <h3>Confirmación de Solicitud</h3>
                 <div style="text-align:center; padding: 40px 20px;">
                     <div style="font-size: 4rem; margin-bottom: 20px;">📝</div>
-                    <h4 style="margin:0; color:var(--ucab-blue); font-size:1.5rem;">¡Estás a un paso!</h4>
+                    <h4 style="margin:0; color:var(--ucab-dark-gray); font-size:1.5rem;">¡Estás a un paso!</h4>
                     <p>Tus datos han sido validados. Por favor confirma el envío de tu solicitud.</p>
                     <p style="font-size:0.9rem; color:#888;">Se generará un ticket de atención que podrás consultar posteriormente.</p>
                 </div>
                 <div class="form-footer">
                     <button type="button" class="btn-secondary" onclick="goBackFromStepConfirmation()">&larr; Atrás</button>
                     <button type="button" onclick="submitForm()" style="background:var(--ucab-green, #1c7c54);">
-                        <span>Enviar Solicitud Definitiva</span>
+                        <span>Enviar Solicitud</span>
                     </button>
                 </div>
             </div>
@@ -1032,6 +1098,19 @@ FRAGMENTO DE FORMULARIO - VERSIÓN PREMIUM (UCAB STYLE)
         return html;
     }
 
+    function updateNrcPlaceholder(select) {
+        const row = select.closest('.request-row');
+        const nrcInput = row.querySelector('.nrc-input');
+        const nrcLabel = row.querySelector('.nrc-label');
+        if (select.value === 'eliminar') {
+            nrcLabel.textContent = '3. NRC a eliminar';
+            nrcInput.placeholder = 'Ej: 54321';
+        } else {
+            nrcLabel.textContent = '3. NRC sugerido';
+            nrcInput.placeholder = 'Ej: 12345';
+        }
+    }
+
     function updateSelectsOptions() {
         const selects = document.querySelectorAll('.subject-select');
         const optionsHTML = generateSubjectOptionsHTML();
@@ -1053,6 +1132,12 @@ FRAGMENTO DE FORMULARIO - VERSIÓN PREMIUM (UCAB STYLE)
         
         newRow.querySelector('.action-select').selectedIndex = 0;
         newRow.querySelector('.nrc-input').value = '';
+        
+        // Reset NRC Label/Placeholder for the new row
+        const nrcLabel = newRow.querySelector('.nrc-label');
+        if(nrcLabel) nrcLabel.textContent = '3. NRC sugerido';
+        const nrcInput = newRow.querySelector('.nrc-input');
+        if(nrcInput) nrcInput.placeholder = 'Ej: 12345';
 
         const btn = newRow.querySelector('.btn-action');
         if (btn) {
@@ -1101,6 +1186,19 @@ FRAGMENTO DE FORMULARIO - VERSIÓN PREMIUM (UCAB STYLE)
         }
 
         document.getElementById('step-indicator').textContent = `Paso ${visualStepCurrent} de ${visualStepTotal}`;
+
+        // Update dynamic message if moving to Step 3-B (index 3)
+        if(targetStepIndex === 3 && selectedRoute === 'nrc') {
+            const radioSi = document.querySelector('input[name="autorizacion_nrc"][value="si"]');
+            const msgEl = document.getElementById('msg-autorizacion-dinamico');
+            if(msgEl) {
+                if(radioSi && radioSi.checked) {
+                    msgEl.innerHTML = 'Como <strong>has autorizado</strong> cambios de horario, buscaremos las mejores opciones disponibles para procesar tu solicitud, incluso si esto implica ajustar tu inscripción actual.';
+                } else {
+                    msgEl.innerHTML = 'Como <strong>no has autorizado</strong> cambios de horario, intentaremos realizar el ajuste solicitado sin alterar tus materias actuales. Si existe algún conflicto, mantendremos tu inscripción original.';
+                }
+            }
+        }
 
         // Visibility handling
         sections[targetStepIndex].style.display = 'block';
