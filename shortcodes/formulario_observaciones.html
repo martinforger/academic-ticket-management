@@ -790,12 +790,16 @@
                 "
                 >2. Asignatura</label
               >
-              <select class="req-select subject-select" name="asignatura[]">
+              <select
+                class="req-select subject-select"
+                name="asignatura[]"
+                onchange="updateNrcOptionsForRow(this.closest('.request-row'))"
+              >
                 <option value="">Seleccionar Asignatura...</option>
               </select>
             </div>
 
-            <div style="width: 150px; flex-shrink: 0">
+            <div style="width: 180px; flex-shrink: 0">
               <label
                 class="nrc-label"
                 style="
@@ -807,16 +811,13 @@
                 "
                 >3. NRC sugerido</label
               >
-              <input
-                type="text"
-                class="search-input nrc-input"
+              <select
+                class="req-select nrc-select"
                 name="nrc_sugerido[]"
-                placeholder="Ej: 12345"
-                maxlength="5"
-                oninput="
-                  this.value = this.value.replace(/[^0-9]/g, '').substring(0, 5)
-                "
-              />
+                disabled
+              >
+                <option value="">Seleccione NRC...</option>
+              </select>
             </div>
 
             <button
@@ -992,6 +993,7 @@
   let selectedRoute = null;
   let allSubjects = [];
   let projectedSubjectIds = [];
+  let sectionsBySubject = {};
   let currentLogicalStep = 0;
 
   // Etiquetas
@@ -1095,6 +1097,26 @@
     } catch (err) {
       console.error("Puntaje proyección no disponible", err);
       projectedSubjectIds = [];
+    }
+  }
+
+  async function fetchSectionsForSubject(subjectId) {
+    if (!sbClient || !subjectId) return [];
+    if (sectionsBySubject[subjectId]) return sectionsBySubject[subjectId];
+    try {
+      const { data, error } = await sbClient.rpc("get_sections_for_subject", {
+        p_mat_id: subjectId,
+      });
+      if (error) throw error;
+      const nrcs = (data || [])
+        .map((row) => (row.sec_nrc ? String(row.sec_nrc) : null))
+        .filter(Boolean);
+      sectionsBySubject[subjectId] = nrcs;
+      return nrcs;
+    } catch (err) {
+      console.error("Error cargando secciones:", err);
+      sectionsBySubject[subjectId] = [];
+      return [];
     }
   }
 
@@ -1209,14 +1231,48 @@
 
   function updateNrcPlaceholder(select) {
     const row = select.closest(".request-row");
-    const nrcInput = row.querySelector(".nrc-input");
     const nrcLabel = row.querySelector(".nrc-label");
     if (select.value === "eliminar") {
       nrcLabel.textContent = "3. NRC a eliminar";
-      nrcInput.placeholder = "Ej: 54321";
     } else {
       nrcLabel.textContent = "3. NRC sugerido";
-      nrcInput.placeholder = "Ej: 12345";
+    }
+  }
+
+  async function updateNrcOptionsForRow(row) {
+    const subjectSelect = row.querySelector(".subject-select");
+    const nrcSelect = row.querySelector(".nrc-select");
+    if (!subjectSelect || !nrcSelect) return;
+
+    const subjectId = subjectSelect.value ? parseInt(subjectSelect.value) : null;
+    if (!subjectId) {
+      nrcSelect.innerHTML = '<option value="">Seleccione NRC...</option>';
+      nrcSelect.disabled = true;
+      return;
+    }
+
+    nrcSelect.innerHTML = '<option value="">Cargando NRC...</option>';
+    nrcSelect.disabled = true;
+
+    const nrcs = await fetchSectionsForSubject(subjectId);
+    const currentValue = nrcSelect.value;
+
+    nrcSelect.innerHTML = '<option value="">Seleccione NRC...</option>';
+    if (nrcs.length === 0) {
+      nrcSelect.innerHTML = '<option value="">Sin NRC disponibles</option>';
+      nrcSelect.disabled = true;
+      return;
+    }
+
+    nrcs.forEach((nrc) => {
+      const option = document.createElement("option");
+      option.value = nrc;
+      option.textContent = nrc;
+      nrcSelect.appendChild(option);
+    });
+    nrcSelect.disabled = false;
+    if (currentValue && nrcs.includes(currentValue)) {
+      nrcSelect.value = currentValue;
     }
   }
 
@@ -1227,6 +1283,7 @@
       const currentVal = sel.value;
       sel.innerHTML = optionsHTML;
       sel.value = currentVal;
+      updateNrcOptionsForRow(sel.closest(".request-row"));
     });
   }
 
@@ -1240,16 +1297,21 @@
     if (select) {
       select.innerHTML = generateSubjectOptionsHTML();
       select.selectedIndex = 0;
+      select.onchange = function () {
+        updateNrcOptionsForRow(newRow);
+      };
     }
 
     newRow.querySelector(".action-select").selectedIndex = 0;
-    newRow.querySelector(".nrc-input").value = "";
 
     // Reset NRC Label/Placeholder for the new row
     const nrcLabel = newRow.querySelector(".nrc-label");
     if (nrcLabel) nrcLabel.textContent = "3. NRC sugerido";
-    const nrcInput = newRow.querySelector(".nrc-input");
-    if (nrcInput) nrcInput.placeholder = "Ej: 12345";
+    const nrcSelect = newRow.querySelector(".nrc-select");
+    if (nrcSelect) {
+      nrcSelect.innerHTML = '<option value="">Seleccione NRC...</option>';
+      nrcSelect.disabled = true;
+    }
 
     const btn = newRow.querySelector(".btn-action");
     if (btn) {
@@ -1386,7 +1448,7 @@
       const rows = document.querySelectorAll(".request-row");
       rows.forEach((row) => {
         const selSub = row.querySelector(".subject-select");
-        const inputNrc = row.querySelector(".nrc-input");
+        const inputNrc = row.querySelector(".nrc-select");
         const selAct = row.querySelector(".action-select");
 
         if (selSub && selSub.value) {

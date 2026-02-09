@@ -20,14 +20,35 @@ interface StudentRow {
   attempts: number;
 }
 
+interface ScheduleRow {
+  LUNES?: string;
+  MARTES?: string;
+  MIERCOLES?: string;
+  JUEVES?: string;
+  VIERNES?: string;
+  SABADO?: string;
+  DOMINGO?: string;
+  SSBSECT_CRN?: string | number;
+  SSBSECT_SUBJ_CODE?: string;
+  SSBSECT_CRSE_NUMB?: string | number;
+  PROFESOR?: string;
+  SECCION?: string | number;
+  INSCRITOS?: string | number;
+  CUPO?: string | number;
+}
+
+type UploadType = 'proyecciones' | 'horarios';
+
 export function UploadProjections() {
   const { profile } = useAuth();
   const [semester, setSemester] = useState('');
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState('');
+  const [uploadType, setUploadType] = useState<UploadType>('proyecciones');
 
   // New State
   const [previewData, setPreviewData] = useState<StudentRow[]>([]);
+  const [schedulePreview, setSchedulePreview] = useState<ScheduleRow[]>([]);
   const [modal, setModal] = useState<{ isOpen: boolean; type: 'success' | 'error'; title: string; message: string }>({
     isOpen: false,
     type: 'success',
@@ -36,6 +57,11 @@ export function UploadProjections() {
   });
 
   const closeModal = () => setModal(prev => ({ ...prev, isOpen: false }));
+  const resetPreview = () => {
+    setPreviewData([]);
+    setSchedulePreview([]);
+    setProgress('');
+  };
 
   if (profile?.role !== 'administrador') {
     return (
@@ -49,7 +75,7 @@ export function UploadProjections() {
     );
   }
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProjectionsFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -117,64 +143,174 @@ export function UploadProjections() {
     reader.readAsBinaryString(file);
   };
 
-  const handleProcessUpload = async () => {
-    if (previewData.length === 0) return;
+  const handleScheduleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
     setLoading(true);
-    setProgress(`Iniciando carga de ${previewData.length} registros...`);
+    setProgress('Leyendo archivo...');
+    setSchedulePreview([]);
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const content = evt.target?.result;
+        const csvText = typeof content === 'string' ? content : '';
+
+        if (!csvText) {
+          throw new Error('No se pudo leer el contenido del archivo CSV.');
+        }
+
+        const wb = XLSX.read(csvText, { type: 'string', FS: ';' });
+        const firstSheetName = wb.SheetNames[0];
+        if (!firstSheetName) {
+          throw new Error('El archivo CSV no contiene hojas válidas.');
+        }
+
+        const ws = wb.Sheets[firstSheetName];
+        const data = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: '' });
+
+        if (data.length === 0) {
+          throw new Error('El archivo CSV está vacío.');
+        }
+
+        const cleanedData = data.map((row) => {
+          const trimmedEntries = Object.entries(row).map(([key, value]) => [key.trim(), value]);
+          return Object.fromEntries(trimmedEntries);
+        });
+
+        const requiredColumns = [
+          'LUNES',
+          'MARTES',
+          'MIERCOLES',
+          'JUEVES',
+          'VIERNES',
+          'SABADO',
+          'DOMINGO',
+          'SSBSECT_CRN',
+          'SSBSECT_SUBJ_CODE',
+          'SSBSECT_CRSE_NUMB',
+          'PROFESOR',
+          'SECCION',
+          'INSCRITOS',
+          'CUPO'
+        ];
+        const missingColumns = requiredColumns.filter((column) => !(column in cleanedData[0]));
+        if (missingColumns.length > 0) {
+          throw new Error(`Faltan columnas requeridas: ${missingColumns.join(', ')}`);
+        }
+
+        setSchedulePreview(cleanedData as ScheduleRow[]);
+        setProgress('');
+      } catch (err: any) {
+        console.error(err);
+        setModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Error de Lectura',
+          message: err.message || 'Error al procesar el archivo CSV.'
+        });
+        e.target.value = '';
+      } finally {
+        setLoading(false);
+      }
+    };
+    reader.readAsText(file, 'utf-8');
+  };
+
+  const handleProcessUpload = async () => {
+    if (uploadType === 'proyecciones') {
+      if (previewData.length === 0) return;
+
+      setLoading(true);
+      setProgress(`Iniciando carga de ${previewData.length} registros...`);
+
+      try {
+        // Note: sending all data in one transaction to ensure atomicity with the specific SP logic
+        // which deletes previous data.
+
+        // Note: The stored procedure handles deletion of old data on the first call?
+        // Actually, if we batch, we only want to delete ONCE.
+        // Limitation: The current SP deletes on EVERY call if we don't handle it.
+        // FIX: We should probably change the SP to logic, OR we send chunks.
+        // Since the User requested "Vaciar antes de insertar", we must be careful.
+        // Strategy: Send data in chunks. 
+        // The SP deletes `proyeccion` by semester and ALL strings. 
+        // If we call it 10 times for 10 batches, it will delete existing data 10 times.
+        // This means Batch 2 will delete Batch 1's work!
+        //
+        // CRITICAL FIX: The SP needs a mode, or we must use a single large payload if possible, 
+        // OR we modify the SP to 'upsert' only and have a separate 'clean' function.
+        //
+        // Given constraints and previous instructions:
+        // I will assume for now we must send ALL data in one go if possible, OR
+        // I need to split the "Clean" operation from the "Insert" operation.
+        //
+        // Refined Plan (executed here in code):
+        // 1. Call a new 'clean' function or pass a flag?
+        // Since I cannot change SP easily in this file content without context switch, 
+        // I will assume the SP `upload_proyecciones` currently WIPES data.
+        // So I CANNOT batch calls unless I change the SP to not wipe every time.
+        //
+        // Wait, passing 5000 rows in JSON might be heavy but doable for Supabase/Postgres.
+        // Let's try sending ALL. usage of chunks often implies limits.
+        // If the file is huge (20k rows), one request might timeout.
+        //
+        // Alternative: Modify SP to take a 'clear_first' boolean.
+        // Since I just defined the SP, I know it unconditionally deletes.
+        // I SHOULD FIX THE SP FIRST if I want batching.
+        // BUT, for now, let's try to send it all in one chunk if it's reasonable size (< 5MB json).
+        // If 500 rows, it's fine. If 10,000 rows, it might be 2-3MB. perfectly fine for one request.
+
+        const { error: rpcError } = await supabase.rpc('upload_proyecciones', {
+          p_semestre: semester,
+          p_data: previewData
+        });
+
+        if (rpcError) throw rpcError;
+
+        setPreviewData([]); // Clear preview
+        setModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Carga Completada',
+          message: `Se han procesado record ${previewData.length} registros exitosamente.`
+        });
+
+      } catch (err: any) {
+        console.error(err);
+        setModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Error de Carga',
+          message: err.message || 'Ocurrió un error al insertar los datos en la base de datos.'
+        });
+      } finally {
+        setLoading(false);
+        setProgress('');
+      }
+      return;
+    }
+
+    if (schedulePreview.length === 0) return;
+
+    setLoading(true);
+    setProgress(`Iniciando carga de ${schedulePreview.length} registros...`);
 
     try {
-      // Note: sending all data in one transaction to ensure atomicity with the specific SP logic
-      // which deletes previous data.
-
-      // Note: The stored procedure handles deletion of old data on the first call?
-      // Actually, if we batch, we only want to delete ONCE.
-      // Limitation: The current SP deletes on EVERY call if we don't handle it.
-      // FIX: We should probably change the SP to logic, OR we send chunks.
-      // Since the User requested "Vaciar antes de insertar", we must be careful.
-      // Strategy: Send data in chunks. 
-      // The SP deletes `proyeccion` by semester and ALL strings. 
-      // If we call it 10 times for 10 batches, it will delete existing data 10 times.
-      // This means Batch 2 will delete Batch 1's work!
-      //
-      // CRITICAL FIX: The SP needs a mode, or we must use a single large payload if possible, 
-      // OR we modify the SP to 'upsert' only and have a separate 'clean' function.
-      //
-      // Given constraints and previous instructions:
-      // I will assume for now we must send ALL data in one go if possible, OR
-      // I need to split the "Clean" operation from the "Insert" operation.
-      //
-      // Refined Plan (executed here in code):
-      // 1. Call a new 'clean' function or pass a flag?
-      // Since I cannot change SP easily in this file content without context switch, 
-      // I will assume the SP `upload_proyecciones` currently WIPES data.
-      // So I CANNOT batch calls unless I change the SP to not wipe every time.
-      //
-      // Wait, passing 5000 rows in JSON might be heavy but doable for Supabase/Postgres.
-      // Let's try sending ALL. usage of chunks often implies limits.
-      // If the file is huge (20k rows), one request might timeout.
-      //
-      // Alternative: Modify SP to take a 'clear_first' boolean.
-      // Since I just defined the SP, I know it unconditionally deletes.
-      // I SHOULD FIX THE SP FIRST if I want batching.
-      // BUT, for now, let's try to send it all in one chunk if it's reasonable size (< 5MB json).
-      // If 500 rows, it's fine. If 10,000 rows, it might be 2-3MB. perfectly fine for one request.
-
-      const { error: rpcError } = await supabase.rpc('upload_proyecciones', {
-        p_semestre: semester,
-        p_data: previewData
+      const { error: rpcError } = await supabase.rpc('upload_horarios_programa', {
+        p_data: schedulePreview
       });
 
       if (rpcError) throw rpcError;
 
-      setPreviewData([]); // Clear preview
+      setSchedulePreview([]);
       setModal({
         isOpen: true,
         type: 'success',
         title: 'Carga Completada',
-        message: `Se han procesado record ${previewData.length} registros exitosamente.`
+        message: `Se han procesado ${schedulePreview.length} registros exitosamente.`
       });
-
     } catch (err: any) {
       console.error(err);
       setModal({
@@ -194,39 +330,100 @@ export function UploadProjections() {
       <header className="px-8 py-6 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
         <h1 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-3">
           <span className="material-symbols-outlined text-primary">upload_file</span>
-          Carga Masiva de Proyecciones
+          Carga Masiva de Datos
         </h1>
-        <p className="text-slate-500 dark:text-slate-400 mt-1">Sube archivos de Excel para actualizar proyecciones estudiantiles</p>
+        <p className="text-slate-500 dark:text-slate-400 mt-1">Sube archivos para actualizar proyecciones y horarios por programa</p>
       </header>
 
       <main className="flex-1 p-8">
         <div className="max-w-2xl mx-auto bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-8">
 
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-4 text-center">
-              Código de Semestre
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
+              Tipo de carga
             </label>
-            <SemesterInput
-              value={semester}
-              onChange={setSemester}
-              disabled={loading || previewData.length > 0}
-            />
-            <p className="text-xs text-slate-500 mt-4 text-center">El código debe coincidir con el nombre de la hoja en el Excel.</p>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setUploadType('proyecciones');
+                  resetPreview();
+                }}
+                disabled={loading}
+                className={`px-4 py-3 rounded-lg border text-sm font-semibold transition-colors ${uploadType === 'proyecciones'
+                  ? 'border-primary/40 bg-primary/10 text-primary'
+                  : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                  }`}
+              >
+                Proyecciones
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setUploadType('horarios');
+                  resetPreview();
+                }}
+                disabled={loading}
+                className={`px-4 py-3 rounded-lg border text-sm font-semibold transition-colors ${uploadType === 'horarios'
+                  ? 'border-primary/40 bg-primary/10 text-primary'
+                  : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                  }`}
+              >
+                Horarios por programa
+              </button>
+            </div>
           </div>
 
-          {!previewData.length ? (
+          {uploadType === 'proyecciones' && (
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-4 text-center">
+                Código de Semestre
+              </label>
+              <SemesterInput
+                value={semester}
+                onChange={setSemester}
+                disabled={loading || previewData.length > 0}
+              />
+              <p className="text-xs text-slate-500 mt-4 text-center">El código debe coincidir con el nombre de la hoja en el Excel.</p>
+            </div>
+          )}
+
+          {((uploadType === 'proyecciones' && !previewData.length) || (uploadType === 'horarios' && !schedulePreview.length)) ? (
             <div className="mb-8">
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                Archivo Excel (.xlsx)
+                {uploadType === 'proyecciones' ? 'Archivo Excel (.xlsx)' : 'Archivo CSV (.csv)'}
               </label>
               <div className="flex items-center justify-center w-full">
                 <label className={`flex flex-col items-center justify-center w-full h-64 border-2 border-slate-300 dark:border-slate-600 border-dashed rounded-lg cursor-pointer bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}>
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <span className="material-symbols-outlined text-4xl text-slate-400 mb-2">cloud_upload</span>
                     <p className="mb-2 text-sm text-slate-500 dark:text-slate-400"><span className="font-semibold">Click para subir</span> o arrastrar y soltar</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">XLSX (Hoja: Poblaciones ({semester || 'CODIGO'}))</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {uploadType === 'proyecciones'
+                        ? `XLSX (Hoja: Poblaciones (${semester || 'CODIGO'}))`
+                        : 'CSV (Reporte de horarios por programa)'
+                      }
+                    </p>
                   </div>
-                  <input id="dropzone-file" type="file" className="hidden" accept=".xlsx" onChange={handleFileSelect} disabled={loading || !semester} />
+                  {uploadType === 'proyecciones' ? (
+                    <input
+                      id="dropzone-file"
+                      type="file"
+                      className="hidden"
+                      accept=".xlsx"
+                      onChange={handleProjectionsFileSelect}
+                      disabled={loading || !semester}
+                    />
+                  ) : (
+                    <input
+                      id="dropzone-file"
+                      type="file"
+                      className="hidden"
+                      accept=".csv"
+                      onChange={handleScheduleFileSelect}
+                      disabled={loading}
+                    />
+                  )}
                 </label>
               </div>
             </div>
@@ -238,12 +435,12 @@ export function UploadProjections() {
                 </div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">Archivo listo para procesar</h3>
                 <p className="text-slate-500 dark:text-slate-400 mb-6">
-                  Se han encontrado <strong className="text-slate-900 dark:text-white">{previewData.length}</strong> registros para el semestre {semester}.
+                  Se han encontrado <strong className="text-slate-900 dark:text-white">{uploadType === 'proyecciones' ? previewData.length : schedulePreview.length}</strong> registros {uploadType === 'proyecciones' ? `para el semestre ${semester}` : 'en el reporte de horarios'}.
                 </p>
 
                 <div className="flex gap-3 justify-center">
                   <button
-                    onClick={() => { setPreviewData([]); setProgress(''); }}
+                    onClick={resetPreview}
                     className="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium"
                     disabled={loading}
                   >
@@ -262,7 +459,7 @@ export function UploadProjections() {
                     ) : (
                       <>
                         <span className="material-symbols-outlined">send</span>
-                        Procesar Datos
+                        {uploadType === 'proyecciones' ? 'Procesar Datos' : 'Procesar Horarios'}
                       </>
                     )}
                   </button>
@@ -271,7 +468,7 @@ export function UploadProjections() {
             </div>
           )}
 
-          {loading && !previewData.length && (
+          {loading && !previewData.length && !schedulePreview.length && (
             <div className="mb-6">
               <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400 mb-2">
                 <span>Estado</span>
