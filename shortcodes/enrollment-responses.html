@@ -1,0 +1,646 @@
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+  .enr-resp-container {
+    --ucab-blue: #0071bb;
+    --ucab-dark-blue: #005696;
+    --ucab-yellow: #f1b417;
+    --ucab-dark-gray: #343434;
+    --ucab-gray-text: #555555;
+    --ucab-bg: #ffffff;
+    --ucab-light-bg: #f9fbfd;
+    --ucab-green: #1c7c54;
+    --ucab-red: #dc2626;
+    --border-radius: 6px;
+    --transition-speed: 0.3s;
+  }
+
+  .enr-resp-container {
+    width: 100%;
+    max-width: 850px;
+    margin: 20px auto;
+    color: #333;
+    font-size: 16px;
+    line-height: 1.5;
+    text-align: left;
+    box-sizing: border-box;
+  }
+
+  .enr-resp-container * {
+    box-sizing: border-box !important;
+  }
+
+  .enr-resp-container .enr-resp-panel {
+    background: var(--ucab-bg) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 24px 28px !important;
+    box-shadow: none !important;
+  }
+
+  .enr-resp-container .enr-resp-form {
+    margin: 0 !important;
+  }
+
+  .enr-resp-container .enr-resp-header {
+    margin-bottom: 16px !important;
+  }
+
+  .enr-resp-container .enr-resp-title {
+    margin: 0 0 6px 0 !important;
+    color: var(--ucab-dark-gray) !important;
+    font-weight: 700 !important;
+    font-size: 1.35rem !important;
+    line-height: 1.3 !important;
+  }
+
+  .enr-resp-container .enr-resp-subtitle {
+    margin: 0 !important;
+    color: var(--ucab-gray-text) !important;
+    font-size: 1rem !important;
+  }
+
+  .enr-resp-container .enr-resp-search-row {
+    display: flex !important;
+    gap: 12px !important;
+    align-items: center !important;
+  }
+
+  .enr-resp-container .enr-resp-search-row > input {
+    flex: 1 !important;
+  }
+
+  .enr-resp-container .enr-resp-input {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 10px 14px !important;
+    border: 2px solid #c5c4c4 !important;
+    border-radius: 4px !important;
+    font-family: inherit !important;
+    font-size: 1rem !important;
+    line-height: normal !important;
+    transition: all var(--transition-speed);
+    background-color: #eeeeee !important;
+    margin: 0 !important;
+    color: #333333 !important;
+    box-shadow: none !important;
+    height: 48px !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+  }
+
+  .enr-resp-container .enr-resp-input::placeholder {
+    color: #999999 !important;
+  }
+
+  .enr-resp-container .enr-resp-input:focus {
+    border-color: var(--ucab-blue) !important;
+    outline: none !important;
+    background-color: #ffffff !important;
+    color: #333 !important;
+  }
+
+  .enr-resp-container .enr-resp-button {
+    cursor: pointer !important;
+    padding: 10px 24px !important;
+    border-radius: 3px !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    transition: all var(--transition-speed);
+    border: 2px solid var(--ucab-blue) !important;
+    background-color: #ffffff !important;
+    color: var(--ucab-blue) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    line-height: 1.64em !important;
+    text-transform: none !important;
+    text-decoration: none !important;
+    height: 48px !important;
+    min-width: 120px !important;
+  }
+
+  .enr-resp-container .enr-resp-button:hover:not(:disabled) {
+    background-color: var(--ucab-blue) !important;
+    color: #ffffff !important;
+    border-color: var(--ucab-blue) !important;
+    box-shadow: none !important;
+  }
+
+  .enr-resp-container .enr-resp-button:disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+  }
+
+  .enr-resp-container .enr-resp-alert {
+    margin-top: 14px !important;
+    padding: 12px 14px !important;
+    border-radius: 6px !important;
+    border: 1px solid transparent !important;
+    display: block;
+    line-height: 1.4 !important;
+    animation: enrShake 0.4s ease;
+  }
+
+  .enr-resp-container .enr-resp-alert--error {
+    background-color: #fef2f2 !important;
+    border-color: #fecaca !important;
+    color: #b91c1c !important;
+  }
+
+  .enr-resp-container .enr-resp-alert--info {
+    background-color: #f0f7ff !important;
+    border-color: #cfe3ff !important;
+    color: #1f4b7a !important;
+  }
+
+  .enr-resp-container .enr-resp-alert-icon {
+    display: inline-block !important;
+    font-size: 1.1rem !important;
+    line-height: 1 !important;
+    margin-right: 8px !important;
+    vertical-align: text-top !important;
+  }
+
+  .enr-resp-container .enr-resp-alert-text {
+    display: inline !important;
+  }
+
+  .enr-resp-container .enr-resp-loader {
+    display: block;
+    margin: 16px auto 0;
+    width: 48px;
+    height: 48px;
+  }
+
+  .enr-resp-container .enr-resp-results {
+    margin-top: 20px !important;
+    display: grid !important;
+    gap: 16px !important;
+  }
+
+  .enr-resp-container .enr-resp-card {
+    background: var(--ucab-bg) !important;
+    border: 1px solid #e1e4e8 !important;
+    border-radius: 6px !important;
+    padding: 16px 20px !important;
+    box-shadow: none !important;
+    animation: enrFadeIn 0.35s ease;
+  }
+
+  .enr-resp-container .enr-resp-card--student {
+    background: #f8fbff !important;
+    border-left: 4px solid var(--ucab-yellow) !important;
+  }
+
+  .enr-resp-container .enr-resp-card--response {
+    background: #ffffff !important;
+    border-left: 4px solid var(--ucab-blue) !important;
+    border: 3px solid #e1e4e8 !important;
+  }
+
+  .enr-resp-container .enr-resp-card--legend {
+    background: var(--ucab-light-bg) !important;
+  }
+
+  .enr-resp-container .enr-resp-card-header {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .enr-resp-container .enr-resp-card-header--row {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+  }
+
+  .enr-resp-container .enr-resp-card-title {
+    font-weight: 700 !important;
+    color: var(--ucab-dark-gray) !important;
+    font-size: 1.05rem !important;
+  }
+
+  .enr-resp-container .enr-resp-card-meta {
+    font-size: 0.9rem !important;
+    color: #666 !important;
+  }
+
+  .enr-resp-container .enr-resp-card-label {
+    font-size: 0.8rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    color: #666 !important;
+    margin-bottom: 6px !important;
+  }
+
+  .enr-resp-container .enr-resp-card-body {
+    color: #333 !important;
+  }
+
+  .enr-resp-container .enr-resp-card-body em {
+    color: #666 !important;
+  }
+
+  .enr-resp-container .enr-resp-consent {
+    margin-top: 12px !important;
+    padding-top: 12px !important;
+    border-top: 1px solid #f1e6c5 !important;
+    font-size: 0.9rem !important;
+    font-style: italic !important;
+    color: #555 !important;
+  }
+
+  .enr-resp-container .enr-resp-status {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 4px 10px !important;
+    border-radius: 999px !important;
+    border: 1px solid #e5e7eb !important;
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    color: #374151 !important;
+    background: #f3f4f6 !important;
+    white-space: nowrap !important;
+  }
+
+  .enr-resp-container .enr-resp-status--success {
+    background: #ecfdf3 !important;
+    border-color: #bbf7d0 !important;
+    color: #166534 !important;
+  }
+
+  .enr-resp-container .enr-resp-status--danger {
+    background: #fef2f2 !important;
+    border-color: #fecaca !important;
+    color: #b91c1c !important;
+  }
+
+  .enr-resp-container .enr-resp-status--pending {
+    background: #fff7ed !important;
+    border-color: #fed7aa !important;
+    color: #9a3412 !important;
+  }
+
+  .enr-resp-container .enr-resp-field {
+    margin-top: 12px !important;
+  }
+
+  .enr-resp-container .enr-resp-field:first-child {
+    margin-top: 0 !important;
+  }
+
+  .enr-resp-container .enr-resp-field-label {
+    font-size: 0.8rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    color: #666 !important;
+    margin-bottom: 6px !important;
+  }
+
+  .enr-resp-container .enr-resp-field-value {
+    color: #333 !important;
+  }
+
+  .enr-resp-container .enr-resp-legend-list {
+    list-style: none !important;
+    margin: 10px 0 0 0 !important;
+    padding: 0 !important;
+    display: grid !important;
+    gap: 8px !important;
+  }
+
+  .enr-resp-container .enr-resp-legend-list li {
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    color: #444 !important;
+  }
+
+  .enr-resp-container .enr-resp-legend-icon {
+    width: 20px !important;
+    text-align: center !important;
+  }
+
+  @keyframes enrFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes enrShake {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    25% {
+      transform: translateX(-4px);
+    }
+    75% {
+      transform: translateX(4px);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .enr-resp-container {
+      margin: 10px auto;
+    }
+
+    .enr-resp-container .enr-resp-panel {
+      padding: 20px !important;
+    }
+
+    .enr-resp-container .enr-resp-search-row {
+      flex-direction: column !important;
+      align-items: stretch !important;
+    }
+
+    .enr-resp-container .enr-resp-button {
+      width: 100% !important;
+    }
+  }
+</style>
+
+<div class="enr-resp-container">
+  <div class="enr-resp-panel">
+    <form id="enr-resp-frm" class="enr-resp-form">
+      <div class="enr-resp-header">
+        <h3 class="enr-resp-title">Consulta de respuestas</h3>
+        <p class="enr-resp-subtitle">
+          Introduce tu número de cédula para ver el estado de tus solicitudes.
+        </p>
+      </div>
+      <div class="enr-resp-search-row">
+        <input
+          id="enr-resp-frm-ssn"
+          class="enr-resp-input"
+          name="ssn"
+          type="text"
+          placeholder="Introduce tu número de cédula de identidad"
+        />
+        <button
+          id="enr-resp-frm-submit-btn"
+          type="submit"
+          class="enr-resp-button et_pb_button"
+        >
+          Buscar
+        </button>
+      </div>
+      <div
+        id="enr-resp-frm-error-message"
+        class="enr-resp-alert enr-resp-alert--error"
+        style="display: none"
+      ></div>
+    </form>
+  </div>
+  <img
+    id="enr-resp-loader"
+    class="enr-resp-loader"
+    src="https://ingenieria.ucab.edu.ve/informatica/wp-content/uploads/sites/4/2019/07/popup_loading.gif"
+    style="display: none"
+  />
+  <div id="enr-resp-result" class="enr-resp-results"></div>
+</div>
+<script>
+  ((jQuery) => {
+    const SUPABASE_URL = "https://zmvecicbbxbpuhbnexiz.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_tLbqOISGtoE-_0lEsqxuXQ_YYRaT59G";
+    let sbClient = null;
+
+    const invalidSsn =
+      "Debes introducir un número de cédula de identidad válido.";
+    const notFound =
+      "No se encontró ninguna información asociada a la cédula de identidad N° <strong>@SSN@</strong>.";
+    const generalError =
+      "Hubo un error inesperado al intentar obtener la información. Intenta más tarde&hellip;";
+    const consent =
+      "Autorizo a cambiar mi horario para poder inscribir las asignaturas indicadas.";
+    const noConsent = "No autorizo a realizar ningún cambio en mi horario.";
+
+    function initSupabase() {
+      if (sbClient) return sbClient;
+      if (window.supabase && window.supabase.createClient) {
+        sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      } else if (typeof createClient !== "undefined") {
+        sbClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+      }
+      return sbClient;
+    }
+
+    jQuery(() => {
+      const $frm = jQuery("#enr-resp-frm");
+      const $ssn = jQuery("#enr-resp-frm-ssn");
+      const $resultsContainer = jQuery("#enr-resp-result");
+      const $errMsg = jQuery("#enr-resp-frm-error-message");
+      const $loader = jQuery("#enr-resp-loader");
+      const SPEED = 250;
+
+      let ssn = null;
+      $frm.on(
+        "click",
+        "#enr-resp-frm-submit-btn",
+        handleEnrollmentRespSsnSearchButtonClick,
+      );
+
+      function validateSsn(ssn) {
+        const matched = ssn.trim().match(/^(?:AS){0,1}(\d+)$/i);
+        return matched !== null;
+      }
+
+      function handleEnrollmentRespSsnSearchButtonClick(evt) {
+        evt.preventDefault();
+
+        if (ssn !== $ssn.val()) {
+          ssn = $ssn.val();
+
+          if (ssn) {
+            if (!validateSsn(ssn)) {
+              hideLoader(invalidSsn);
+            } else {
+              showLoader();
+              fetchData(ssn);
+            }
+          } else {
+            hideLoader(invalidSsn);
+          }
+        }
+      }
+
+      function hideLoader(msg) {
+        if (msg) {
+          $loader.fadeOut(SPEED, () => {
+            $resultsContainer.fadeOut(SPEED, () => {
+              $errMsg
+                .html(
+                  `<span class="enr-resp-alert-icon" aria-hidden="true">⚠️</span><span class="enr-resp-alert-text">${msg}</span>`,
+                )
+                .fadeIn();
+            });
+          });
+        } else {
+          $loader.fadeOut(SPEED, () => $resultsContainer.fadeIn());
+        }
+      }
+
+      function showLoader() {
+        $resultsContainer.fadeOut(SPEED, () => {
+          $errMsg.fadeOut(SPEED, () => $loader.fadeIn());
+        });
+      }
+
+      async function fetchData(ssn) {
+        try {
+          const client = initSupabase();
+          if (!client) {
+            hideLoader(generalError);
+            return;
+          }
+
+          const { data, error } = await client.rpc("get_enrollment_responses", {
+            p_cedula: ssn,
+          });
+
+          if (error) throw error;
+
+          $resultsContainer.empty();
+          hideLoader();
+
+          renderMessages(data || []);
+        } catch (err) {
+          console.error(err);
+          hideLoader(generalError);
+        }
+      }
+
+      function renderMessages(data) {
+        if (data && data.length > 0) {
+          const filteredRows = data.filter(
+            (row) => row.status !== "IGNORADO" && row.status !== "REPETIDO",
+          );
+
+          filteredRows.forEach((row) => {
+            const submittedAt = new Date(row.submitted_at).toLocaleString(
+              "es-VE",
+              {
+                dateStyle: "full",
+                timeStyle: "short",
+              },
+            );
+
+            let statusEmoji = "⏳";
+            let statusClass = "enr-resp-status--pending";
+            let statusText = "En proceso";
+
+            if (row.status === "EN REVISIÓN" || row.status === "POR REVISAR") {
+              statusEmoji = "⏳";
+              statusClass = "enr-resp-status--pending";
+              statusText = "En proceso";
+            } else if (
+              row.status === "IGNORADO" ||
+              row.status === "NO PROCEDE" ||
+              row.status === "REPETIDO" ||
+              row.status === "REVISADO" ||
+              row.status === "SOLUCIONADO"
+            ) {
+              statusEmoji = "✔️";
+              statusClass = "enr-resp-status--success";
+              statusText = "Procesada";
+            }
+
+            const responseText = row.respuesta
+              ? row.respuesta.replace(/\n/g, "<br/>")
+              : row.status === "SOLUCIONADO" || row.status === "NO PROCEDE"
+                ? ""
+                : "Actualmente nos encontramos procesando tu solicitud. Estaremos dándote respuesta a la brevedad.";
+
+            const $card = jQuery("<div>").addClass(
+              "enr-resp-card enr-resp-card--response",
+            );
+            const $header = jQuery("<div>").addClass(
+              "enr-resp-card-header enr-resp-card-header--row",
+            );
+            const $title = jQuery("<div>")
+              .addClass("enr-resp-card-title")
+              .text(`${row.student_name} - ${row.student_cedula}`);
+            const $status = jQuery("<div>")
+              .addClass(`enr-resp-status ${statusClass}`)
+              .html(`${statusEmoji} ${statusText}`);
+            const $meta = jQuery("<div>")
+              .addClass("enr-resp-card-meta")
+              .text(submittedAt);
+
+            $header.append($title, $status, $meta);
+
+            const $requestField = jQuery("<div>").addClass("enr-resp-field");
+            const requestText = `${row.accion || ""} "${row.materia || ""}"${row.nrc ? ` (sugiero el NRC ${row.nrc})` : ""}`;
+            $requestField.append(
+              jQuery("<div>")
+                .addClass("enr-resp-field-label")
+                .text("Comentario de observacion"),
+              jQuery("<div>")
+                .addClass("enr-resp-field-value")
+                .html(
+                  row.comentarios
+                    ? row.comentarios.replace(/\n/g, "<br/>")
+                    : "<em>¡No dejé comentarios u observaciones!</em>",
+                ),
+            );
+
+            const $subjectField = jQuery("<div>").addClass("enr-resp-field");
+            const actionLabel = row.accion
+              ? row.accion.charAt(0).toUpperCase() + row.accion.slice(1)
+              : "Solicitud";
+            const subjectText = row.materia
+              ? `<strong>${actionLabel}</strong>: ${row.materia}`
+              : "<em>No aplica</em>";
+            const nrcText = row.nrc ? ` (NRC: ${row.nrc})` : "";
+            $subjectField.append(
+              jQuery("<div>").addClass("enr-resp-field-label").text("Materia"),
+              jQuery("<div>")
+                .addClass("enr-resp-field-value")
+                .html(`${subjectText}${nrcText}`),
+            );
+
+            const $responseField = jQuery("<div>").addClass("enr-resp-field");
+            $responseField.append(
+              jQuery("<div>")
+                .addClass("enr-resp-field-label")
+                .text("Respuesta"),
+              jQuery("<div>")
+                .addClass("enr-resp-field-value")
+                .html(responseText || "<em>Sin respuesta registrada.</em>"),
+            );
+
+            $card.append($header, $requestField, $subjectField, $responseField);
+
+            if (row.autoriza || row.accion || row.materia || row.nrc) {
+              const consentText = row.autoriza === "SÍ" ? consent : noConsent;
+              $card.append(
+                jQuery("<div>").addClass("enr-resp-consent").text(consentText),
+              );
+            }
+
+            $resultsContainer.append($card);
+          });
+        } else {
+          $resultsContainer.append(
+            `<div class="enr-resp-alert enr-resp-alert--error"><span class="enr-resp-alert-icon" aria-hidden="true">⚠️</span><span class="enr-resp-alert-text">${notFound.replace("@SSN@", ssn)}</span></div>`,
+          );
+        }
+      }
+    });
+  })(jQuery);
+</script>

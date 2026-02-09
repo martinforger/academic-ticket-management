@@ -1,1286 +1,1436 @@
-<!-- 
-FRAGMENTO DE FORMULARIO - VERSIÓN PREMIUM (UCAB STYLE)
--->
-<meta charset="UTF-8">
-<!-- Import Open Sans from Google Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link
+  href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap"
+  rel="stylesheet"
+/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-    /* Scope all variables to the container to avoid polluting :root */
+  /* Scope all variables to the container to avoid polluting :root */
+  .obs-form-container {
+    --ucab-blue: #0071bb;
+    --ucab-dark-blue: #005696;
+    --ucab-yellow: #f1b417;
+    --ucab-dark-gray: #343434;
+    --ucab-gray-text: #555555;
+    --ucab-bg: #ffffff;
+    --ucab-light-bg: #f9fbfd;
+    --ucab-green: #1c7c54;
+    --ucab-red: #dc2626;
+    --border-radius: 4px;
+    --transition-speed: 0.3s;
+  }
+
+  /* Base styles only for this container */
+  .obs-form-container {
+    font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    width: 100%;
+    max-width: 850px;
+    margin: 20px auto;
+    background: var(--ucab-bg);
+    border-radius: 8px;
+    box-shadow: none !important;
+    overflow: hidden;
+    border: none !important;
+    position: relative;
+    color: #333;
+    box-sizing: border-box;
+    text-align: left;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  /* Ensure all form elements use border-box */
+  .obs-form-container input,
+  .obs-form-container select,
+  .obs-form-container textarea,
+  .obs-form-container button {
+    box-sizing: border-box !important;
+  }
+
+  /* Slider Structure */
+  .obs-form-container .obs-form-viewport {
+    overflow: hidden;
+    width: 100%;
+    background: #fff !important;
+    height: auto;
+    transition: height 0.2s ease;
+  }
+
+  .obs-form-container .obs-form-slider {
+    display: flex;
+    width: 700%; /* 7 pasos */
+    transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+    margin: 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+  }
+
+  .obs-form-container .form-section {
+    width: 14.2857%; /* 100% / 7 */
+    padding: 30px 40px;
+    display: block;
+    background: transparent !important;
+  }
+
+  /* Typography scoped only to direct children of form sections to avoid affecting boxes or other nested components */
+  .obs-form-container .form-section > h3 {
+    color: var(--ucab-dark-gray);
+    font-weight: 700;
+    margin: 0 0 15px 0;
+    padding: 0 0 10px 0;
+    font-size: 1.4rem;
+    border-bottom: 2px solid #f0f0f0;
+    line-height: 1.3;
+    text-transform: none;
+    letter-spacing: normal;
+    text-align: left;
+    background: transparent;
+  }
+  .obs-form-container .form-section > p {
+    color: var(--ucab-gray-text);
+    line-height: 1.6;
+    margin: 0 0 15px 0;
+    padding: 0;
+    font-size: 1rem;
+  }
+  .obs-form-container .form-section strong {
+    color: inherit;
+    font-weight: 700;
+  }
+
+  /* Inputs & Controls scoped - UPDATED */
+  .obs-form-container .search-row {
+    display: flex !important;
+    gap: 12px !important;
+    align-items: center !important;
+    margin-bottom: 20px !important;
+  }
+
+  .obs-form-container .search-input,
+  .obs-form-container select,
+  .obs-form-container textarea {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 10px 14px !important;
+    border: 2px solid #c5c4c4 !important;
+    border-radius: 4px !important;
+    font-family: inherit !important;
+    font-size: 1rem !important;
+    line-height: normal !important;
+    transition: all var(--transition-speed);
+    background-color: #eeeeee !important;
+    margin: 0 !important;
+    color: #333333 !important;
+    box-shadow: none !important;
+    height: 48px !important;
+    -webkit-appearance: auto !important; /* Re-enable for better cross-browser arrow */
+    appearance: auto !important;
+  }
+
+  .obs-form-container .search-input::placeholder,
+  .obs-form-container select::placeholder,
+  .obs-form-container textarea::placeholder {
+    color: #999999 !important;
+  }
+
+  .obs-form-container .search-row > input {
+    flex: 1 !important;
+  }
+
+  .obs-form-container textarea {
+    height: auto !important;
+    min-height: 120px !important;
+  }
+
+  .obs-form-container .search-input:focus,
+  .obs-form-container select:focus,
+  .obs-form-container textarea:focus {
+    border-color: var(--ucab-blue) !important;
+    outline: none !important;
+    background-color: #fff !important;
+    color: #333 !important;
+  }
+
+  /* Buttons scoped - UPDATED to match image and snippet */
+  .obs-form-container button:not(.btn-action) {
+    cursor: pointer !important;
+    padding: 10px 24px !important;
+    border-radius: 3px !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    transition: all var(--transition-speed);
+    border: 2px solid var(--ucab-blue) !important;
+    background-color: #ffffff !important;
+    color: var(--ucab-blue) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    line-height: 1.64em !important;
+    text-transform: none !important;
+    text-decoration: none !important;
+    height: auto !important;
+    width: auto !important;
+  }
+
+  /* Primary buttons (blue theme) */
+  .obs-form-container
+    button[type="button"]:not(.btn-action):not(.btn-secondary),
+  .obs-form-container
+    button[type="submit"]:not(.btn-action):not(.btn-secondary),
+  .obs-form-container .search-row button {
+    background-color: #ffffff !important;
+    color: var(--ucab-blue) !important;
+    border: 2px solid var(--ucab-blue) !important;
+  }
+
+  .obs-form-container button:hover:not(:disabled):not(.btn-action) {
+    background-color: var(--ucab-blue) !important;
+    color: #ffffff !important;
+    border-color: var(--ucab-blue) !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Specialty buttons override logic */
+  .obs-form-container button[style*="background"]:not(:hover) {
+    border-color: transparent !important;
+    color: white !important;
+  }
+
+  .obs-form-container button.btn-secondary {
+    background-color: transparent !important;
+    color: #666 !important;
+    border: 2px solid #ccc !important;
+  }
+  .obs-form-container button.btn-secondary:hover {
+    background-color: #f5f5f5 !important;
+    color: #333 !important;
+    border-color: #999 !important;
+  }
+
+  .obs-form-container button:disabled,
+  .obs-form-container .btn-disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    background-color: #f7fafc !important;
+    border-color: #cbd5e0 !important;
+    color: #a0aec0 !important;
+    pointer-events: none !important;
+  }
+
+  /* Cards & Data Display scoped */
+  .obs-form-container .student-data-container {
+    display: none; /* Hide by default, JS will show appropriate one */
+    border: 1px solid #e1e4e8 !important;
+    border-radius: 6px !important;
+    background: var(--ucab-light-bg) !important;
+    margin-top: 20px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    animation: obsFadeIn 0.4s ease;
+  }
+  .obs-form-container .student-data-header {
+    background: #edf2f7 !important;
+    padding: 10px 20px !important;
+    border-bottom: 1px solid #e1e4e8 !important;
+    font-weight: 600 !important;
+    color: var(--ucab-dark-gray) !important;
+    font-size: 0.9rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    margin: 0 !important;
+    line-height: 1.4 !important;
+  }
+  .obs-form-container .data-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    padding: 12px 20px !important;
+    border-bottom: 1px solid #eee !important;
+    margin: 0 !important;
+    gap: 15px !important;
+  }
+  .obs-form-container .data-row:last-child {
+    border-bottom: none !important;
+  }
+  .obs-form-container .data-label {
+    font-weight: 600 !important;
+    color: #666 !important;
+    flex-shrink: 0 !important;
+    min-width: 70px !important;
+  }
+  .obs-form-container .data-value {
+    color: #000 !important;
+    font-weight: 500 !important;
+    text-align: right !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  /* Error container remains as it is used for dynamic validation errors */
+  .obs-form-container .error-container {
+    background-color: #fef2f2 !important;
+    border: 1px solid #fecaca !important;
+    color: #b91c1c !important;
+    padding: 12px !important;
+    border-radius: 4px !important;
+    margin-top: 15px !important;
+    display: none;
+    animation: obsShake 0.4s ease;
+    text-align: left !important;
+  }
+
+  /* Radio Inputs Custom scoped */
+  .obs-form-container .radio-group {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+  .obs-form-container .radio-card {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+    padding: 16px !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    transition: all 0.2s;
+    margin: 0 !important;
+    background: #fff !important;
+  }
+  .obs-form-container .radio-card:hover {
+    border-color: var(--ucab-blue) !important;
+    background: #f0f7ff !important;
+  }
+  .obs-form-container .radio-card input[type="radio"] {
+    margin-top: 4px !important;
+    margin-right: 0 !important;
+    accent-color: var(--ucab-blue) !important;
+    transform: scale(1.1) !important;
+    width: auto !important;
+    height: auto !important;
+    display: inline-block !important;
+  }
+  .obs-form-container .radio-card > div {
+    flex: 1 !important;
+  }
+  .obs-form-container .radio-card span {
+    font-size: 0.95rem !important;
+    color: #444 !important;
+    line-height: 1.4 !important;
+  }
+
+  /* Request Rows scoped */
+  .obs-form-container .request-row {
+    background: #f8f9fa !important;
+    padding: 12px 15px !important;
+    border-radius: 6px !important;
+    border: 1px solid #eee !important;
+    display: flex !important;
+    gap: 12px !important;
+    align-items: flex-end !important; /* Align everything to the bottom of the column */
+    flex-wrap: nowrap !important;
+    margin-bottom: 15px !important;
+    transition: background 0.2s;
+  }
+  .obs-form-container .request-row:hover {
+    background: #fff !important;
+    border-color: #ddd !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05) !important;
+  }
+  .obs-form-container .btn-action {
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    padding: 0 !important;
+    border-radius: 4px !important;
+    background: #fff5f5 !important;
+    color: #c4151c !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.2s;
+    border: 2px solid #c4151c !important;
+    cursor: pointer !important;
+  }
+  .obs-form-container .btn-action:hover {
+    background: #c4151c !important;
+    color: white !important;
+  }
+
+  /* Blue Version for "Add" button Visual Language */
+  .obs-form-container .btn-add-row {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    padding: 0 20px !important;
+    height: 48px !important;
+    border-radius: 4px !important;
+    background: #f0f7ff !important;
+    color: #0071bb !important;
+    border: 2px solid #0071bb !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+    font-size: 0.95rem !important;
+  }
+  .obs-form-container .btn-add-row:hover {
+    background: #0071bb !important;
+    color: white !important;
+  }
+  .obs-form-container .btn-add-row svg,
+  .obs-form-container .btn-action svg {
+    width: 20px !important;
+    height: 20px !important;
+    stroke-width: 2.5 !important;
+  }
+
+  /* Animations namespaced */
+  @keyframes obsFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes obsShake {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    25% {
+      transform: translateX(-5px);
+    }
+    75% {
+      transform: translateX(5px);
+    }
+  }
+  @keyframes obsSpin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Footer Buttons Container scoped */
+  .obs-form-container .form-footer {
+    margin-top: 30px !important;
+    padding-top: 20px !important;
+    border-top: 1px solid #eee !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+  }
+
+  /* Loading Spinner scoped */
+  .obs-form-container .spinner {
+    display: inline-block !important;
+    width: 16px !important;
+    height: 16px !important;
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
+    border-radius: 50% !important;
+    border-top-color: #fff !important;
+    animation: obsSpin 1s ease-in-out infinite !important;
+    margin-right: 8px !important;
+  }
+
+  /* Success Message Styles */
+  .obs-form-container .obs-success-message {
+    padding: 50px !important;
+    text-align: center !important;
+    animation: obsFadeIn 0.5s ease;
+  }
+  .obs-form-container .obs-success-icon {
+    width: 80px !important;
+    height: 80px !important;
+    margin-bottom: 20px !important;
+    display: inline-block !important;
+  }
+  .obs-form-container .obs-success-title {
+    color: var(--ucab-dark-gray) !important;
+    font-size: 1.8rem !important;
+    margin-bottom: 10px !important;
+    font-weight: 700 !important;
+  }
+  .obs-form-container .obs-success-text {
+    font-size: 1.1rem !important;
+    color: #555 !important;
+    line-height: 1.6 !important;
+    max-width: 450px !important;
+    margin: 0 auto !important;
+    display: block !important;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
     .obs-form-container {
-        --ucab-blue: #0071BB;
-        --ucab-dark-blue: #005696;
-        --ucab-yellow: #f1b417;
-        --ucab-dark-gray: #343434;
-        --ucab-gray-text: #555555;
-        --ucab-bg: #FFFFFF;
-        --ucab-light-bg: #f9fbfd;
-        --ucab-green: #1c7c54;
-        --ucab-red: #dc2626;
-        --border-radius: 4px;
-        --transition-speed: 0.3s;
+      margin: 10px auto !important;
+      border-radius: 4px !important;
     }
-
-    /* Base styles only for this container */
-    .obs-form-container {
-        font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-        width: 100%;
-        max-width: 850px;
-        margin: 20px auto;
-        background: var(--ucab-bg);
-        border-radius: 8px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        overflow: hidden;
-        border: 1px solid #e1e4e8 !important;
-        position: relative;
-        color: #333;
-        box-sizing: border-box;
-        text-align: left;
-        font-size: 16px;
-        line-height: 1.5;
-    }
-    
-    /* Ensure all form elements use border-box */
-    .obs-form-container input,
-    .obs-form-container select,
-    .obs-form-container textarea,
-    .obs-form-container button {
-        box-sizing: border-box !important;
-    }
-
-    /* Header Styling with forced high specificity */
-    .obs-form-container .form-header {
-        background: var(--ucab-blue) !important;
-        color: white !important;
-        padding: 20px 30px !important;
-        border-bottom: 4px solid var(--ucab-yellow) !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-    }
-    .obs-form-container .form-header h2 {
-        display: block !important;
-        width: auto !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        font-size: 1.5rem !important;
-        font-weight: 700 !important;
-        color: #ffffff !important;
-        line-height: 1.2 !important;
-        text-transform: none !important;
-        letter-spacing: normal !important;
-        text-align: left !important;
-        border: none !important;
-        background: transparent !important;
-        text-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
-    }
-    .obs-form-container .step-indicator {
-        font-size: 0.9rem !important;
-        background: rgba(255, 255, 255, 0.25) !important;
-        color: #ffffff !important;
-        padding: 4px 12px !important;
-        border-radius: 20px !important;
-        font-weight: 600 !important;
-        white-space: nowrap !important;
-        line-height: 1.5 !important;
-    }
-
-    /* Slider Structure */
-    .obs-form-container .obs-form-viewport {
-        overflow: hidden;
-        width: 100%;
-        background: #fff !important;
-    }
-
-    .obs-form-container .obs-form-slider {
-        display: flex;
-        width: 700%; /* 7 pasos */
-        transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
-        margin: 0 !important;
-        padding: 0 !important;
-        list-style: none !important;
-    }
-
     .obs-form-container .form-section {
-        width: 14.2857%; /* 100% / 7 */
-        padding: 30px 40px;
-        display: block;
-        background: transparent !important;
+      padding: 20px !important;
     }
-
-    /* Typography scoped only to direct children of form sections to avoid affecting boxes or other nested components */
-    .obs-form-container .form-section > h3 {
-        color: var(--ucab-dark-gray);
-        font-weight: 700;
-        margin: 0 0 15px 0;
-        padding: 0 0 10px 0;
-        font-size: 1.4rem;
-        border-bottom: 2px solid #f0f0f0;
-        line-height: 1.3;
-        text-transform: none;
-        letter-spacing: normal;
-        text-align: left;
-        background: transparent;
-    }
-    .obs-form-container .form-section > p {
-        color: var(--ucab-gray-text);
-        line-height: 1.6;
-        margin: 0 0 15px 0;
-        padding: 0;
-        font-size: 1rem;
-    }
-    .obs-form-container .form-section strong {
-        color: inherit;
-        font-weight: 700; 
-    }
-
-    /* Inputs & Controls scoped - UPDATED */
     .obs-form-container .search-row {
-        display: flex !important;
-        gap: 12px !important;
-        align-items: center !important;
-        margin-bottom: 20px !important;
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 10px !important;
     }
-    
-    .obs-form-container .search-input, 
-    .obs-form-container select, 
-    .obs-form-container textarea {
-        display: block !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        padding: 10px 14px !important;
-        border: 2px solid #c5c4c4 !important;
-        border-radius: 4px !important;
-        font-family: inherit !important;
-        font-size: 1rem !important;
-        line-height: normal !important;
-        transition: all var(--transition-speed);
-        background-color: #eeeeee !important;
-        margin: 0 !important;
-        color: #333333 !important;
-        box-shadow: none !important;
-        height: 48px !important;
-        -webkit-appearance: auto !important; /* Re-enable for better cross-browser arrow */
-        appearance: auto !important;
-    }
-
-    .obs-form-container .search-input::placeholder,
-    .obs-form-container select::placeholder,
-    .obs-form-container textarea::placeholder {
-        color: #999999 !important;
-    }
-
-    .obs-form-container .search-row > input {
-        flex: 1 !important;
-    }
-    
-    .obs-form-container textarea {
-        height: auto !important;
-        min-height: 120px !important;
-    }
-
-    .obs-form-container .search-input:focus, 
-    .obs-form-container select:focus, 
-    .obs-form-container textarea:focus {
-        border-color: var(--ucab-blue) !important;
-        outline: none !important;
-        background-color: #fff !important;
-        color: #333 !important;
-    }
-
-    /* Buttons scoped - UPDATED to match image and snippet */
-    .obs-form-container button:not(.btn-action) {
-        cursor: pointer !important;
-        padding: 10px 24px !important;
-        border-radius: 3px !important;
-        font-size: 1rem !important;
-        font-weight: 600 !important;
-        transition: all var(--transition-speed);
-        border: 2px solid var(--ucab-blue) !important;
-        background-color: #ffffff !important;
-        color: var(--ucab-blue) !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        gap: 8px !important;
-        line-height: 1.64em !important;
-        text-transform: none !important;
-        text-decoration: none !important;
-        height: auto !important;
-        width: auto !important;
-    }
-
-    /* Primary buttons (blue theme) */
-    .obs-form-container button[type="button"]:not(.btn-action):not(.btn-secondary),
-    .obs-form-container button[type="submit"]:not(.btn-action):not(.btn-secondary),
     .obs-form-container .search-row button {
-        background-color: #ffffff !important;
-        color: var(--ucab-blue) !important;
-        border: 2px solid var(--ucab-blue) !important;
+      width: 100% !important;
     }
-
-    .obs-form-container button:hover:not(:disabled):not(.btn-action) {
-        background-color: var(--ucab-blue) !important;
-        color: #ffffff !important;
-        border-color: var(--ucab-blue) !important;
-        transform: none !important;
-        box-shadow: none !important;
-    }
-
-    /* Specialty buttons override logic */
-    .obs-form-container button[style*="background"]:not(:hover) {
-        border-color: transparent !important;
-        color: white !important;
-    }
-
-    .obs-form-container button.btn-secondary {
-        background-color: transparent !important;
-        color: #666 !important;
-        border: 2px solid #ccc !important;
-    }
-    .obs-form-container button.btn-secondary:hover {
-        background-color: #f5f5f5 !important;
-        color: #333 !important;
-        border-color: #999 !important;
-    }
-    
-    .obs-form-container button:disabled, 
-    .obs-form-container .btn-disabled {
-        opacity: 0.5 !important;
-        cursor: not-allowed !important;
-        background-color: #f7fafc !important;
-        border-color: #cbd5e0 !important;
-        color: #a0aec0 !important;
-        pointer-events: none !important;
-    }
-
-    /* Cards & Data Display scoped */
-    .obs-form-container .student-data-container {
-        display: none; /* Hide by default, JS will show appropriate one */
-        border: 1px solid #e1e4e8 !important;
-        border-radius: 6px !important;
-        background: var(--ucab-light-bg) !important;
-        margin-top: 20px !important;
-        padding: 0 !important;
-        overflow: hidden !important;
-        animation: obsFadeIn 0.4s ease;
-    }
-    .obs-form-container .student-data-header {
-        background: #edf2f7 !important;
-        padding: 10px 20px !important;
-        border-bottom: 1px solid #e1e4e8 !important;
-        font-weight: 600 !important;
-        color: var(--ucab-dark-gray) !important;
-        font-size: 0.9rem !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.5px !important;
-        margin: 0 !important;
-        line-height: 1.4 !important;
-    }
-    .obs-form-container .data-row {
-        display: flex !important;
-        justify-content: space-between !important;
-        align-items: flex-start !important;
-        padding: 12px 20px !important;
-        border-bottom: 1px solid #eee !important;
-        margin: 0 !important;
-        gap: 15px !important;
-    }
-    .obs-form-container .data-row:last-child {
-        border-bottom: none !important;
-    }
-    .obs-form-container .data-label {
-        font-weight: 600 !important;
-        color: #666 !important;
-        flex-shrink: 0 !important;
-        min-width: 70px !important;
-    }
-    .obs-form-container .data-value {
-        color: #000 !important;
-        font-weight: 500 !important;
-        text-align: right !important;
-        word-break: break-word !important;
-        overflow-wrap: anywhere !important;
-    }
-
-    /* Error container remains as it is used for dynamic validation errors */
-    .obs-form-container .error-container {
-        background-color: #fef2f2 !important;
-        border: 1px solid #fecaca !important;
-        color: #b91c1c !important;
-        padding: 12px !important;
-        border-radius: 4px !important;
-        margin-top: 15px !important;
-        display: none;
-        animation: obsShake 0.4s ease;
-        text-align: left !important;
-    }
-
-    /* Radio Inputs Custom scoped */
-    .obs-form-container .radio-group {
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 12px !important;
-    }
-    .obs-form-container .radio-card {
-        display: flex !important;
-        align-items: flex-start !important;
-        gap: 12px !important;
-        padding: 16px !important;
-        border: 1px solid #e2e8f0 !important;
-        border-radius: 6px !important;
-        cursor: pointer !important;
-        transition: all 0.2s;
-        margin: 0 !important;
-        background: #fff !important;
-    }
-    .obs-form-container .radio-card:hover {
-        border-color: var(--ucab-blue) !important;
-        background: #f0f7ff !important;
-    }
-    .obs-form-container .radio-card input[type="radio"] {
-        margin-top: 4px !important;
-        margin-right: 0 !important;
-        accent-color: var(--ucab-blue) !important;
-        transform: scale(1.1) !important;
-        width: auto !important;
-        height: auto !important;
-        display: inline-block !important;
-    }
-    .obs-form-container .radio-card > div {
-        flex: 1 !important;
-    }
-    .obs-form-container .radio-card span {
-        font-size: 0.95rem !important;
-        color: #444 !important;
-        line-height: 1.4 !important;
-    }
-
-    /* Request Rows scoped */
     .obs-form-container .request-row {
-        background: #f8f9fa !important;
-        padding: 12px 15px !important;
-        border-radius: 6px !important;
-        border: 1px solid #eee !important;
-        display: flex !important;
-        gap: 12px !important;
-        align-items: flex-end !important; /* Align everything to the bottom of the column */
-        flex-wrap: nowrap !important;
-        margin-bottom: 15px !important;
-        transition: background 0.2s;
+      flex-direction: column !important;
+      align-items: stretch !important;
+      padding: 15px !important;
+      gap: 15px !important;
     }
-    .obs-form-container .request-row:hover {
-        background: #fff !important;
-        border-color: #ddd !important;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05) !important;
+    .obs-form-container .request-row > div {
+      width: 100% !important;
+      min-width: 100% !important;
     }
     .obs-form-container .btn-action {
-        width: 48px !important;
-        height: 48px !important;
-        min-width: 48px !important;
-        padding: 0 !important;
-        border-radius: 4px !important;
-        background: #fff5f5 !important;
-        color: #c4151c !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        transition: all 0.2s;
-        border: 2px solid #c4151c !important;
-        cursor: pointer !important;
+      width: 100% !important;
+      height: 44px !important;
+      margin-top: 5px !important;
     }
-    .obs-form-container .btn-action:hover {
-        background: #c4151c !important;
-        color: white !important;
-    }
-
-    /* Blue Version for "Add" button Visual Language */
-    .obs-form-container .btn-add-row {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        gap: 8px !important;
-        padding: 0 20px !important;
-        height: 48px !important;
-        border-radius: 4px !important;
-        background: #f0f7ff !important;
-        color: #0071bb !important;
-        border: 2px solid #0071bb !important;
-        font-weight: 700 !important;
-        cursor: pointer !important;
-        transition: all 0.2s !important;
-        font-size: 0.95rem !important;
-    }
-    .obs-form-container .btn-add-row:hover {
-        background: #0071bb !important;
-        color: white !important;
-    }
-    .obs-form-container .btn-add-row svg,
-    .obs-form-container .btn-action svg {
-        width: 20px !important;
-        height: 20px !important;
-        stroke-width: 2.5 !important;
-    }
-
-    /* Animations namespaced */
-    @keyframes obsFadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes obsShake {
-        0%, 100% { transform: translateX(0); }
-        25% { transform: translateX(-5px); }
-        75% { transform: translateX(5px); }
-    }
-    @keyframes obsSpin { to { transform: rotate(360deg); } }
-
-    /* Footer Buttons Container scoped */
     .obs-form-container .form-footer {
-        margin-top: 30px !important;
-        padding-top: 20px !important;
-        border-top: 1px solid #eee !important;
-        display: flex !important;
-        justify-content: space-between !important;
-        align-items: center !important;
+      flex-direction: column-reverse !important;
+      gap: 12px !important;
     }
+    .obs-form-container .form-footer button {
+      width: 100% !important;
+    }
+    .obs-form-container .radio-card {
+      padding: 12px !important;
+    }
+  }
+  @media (max-width: 480px) {
+    .obs-form-container h3 {
+      font-size: 1.25rem !important;
+    }
+  }
 
-    /* Loading Spinner scoped */
-    .obs-form-container .spinner {
-        display: inline-block !important;
-        width: 16px !important;
-        height: 16px !important;
-        border: 2px solid rgba(255,255,255,.3) !important;
-        border-radius: 50% !important;
-        border-top-color: #fff !important;
-        animation: obsSpin 1s ease-in-out infinite !important;
-        margin-right: 8px !important;
+  @media (min-width: 820px) {
+    .obs-form-container div.et-box::after {
+      margin-top: 0 !important;
     }
-
-    /* Success Message Styles */
-    .obs-form-container .obs-success-message {
-        padding: 50px !important;
-        text-align: center !important;
-        animation: obsFadeIn 0.5s ease;
-    }
-    .obs-form-container .obs-success-icon {
-        width: 80px !important;
-        height: 80px !important;
-        margin-bottom: 20px !important;
-        display: inline-block !important;
-    }
-    .obs-form-container .obs-success-title {
-        color: var(--ucab-dark-gray) !important;
-        font-size: 1.8rem !important;
-        margin-bottom: 10px !important;
-        font-weight: 700 !important;
-    }
-    .obs-form-container .obs-success-text {
-        font-size: 1.1rem !important;
-        color: #555 !important;
-        line-height: 1.6 !important;
-        max-width: 450px !important;
-        margin: 0 auto !important;
-        display: block !important;
-    }
-
-    /* Responsive Design */
-    @media (max-width: 768px) {
-        .obs-form-container {
-            margin: 10px auto !important;
-            border-radius: 4px !important;
-        }
-        .obs-form-container .form-header {
-            padding: 15px 20px !important;
-            flex-direction: column !important;
-            align-items: flex-start !important;
-            gap: 12px !important;
-        }
-        .obs-form-container .form-header h2 {
-            font-size: 1.2rem !important;
-        }
-        .obs-form-container .form-section {
-            padding: 20px !important;
-        }
-        .obs-form-container .search-row {
-            flex-direction: column !important;
-            align-items: stretch !important;
-            gap: 10px !important;
-        }
-        .obs-form-container .search-row button {
-            width: 100% !important;
-        }
-        .obs-form-container .request-row {
-            flex-direction: column !important;
-            align-items: stretch !important;
-            padding: 15px !important;
-            gap: 15px !important;
-        }
-        .obs-form-container .request-row > div {
-            width: 100% !important;
-            min-width: 100% !important;
-        }
-        .obs-form-container .btn-action {
-            width: 100% !important;
-            height: 44px !important;
-            margin-top: 5px !important;
-        }
-        .obs-form-container .form-footer {
-            flex-direction: column-reverse !important;
-            gap: 12px !important;
-        }
-        .obs-form-container .form-footer button {
-            width: 100% !important;
-        }
-        .obs-form-container .radio-card {
-            padding: 12px !important;
-        }
-    }
-    @media (max-width: 480px) {
-        .obs-form-container .form-header h2 {
-            font-size: 1.1rem !important;
-        }
-        .obs-form-container h3 {
-            font-size: 1.25rem !important;
-        }
-    }
-
+  }
 </style>
 
 <div class="obs-form-container">
-    <div class="form-header">
-        <h2>Modificación de Inscripción</h2>
-        <div class="step-indicator" id="step-indicator">Paso 1 de 6</div>
-    </div>
-
-    <!-- Contenedor del Slide (Índices: 0 a 6) -->
-    <div class="obs-form-viewport">
-        <div id="obs-form-slider" class="obs-form-slider">
-    
-            <!-- [0] PASO 1: BÚSQUEDA -->
-            <div class="form-section">
-                <h3>Identificación del Estudiante</h3>
-                <p>Ingrese su número de cédula para consultar sus datos académicos.</p>
-                <div class="search-row">
-                    <input type="text" id="input-cedula" class="search-input" placeholder="Ej: 28123456"
-                        onkeypress="handleEnter(event)">
-                    <button type="button" onclick="buscarEstudiante()">
-                        <span>Buscar</span>
-                    </button>
-                </div>
-                
-                <div id="student-error" class="error-container"></div>
-                
-                <!-- Resultado Estudiante -->
-                <div id="student-result" class="student-data-container" style="display:none;">
-                    <div class="student-data-header">Datos Del Estudiante</div>
-                    <div class="data-row">
-                        <span class="data-label" id="lbl-cedula">Cédula</span>
-                        <span class="data-value" id="val-cedula"></span>
-                    </div>
-                    <div class="data-row">
-                        <span class="data-label" id="lbl-nombre">Nombre</span>
-                        <span class="data-value" id="val-nombre"></span>
-                    </div>
-                    <div class="data-row">
-                        <span class="data-label" id="lbl-correo">Correo</span>
-                        <span class="data-value" id="val-correo"></span>
-                    </div>
-                    <div class="data-row" id="row-carrera">
-                        <span class="data-label" id="lbl-carrera">Carrera</span>
-                        <span class="data-value" id="val-carrera"></span>
-                    </div>
-                </div>
-    
-                <!-- FORMULARIO NUEVO ESTUDIANTE -->
-                <div id="new-student-form" class="student-data-container" style="border-color: #cbd5e0; background: #fff; display:none;">
-                    <div class="student-data-header" style="background: #e2e8f0; color: #2d3748;">Registro de Nuevo Estudiante</div>
-                    <div style="padding: 20px;">
-                        <p style="margin-top:0;"><strong>Estudiante no encontrado.</strong> Por favor complete sus datos:</p>
-                        <div style="margin-bottom:15px;">
-                            <label style="display:block; font-weight:600; margin-bottom:5px; font-size:0.9rem;">Nombre Completo</label>
-                            <input type="text" id="new-nombre" class="search-input" placeholder="Nombre y Apellido">
-                        </div>
-                        <div style="margin-bottom:15px;">
-                            <label style="display:block; font-weight:600; margin-bottom:5px; font-size:0.9rem;">Correo Electrónico</label>
-                            <input type="email" id="new-correo" class="search-input" placeholder="correo@est.ucab.edu.ve">
-                        </div>
-                        <div style="text-align: right;">
-                             <button type="button" onclick="registrarEstudiante()">Registrar y Continuar</button>
-                        </div>
-                    </div>
-                </div>
-    
-                <!-- FORMULARIO ACTUALIZAR CORREO -->
-                <div id="update-email-form" class="student-data-container" style="display:none; border-color: #fca5a5; background: #fff5f5;">
-                    <div class="student-data-header" style="background: #fee2e2; color: #9b2c2c;">Acción Requerida</div>
-                    <div style="padding: 20px;">
-                        <p style="margin-top:0;"><strong>Falta información de contacto.</strong> Es necesario registrar su correo:</p>
-                        <div style="margin-bottom:15px;">
-                            <label style="display:block; font-weight:600; margin-bottom:5px; font-size:0.9rem;">Correo Electrónico Utilizado</label>
-                            <input type="email" id="update-correo" class="search-input" placeholder="correo@est.ucab.edu.ve">
-                        </div>
-                        <div style="text-align: right;">
-                             <button type="button" onclick="actualizarCorreo()">Actualizar y Continuar</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="form-footer">
-                    <div></div> <!-- Spacer -->
-                    <button type="button" id="btn-step1-next" onclick="slide(1)" disabled
-                        class="btn-disabled">Continuar &rarr;</button>
-                </div>
-            </div>
-    
-            <!-- [1] PASO 2: SELECCIÓN DE TIPO -->
-            <div class="form-section">
-                <h3>¿Qué deseas hacer?</h3>
-                <p>Selecciona la opción que mejor describa tu solicitud.</p>
-                <div class="radio-group">
-                    <label class="radio-card">
-                        <input type="radio" name="tipo_solicitud" value="nrc" onchange="validateStep2()">
-                        <div>
-                            <div style="font-weight:700; color:var(--ucab-dark-gray); margin-bottom:4px;">Gestión de NRCs</div>
-                            <span>Quiero agregar o eliminar NRCs y dejar comentarios al respecto.</span>
-                        </div>
-                    </label>
-                    <label class="radio-card">
-                        <input type="radio" name="tipo_solicitud" value="observacion" onchange="validateStep2()">
-                        <div>
-                            <div style="font-weight:700; color:var(--ucab-dark-gray); margin-bottom:4px;">Solo Observación</div>
-                            <span>Solo quiero dejar una observación general (no modifica NRCs).</span>
-                        </div>
-                    </label>
-                </div>
-                <div class="form-footer">
-                    <button type="button" class="btn-secondary" onclick="slide(0)">&larr; Atrás</button>
-                    <button type="button" id="btn-next-step-2" onclick="goToNextStep2()" disabled
-                        class="btn-disabled">Continuar &rarr;</button>
-                </div>
-            </div>
-    
-            <!-- [2] PASO 3-A: AUTORIZACIÓN (Ruta NRC) -->
-            <div class="form-section">
-                <h3>Autorización de cambios</h3>
-                
-                <div style="margin-bottom: 20px;">
-                    [box type="warning"]<strong>Importante sobre su horario:</strong> 
-                    
-                    Si deseas agregar asignaturas, estas se inscribirán en un NRC con cupos disponibles. Esto podría requerir modificar tu horario actual.
-                    
-                    [/box]
-                </div>
-
-                <p>Si para llevar a cabo los ajustes que solicitas es necesario alterar tu solicitud original de
-                    inscripción, <strong>¿autorizas a la Escuela a aplicar los cambios necesarios?</strong></p>
-                
-                <div class="radio-group">
-                    <label class="radio-card">
-                        <input type="radio" name="autorizacion_nrc" value="si" onchange="validateStep3A()">
-                        <span><strong>Sí, autorizo.</strong> Entiendo que mi horario podría cambiar para acomodar la solicitud.</span>
-                    </label>
-                    <label class="radio-card">
-                        <input type="radio" name="autorizacion_nrc" value="no" onchange="validateStep3A()">
-                        <span><strong>No autorizo.</strong> Si hay conflicto de horario, prefiero que no se realice el cambio.</span>
-                    </label>
-                </div>
-
-                <div class="form-footer">
-                    <button type="button" class="btn-secondary" onclick="slide(1)">&larr; Atrás</button>
-                    <button type="button" id="btn-step3a-next" onclick="slide(3)" disabled
-                        class="btn-disabled">Continuar &rarr;</button>
-                </div>
-            </div>
-    
-            <!-- [3] PASO 3-B: INFORMACIÓN (Ruta NRC) -->
-            <div class="form-section">
-                <h3>Antes de iniciar...</h3>
-                <div style="display:grid; gap:15px; margin-bottom: 20px;">
-                    <div style="margin-bottom: 10px;">
-                        [box type="info"]<strong>Límite de Créditos:</strong> 
-                        
-                        Tu inscripción no puede superar los 40 créditos. Solicitudes excedentes serán desestimadas.
-                        
-                        [/box]
-                    </div>
-                    <div style="margin-bottom: 20px;">
-                        [box type="alert"]<strong>Eliminación Total:</strong> 
-                        
-                        Si eliminas todas las asignaturas, pasarás a estatus "Inactivo" y deberás solicitar reincorporación futura.
-                        
-                        [/box]
-                    </div>
-                </div>
-                <p id="msg-autorizacion-dinamico" style="margin-top:20px;">
-                    Si no autorizaste cambios de horario explícitamente, intentaremos realizar el ajuste solicitado, pero si no es posible sin afectar otras materias, mantendremos tu inscripción original.
-                </p>
-                <div class="form-footer">
-                    <button type="button" class="btn-secondary" onclick="slide(2)">&larr; Atrás</button>
-                    <button type="button" onclick="slide(4)">Entendido, Continuar &rarr;</button>
-                </div>
-            </div>
-    
-            <!-- [4] PASO 4: SOLICITUDES (Ruta NRC - Dinámico) -->
-            <div class="form-section">
-                <h3>Solicitudes de Modificación</h3>
-                <p>Añade las asignaturas que deseas gestionar. Usa una fila por materia.</p>
-    
-                <div id="requests-container">
-                    <!-- Fila inicial (siempre visible) -->
-                    <div class="request-row" id="row-0">
-                        <div style="width: 140px; flex-shrink: 0;">
-                            <label style="font-size:0.8rem; font-weight:600; color:#777; margin-bottom:6px; display:block;">1. Acción</label>
-                            <select class="req-select action-select" name="accion[]" onchange="updateNrcPlaceholder(this)">
-                                <option value="agregar">Agregar</option>
-                                <option value="eliminar">Eliminar</option>
-                            </select>
-                        </div>
-
-                        <div style="flex-grow:1; min-width:180px;">
-                            <label style="font-size:0.8rem; font-weight:600; color:#777; margin-bottom:6px; display:block;">2. Asignatura</label>
-                            <select class="req-select subject-select" name="asignatura[]">
-                                <option value="">Seleccionar Asignatura...</option>
-                            </select>
-                        </div>
-                        
-                        <div style="width: 150px; flex-shrink: 0;">
-                            <label class="nrc-label" style="font-size:0.8rem; font-weight:600; color:#777; margin-bottom:6px; display:block;">3. NRC sugerido</label>
-                            <input type="text" class="search-input nrc-input" name="nrc_sugerido[]" 
-                                   placeholder="Ej: 12345" maxlength="5" 
-                                   oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 5)">
-                        </div>
-    
-                        <button type="button" class="btn-action" style="visibility: hidden; pointer-events: none;">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                        </button>
-                    </div>
-                </div>
-    
-                <div style="margin-top: 20px;">
-                    <button type="button" class="btn-add-row" onclick="addRequestRow()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                        <span>Añadir otra asignatura</span>
-                    </button>
-                </div>
-    
-                <!-- COMENTARIO FINAL (Step 4) -->
-                <div style="margin-top:25px; border-top: 1px solid #eee; padding-top:20px;">
-                    <label style="display: block; margin-bottom: 8px; font-weight:bold;">Comentarios Adicionales:</label>
-                    <textarea id="final-comments-nrc" placeholder="Indique aquí cualquier consideración adicional sobre su horario, choques, o preferencias..."
-                              style="height: 80px;"></textarea>
-                </div>
-    
-                <div class="form-footer">
-                    <button type="button" class="btn-secondary" onclick="slide(3)">&larr; Atrás</button>
-                    <button type="button" onclick="slide(6)">Revisar y Enviar &rarr;</button>
-                </div>
-            </div>
-    
-            <!-- [5] PASO 5: OBSERVACIONES (Ruta Observación) -->
-            <div class="form-section">
-                <h3>Observaciones Generales</h3>
-                
-                <div style="margin-bottom: 20px;">
-                    [box type="info"]<strong>IMPORTANTE:</strong> 
-                    
-                    Aquí puedes explicar situaciones especiales (ej: trabajo, viajes) que NO impliquen agregar/eliminar materias específicas. Para cambios de materias, usa la opción anterior.
-                    
-                    [/box]
-                </div>
-
-                <div style="margin-bottom: 20px;">
-                    <label style="display: block; margin-bottom: 8px; font-weight:600;">Mensaje:</label>
-                    <textarea name="mensaje_obs" placeholder="Escribe tu observación detallada aquí..."
-                        style="width: 100%; height: 200px; resize: vertical;"></textarea>
-                </div>
-                <div class="form-footer">
-                    <button type="button" class="btn-secondary" onclick="slide(1)">&larr; Atrás</button>
-                    <button type="button" onclick="slide(6)">Revisar y Enviar &rarr;</button>
-                </div>
-            </div>
-    
-            <!-- [6] PASO 6: CONFIRMACIÓN (Común) -->
-            <div class="form-section">
-                <h3>Confirmación de Solicitud</h3>
-                <div style="text-align:center; padding: 40px 20px;">
-                    <div style="font-size: 4rem; margin-bottom: 20px;">📝</div>
-                    <h4 style="margin:0; color:var(--ucab-dark-gray); font-size:1.5rem;">¡Estás a un paso!</h4>
-                    <p>Tus datos han sido validados. Por favor confirma el envío de tu solicitud.</p>
-                    <p style="font-size:0.9rem; color:#888;">Se generará un ticket de atención que podrás consultar posteriormente.</p>
-                </div>
-                <div class="form-footer">
-                    <button type="button" class="btn-secondary" onclick="goBackFromStepConfirmation()">&larr; Atrás</button>
-                    <button type="button" onclick="submitForm()" style="background:var(--ucab-green, #1c7c54);">
-                        <span>Enviar Solicitud</span>
-                    </button>
-                </div>
-            </div>
-    
+  <!-- Contenedor del Slide (Índices: 0 a 6) -->
+  <div class="obs-form-viewport">
+    <div id="obs-form-slider" class="obs-form-slider">
+      <!-- [0] PASO 1: BÚSQUEDA -->
+      <div class="form-section">
+        <h3>Identificación del Estudiante</h3>
+        <p>Ingresa tu número de cédula para consultar tus datos académicos.</p>
+        <div class="search-row">
+          <input
+            type="text"
+            id="input-cedula"
+            class="search-input"
+            placeholder="Ej: 28123456"
+            onkeypress="handleEnter(event)"
+          />
+          <button type="button" onclick="buscarEstudiante()">
+            <span>Buscar</span>
+          </button>
         </div>
+
+        <div id="student-error" class="error-container"></div>
+
+        <!-- Resultado Estudiante -->
+        <div
+          id="student-result"
+          class="student-data-container"
+          style="display: none"
+        >
+          <div class="student-data-header">Datos Del Estudiante</div>
+          <div class="data-row">
+            <span class="data-label" id="lbl-cedula">Cédula</span>
+            <span class="data-value" id="val-cedula"></span>
+          </div>
+          <div class="data-row">
+            <span class="data-label" id="lbl-nombre">Nombre</span>
+            <span class="data-value" id="val-nombre"></span>
+          </div>
+          <div class="data-row">
+            <span class="data-label" id="lbl-correo">Correo</span>
+            <span class="data-value" id="val-correo"></span>
+          </div>
+          <div class="data-row" id="row-carrera">
+            <span class="data-label" id="lbl-carrera">Carrera</span>
+            <span class="data-value" id="val-carrera"></span>
+          </div>
+        </div>
+
+        <div class="form-footer">
+          <div></div>
+          <!-- Spacer -->
+          <button
+            type="button"
+            id="btn-step1-next"
+            onclick="slide(1)"
+            disabled
+            class="btn-disabled"
+          >
+            Continuar &rarr;
+          </button>
+        </div>
+      </div>
+
+      <!-- [1] PASO 2: SELECCIÓN DE TIPO -->
+      <div class="form-section">
+        <h3>¿Qué deseas hacer?</h3>
+        <p>Selecciona la opción que mejor describa tu solicitud.</p>
+        <div class="radio-group">
+          <label class="radio-card">
+            <input
+              type="radio"
+              name="tipo_solicitud"
+              value="nrc"
+              onchange="validateStep2()"
+            />
+            <div>
+              <div
+                style="
+                  font-weight: 700;
+                  color: var(--ucab-dark-gray);
+                  margin-bottom: 4px;
+                "
+              >
+                Gestión de NRCs
+              </div>
+              <span
+                >Quiero agregar o eliminar NRCs y dejar comentarios al
+                respecto.</span
+              >
+            </div>
+          </label>
+          <label class="radio-card">
+            <input
+              type="radio"
+              name="tipo_solicitud"
+              value="observacion"
+              onchange="validateStep2()"
+            />
+            <div>
+              <div
+                style="
+                  font-weight: 700;
+                  color: var(--ucab-dark-gray);
+                  margin-bottom: 4px;
+                "
+              >
+                Solo Observación
+              </div>
+              <span
+                >Solo quiero dejar una observación general (no modifica
+                NRCs).</span
+              >
+            </div>
+          </label>
+        </div>
+        <div class="form-footer">
+          <button type="button" class="btn-secondary" onclick="slide(0)">
+            &larr; Atrás
+          </button>
+          <button
+            type="button"
+            id="btn-next-step-2"
+            onclick="goToNextStep2()"
+            disabled
+            class="btn-disabled"
+          >
+            Continuar &rarr;
+          </button>
+        </div>
+      </div>
+
+      <!-- [2] PASO 3-A: AUTORIZACIÓN (Ruta NRC) -->
+      <div class="form-section">
+        <h3>Autorización de cambios</h3>
+
+        <div style="margin-bottom: 20px">
+          [box type="warning"]<strong>Importante sobre su horario:</strong>
+
+          Si deseas agregar asignaturas, estas se inscribirán en un NRC con
+          cupos disponibles. Esto podría requerir modificar tu horario actual.
+          [/box]
+        </div>
+
+        <p>
+          Si para llevar a cabo los ajustes que solicitas es necesario alterar
+          tu solicitud original de inscripción,
+          <strong
+            >¿autorizas a la Escuela a aplicar los cambios necesarios?</strong
+          >
+        </p>
+
+        <div class="radio-group">
+          <label class="radio-card">
+            <input
+              type="radio"
+              name="autorizacion_nrc"
+              value="si"
+              onchange="validateStep3A()"
+            />
+            <span
+              ><strong>Sí, autorizo.</strong> Entiendo que mi horario podría
+              cambiar para acomodar la solicitud.</span
+            >
+          </label>
+          <label class="radio-card">
+            <input
+              type="radio"
+              name="autorizacion_nrc"
+              value="no"
+              onchange="validateStep3A()"
+            />
+            <span
+              ><strong>No autorizo.</strong> Si hay conflicto de horario,
+              prefiero que no se realice el cambio.</span
+            >
+          </label>
+        </div>
+
+        <div class="form-footer">
+          <button type="button" class="btn-secondary" onclick="slide(1)">
+            &larr; Atrás
+          </button>
+          <button
+            type="button"
+            id="btn-step3a-next"
+            onclick="slide(3)"
+            disabled
+            class="btn-disabled"
+          >
+            Continuar &rarr;
+          </button>
+        </div>
+      </div>
+
+      <!-- [3] PASO 3-B: INFORMACIÓN (Ruta NRC) -->
+      <div class="form-section">
+        <h3>Antes de iniciar...</h3>
+        <div style="display: grid; gap: 15px; margin-bottom: 20px">
+          <div style="margin-bottom: 10px">
+            [box type="info"]<strong>Límite de Créditos:</strong>
+
+            Tu inscripción no puede superar los 40 créditos. Solicitudes
+            excedentes serán desestimadas. [/box]
+          </div>
+          <div style="margin-bottom: 20px">
+            [box type="alert"]<strong>Eliminación Total:</strong>
+
+            Si eliminas todas las asignaturas, pasarás a estatus "Inactivo" y
+            deberás solicitar reincorporación futura. [/box]
+          </div>
+        </div>
+        <p id="msg-autorizacion-dinamico" style="margin-top: 20px">
+          Si no autorizaste cambios de horario explícitamente, intentaremos
+          realizar el ajuste solicitado, pero si no es posible sin afectar otras
+          materias, mantendremos tu inscripción original.
+        </p>
+        <div class="form-footer">
+          <button type="button" class="btn-secondary" onclick="slide(2)">
+            &larr; Atrás
+          </button>
+          <button type="button" onclick="slide(4)">
+            Entendido, Continuar &rarr;
+          </button>
+        </div>
+      </div>
+
+      <!-- [4] PASO 4: SOLICITUDES (Ruta NRC - Dinámico) -->
+      <div class="form-section">
+        <h3>Solicitudes de Modificación</h3>
+        <p>
+          Añade las asignaturas que deseas gestionar. Usa una fila por materia.
+        </p>
+
+        <div id="requests-container">
+          <!-- Fila inicial (siempre visible) -->
+          <div class="request-row" id="row-0">
+            <div style="width: 140px; flex-shrink: 0">
+              <label
+                style="
+                  font-size: 0.8rem;
+                  font-weight: 600;
+                  color: #777;
+                  margin-bottom: 6px;
+                  display: block;
+                "
+                >1. Acción</label
+              >
+              <select
+                class="req-select action-select"
+                name="accion[]"
+                onchange="updateNrcPlaceholder(this)"
+              >
+                <option value="agregar">Agregar</option>
+                <option value="eliminar">Eliminar</option>
+              </select>
+            </div>
+
+            <div style="flex-grow: 1; min-width: 180px">
+              <label
+                style="
+                  font-size: 0.8rem;
+                  font-weight: 600;
+                  color: #777;
+                  margin-bottom: 6px;
+                  display: block;
+                "
+                >2. Asignatura</label
+              >
+              <select class="req-select subject-select" name="asignatura[]">
+                <option value="">Seleccionar Asignatura...</option>
+              </select>
+            </div>
+
+            <div style="width: 150px; flex-shrink: 0">
+              <label
+                class="nrc-label"
+                style="
+                  font-size: 0.8rem;
+                  font-weight: 600;
+                  color: #777;
+                  margin-bottom: 6px;
+                  display: block;
+                "
+                >3. NRC sugerido</label
+              >
+              <input
+                type="text"
+                class="search-input nrc-input"
+                name="nrc_sugerido[]"
+                placeholder="Ej: 12345"
+                maxlength="5"
+                oninput="
+                  this.value = this.value.replace(/[^0-9]/g, '').substring(0, 5)
+                "
+              />
+            </div>
+
+            <button
+              type="button"
+              class="btn-action"
+              style="visibility: hidden; pointer-events: none"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path
+                  d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                ></path>
+                <line x1="10" y1="11" x2="10" y2="17"></line>
+                <line x1="14" y1="11" x2="14" y2="17"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div style="margin-top: 20px">
+          <button type="button" class="btn-add-row" onclick="addRequestRow()">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>Añadir otra asignatura</span>
+          </button>
+        </div>
+
+        <!-- COMENTARIO FINAL (Step 4) -->
+        <div
+          style="
+            margin-top: 25px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+          "
+        >
+          <label style="display: block; margin-bottom: 8px; font-weight: bold"
+            >Comentarios Adicionales:</label
+          >
+          <textarea
+            id="final-comments-nrc"
+            placeholder="Indique aquí cualquier consideración adicional sobre su horario, choques, o preferencias..."
+            style="height: 80px"
+          ></textarea>
+        </div>
+
+        <div class="form-footer">
+          <button type="button" class="btn-secondary" onclick="slide(3)">
+            &larr; Atrás
+          </button>
+          <button type="button" onclick="slide(6)">
+            Revisar y Enviar &rarr;
+          </button>
+        </div>
+      </div>
+
+      <!-- [5] PASO 5: OBSERVACIONES (Ruta Observación) -->
+      <div class="form-section">
+        <h3>Observaciones Generales</h3>
+
+        <div style="margin-bottom: 20px">
+          [box type="info"]<strong>IMPORTANTE:</strong>
+
+          Aquí puedes explicar situaciones especiales (ej: trabajo, viajes) que
+          NO impliquen agregar/eliminar materias específicas. Para cambios de
+          materias, usa la opción anterior. [/box]
+        </div>
+
+        <div style="margin-bottom: 20px">
+          <label style="display: block; margin-bottom: 8px; font-weight: 600"
+            >Mensaje:</label
+          >
+          <textarea
+            name="mensaje_obs"
+            placeholder="Escribe tu observación detallada aquí..."
+            style="width: 100%; height: 200px; resize: vertical"
+          ></textarea>
+        </div>
+        <div class="form-footer">
+          <button type="button" class="btn-secondary" onclick="slide(1)">
+            &larr; Atrás
+          </button>
+          <button type="button" onclick="slide(6)">
+            Revisar y Enviar &rarr;
+          </button>
+        </div>
+      </div>
+
+      <!-- [6] PASO 6: CONFIRMACIÓN (Común) -->
+      <div class="form-section">
+        <h3>Confirmación de Solicitud</h3>
+        <div style="text-align: center; padding: 40px 20px">
+          <div style="font-size: 4rem; margin-bottom: 20px">📝</div>
+          <h4
+            style="margin: 0; color: var(--ucab-dark-gray); font-size: 1.5rem"
+          >
+            ¡Estás a un paso!
+          </h4>
+          <p>
+            Tus datos han sido validados. Por favor confirma el envío de tu
+            solicitud.
+          </p>
+        </div>
+        <div class="form-footer">
+          <button
+            type="button"
+            class="btn-secondary"
+            onclick="goBackFromStepConfirmation()"
+          >
+            &larr; Atrás
+          </button>
+          <button
+            type="button"
+            onclick="submitForm()"
+            style="background: var(--ucab-green, #1c7c54)"
+          >
+            <span>Enviar Solicitud</span>
+          </button>
+        </div>
+      </div>
     </div>
+  </div>
 </div>
 
 <script>
-    // --- SUPABASE CONFIG ---
-    var SUPABASE_URL = 'https://zmvecicbbxbpuhbnexiz.supabase.co';
-    var SUPABASE_KEY = 'sb_publishable_tLbqOISGtoE-_0lEsqxuXQ_YYRaT59G';
-    
-    var sbClient;
+  // --- SUPABASE CONFIG ---
+  var SUPABASE_URL = "https://zmvecicbbxbpuhbnexiz.supabase.co";
+  var SUPABASE_KEY = "sb_publishable_tLbqOISGtoE-_0lEsqxuXQ_YYRaT59G";
 
-    // Inicialización segura
-    if (typeof sbClient === 'undefined') {
+  var sbClient;
+
+  // Inicialización segura
+  if (typeof sbClient === "undefined") {
+    if (window.supabase && window.supabase.createClient) {
+      sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    } else if (typeof createClient !== "undefined") {
+      sbClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+    } else {
+      document.addEventListener("DOMContentLoaded", () => {
         if (window.supabase && window.supabase.createClient) {
-             sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        } else if (typeof createClient !== 'undefined') {
-             sbClient = createClient(SUPABASE_URL, SUPABASE_KEY);
-        } else {
-             document.addEventListener('DOMContentLoaded', () => {
-                 if(window.supabase && window.supabase.createClient) {
-                    sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                    loadAllSubjects(); 
-                 }
-             });
+          sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+          loadAllSubjects();
         }
+      });
+    }
+  }
+
+  // --- CONSTANTES ---
+  const MSG = {
+    invalidSsn: "Por favor, introduce un número de cédula válido.",
+    missingFields: "Por favor complete todos los campos requeridos.",
+    studentNotFound: "Cédula no encontrada.",
+    generalError: "Ocurrió un error. Intente nuevamente.",
+  };
+
+  // --- ESTADO ---
+  let studentData = null;
+  let selectedRoute = null;
+  let allSubjects = [];
+  let projectedSubjectIds = [];
+  let currentLogicalStep = 0;
+
+  // Etiquetas
+  const LABELS = {
+    cedula: "Cédula",
+    nombre: "Nombre",
+    carrera: "Carrera",
+    correo: "Correo",
+  };
+  if (document.getElementById("lbl-cedula"))
+    document.getElementById("lbl-cedula").textContent = LABELS.cedula;
+  if (document.getElementById("lbl-nombre"))
+    document.getElementById("lbl-nombre").textContent = LABELS.nombre;
+  if (document.getElementById("lbl-carrera"))
+    document.getElementById("lbl-carrera").textContent = LABELS.carrera;
+  if (document.getElementById("lbl-correo"))
+    document.getElementById("lbl-correo").textContent = LABELS.correo;
+
+  // --- INIT ---
+  loadAllSubjects();
+  window.addEventListener("load", () => {
+    requestAnimationFrame(updateViewportHeight);
+  });
+
+  async function loadAllSubjects() {
+    try {
+      if (!sbClient) return;
+      const { data, error } = await sbClient.rpc("get_all_subjects");
+      if (error) throw error;
+      allSubjects = data || [];
+      updateSelectsOptions(); // Actualizar si ya hay selects renderizados
+    } catch (err) {
+      console.error("Error cargando materias:", err);
+    }
+  }
+
+  // --- LÓGICA PASO 1 (BÚSQUEDA) ---
+  async function buscarEstudiante() {
+    const input = document.getElementById("input-cedula");
+    const cedula = input.value.trim();
+    const errorContainer = document.getElementById("student-error");
+    const resultContainer = document.getElementById("student-result");
+    const nextBtn = document.getElementById("btn-step1-next");
+    const btnSearch = input.nextElementSibling; // Button next to input
+
+    // Reset UI
+    errorContainer.style.display = "none";
+    resultContainer.style.display = "none";
+    nextBtn.disabled = true;
+    nextBtn.classList.add("btn-disabled");
+    studentData = null;
+    projectedSubjectIds = [];
+
+    if (!cedula || isNaN(cedula)) {
+      showError(MSG.invalidSsn);
+      return;
     }
 
-    // --- CONSTANTES ---
-    const MSG = {
-        invalidSsn: "Por favor, introduce un número de cédula válido.",
-        missingFields: "Por favor complete todos los campos requeridos.",
-        generalError: "Ocurrió un error. Intente nuevamente."
-    };
+    // Loading State
+    const originalBtnText = btnSearch.innerHTML;
+    btnSearch.innerHTML = '<div class="spinner"></div> Buscando...';
+    btnSearch.disabled = true;
 
-    // --- ESTADO ---
-    let studentData = null; 
-    let selectedRoute = null; 
-    let allSubjects = []; 
-    let projectedSubjectIds = []; 
-    let currentLogicalStep = 0;
+    try {
+      if (!sbClient) throw new Error("Cliente no inicializado");
 
-    // Etiquetas
-    const LABELS = { cedula: "Cédula", nombre: "Nombre", carrera: "Carrera", correo: "Correo" };
-    if(document.getElementById('lbl-cedula')) document.getElementById('lbl-cedula').textContent = LABELS.cedula;
-    if(document.getElementById('lbl-nombre')) document.getElementById('lbl-nombre').textContent = LABELS.nombre;
-    if(document.getElementById('lbl-carrera')) document.getElementById('lbl-carrera').textContent = LABELS.carrera;
-    if(document.getElementById('lbl-correo')) document.getElementById('lbl-correo').textContent = LABELS.correo;
+      const { data, error } = await sbClient.rpc("get_student_by_cedula", {
+        p_cedula: cedula,
+      });
 
-    // --- INIT ---
-    loadAllSubjects();
+      if (error) throw error;
 
-    async function loadAllSubjects() {
-        try {
-            if(!sbClient) return; 
-            const { data, error } = await sbClient.rpc('get_all_subjects');
-            if (error) throw error;
-            allSubjects = data || [];
-            updateSelectsOptions(); // Actualizar si ya hay selects renderizados
-        } catch (err) {
-            console.error("Error cargando materias:", err);
-        }
+      const student = data && data.length > 0 ? data[0] : null;
+
+      if (student) {
+        studentData = student;
+        showStudentData(student);
+        loadProjection(student.est_id);
+      } else {
+        showError(MSG.studentNotFound);
+      }
+    } catch (err) {
+      console.error(err);
+      showError(MSG.generalError);
+    } finally {
+      btnSearch.innerHTML = originalBtnText;
+      btnSearch.disabled = false;
+      requestAnimationFrame(updateViewportHeight);
+    }
+  }
+
+  async function loadProjection(estId) {
+    if (!sbClient) return;
+    try {
+      const { data, error } = await sbClient.rpc("get_student_projections", {
+        p_est_id: estId,
+      });
+      if (error) throw error;
+      projectedSubjectIds = data.map((p) => p.mat_id);
+      // Refresh selects logic if needed, but usually done at step 5
+    } catch (err) {
+      console.error("Puntaje proyección no disponible", err);
+      projectedSubjectIds = [];
+    }
+  }
+
+  function showStudentData(data) {
+    studentData = data;
+    document.getElementById("val-cedula").textContent = data.est_cedula;
+    document.getElementById("val-nombre").textContent = data.est_nombre;
+    document.getElementById("val-correo").textContent = data.est_correo || "-";
+
+    const rowCarrera = document.getElementById("row-carrera");
+    if (data.est_cod_programa) {
+      let carreraDisplay = data.est_cod_programa;
+      if (carreraDisplay === "LICINFORM001") {
+        carreraDisplay = "Ingeniería Informática";
+      }
+      document.getElementById("val-carrera").textContent = carreraDisplay;
+      rowCarrera.style.display = "flex";
+    } else {
+      rowCarrera.style.display = "none";
     }
 
-    // --- LÓGICA PASO 1 (BÚSQUEDA) ---
-    async function buscarEstudiante() {
-        const input = document.getElementById('input-cedula');
-        const cedula = input.value.trim();
-        const errorContainer = document.getElementById('student-error');
-        const resultContainer = document.getElementById('student-result');
-        const newStudentContainer = document.getElementById('new-student-form');
-        const updateEmailContainer = document.getElementById('update-email-form');
-        const nextBtn = document.getElementById('btn-step1-next');
-        const btnSearch = input.nextElementSibling; // Button next to input
+    document.getElementById("student-result").style.display = "block";
+    const nextBtn = document.getElementById("btn-step1-next");
+    nextBtn.disabled = false;
+    nextBtn.classList.remove("btn-disabled");
+    requestAnimationFrame(updateViewportHeight);
+  }
 
-        // Reset UI
-        errorContainer.style.display = 'none';
-        resultContainer.style.display = 'none';
-        newStudentContainer.style.display = 'none';
-        updateEmailContainer.style.display = 'none';
-        nextBtn.disabled = true;
-        nextBtn.classList.add('btn-disabled');
-        studentData = null;
-        projectedSubjectIds = [];
+  function showError(htmlMsg) {
+    const errorContainer = document.getElementById("student-error");
+    errorContainer.innerHTML = htmlMsg;
+    errorContainer.style.display = "block";
+    requestAnimationFrame(updateViewportHeight);
+  }
 
-        if (!cedula || isNaN(cedula)) {
-            showError(MSG.invalidSsn);
-            return;
-        }
+  function handleEnter(e) {
+    if (e.key === "Enter") buscarEstudiante();
+  }
 
-        // Loading State
-        const originalBtnText = btnSearch.innerHTML;
-        btnSearch.innerHTML = '<div class="spinner"></div> Buscando...';
-        btnSearch.disabled = true;
+  // --- LÓGICA DE NAVEGACIÓN Y PASOS ---
 
-        try {
-            if (!sbClient) throw new Error("Cliente no inicializado");
+  function validateStep2() {
+    const radionrc = document.querySelector(
+      'input[name="tipo_solicitud"][value="nrc"]',
+    );
+    const radioobs = document.querySelector(
+      'input[name="tipo_solicitud"][value="observacion"]',
+    );
+    if (radionrc && radionrc.checked) selectedRoute = "nrc";
+    if (radioobs && radioobs.checked) selectedRoute = "observacion";
 
-            const { data, error } = await sbClient.rpc('get_student_by_cedula', { p_cedula: cedula });
-
-            if (error) throw error;
-            
-            const student = (data && data.length > 0) ? data[0] : null;
-
-            if (student) {
-                studentData = student; 
-                if (!student.est_correo || student.est_correo.trim() === '') {
-                     updateEmailContainer.style.display = 'block';
-                } else {
-                     showStudentData(student);
-                     loadProjection(student.est_id);
-                }
-            } else {
-                newStudentContainer.style.display = 'block';
-            }
-        } catch (err) {
-            console.error(err);
-            showError(MSG.generalError);
-        } finally {
-            btnSearch.innerHTML = originalBtnText;
-            btnSearch.disabled = false;
-        }
+    if (selectedRoute) {
+      document.getElementById("btn-next-step-2").disabled = false;
+      document
+        .getElementById("btn-next-step-2")
+        .classList.remove("btn-disabled");
     }
+  }
 
-    async function actualizarCorreo() {
-        if (!sbClient || !studentData) return;
-        const correoInput = document.getElementById('update-correo');
-        const correo = correoInput.value.trim();
-
-        if (!correo) return alert(MSG.missingFields);
-
-        try {
-            const { data, error } = await sbClient.rpc('update_student_email', { 
-                p_est_id: studentData.est_id, p_correo: correo 
-            });
-
-            if (error) throw error;
-            const updated = data && data.length > 0 ? data[0] : null;
-            if(!updated) throw new Error("Falló actualización");
-
-            alert("Correo actualizado correctamente.");
-            document.getElementById('update-email-form').style.display = 'none';
-            studentData.est_correo = updated.est_correo; 
-            showStudentData(updated); 
-            loadProjection(updated.est_id);
-
-        } catch (err) {
-            alert("Error: " + err.message);
-        }
+  function goToNextStep2() {
+    if (selectedRoute === "nrc") {
+      updateSelectsOptions();
+      slide(2);
+    } else if (selectedRoute === "observacion") {
+      slide(5);
     }
+  }
 
-    async function registrarEstudiante() {
-        if (!sbClient) return;
-        const cedula = document.getElementById('input-cedula').value.trim();
-        const nombre = document.getElementById('new-nombre').value.trim();
-        const correo = document.getElementById('new-correo').value.trim();
-
-        if (!cedula || !nombre || !correo) return alert(MSG.missingFields);
-
-        try {
-            const { data, error } = await sbClient.rpc('register_student', {
-                p_cedula: cedula, p_nombre: nombre, p_correo: correo
-            });
-
-            if (error) throw error;
-            const newStudent = data && data.length > 0 ? data[0] : null;
-            if(!newStudent) throw new Error("Falló registro");
-
-            alert("Estudiante registrado exitosamente.");
-            document.getElementById('new-student-form').style.display = 'none';
-            showStudentData(newStudent);
-            projectedSubjectIds = [];
-
-        } catch (err) {
-            alert("Error: " + err.message);
-        }
+  function validateStep3A() {
+    const radioSi = document.querySelector(
+      'input[name="autorizacion_nrc"][value="si"]',
+    );
+    const radioNo = document.querySelector(
+      'input[name="autorizacion_nrc"][value="no"]',
+    );
+    if ((radioSi && radioSi.checked) || (radioNo && radioNo.checked)) {
+      document.getElementById("btn-step3a-next").disabled = false;
+      document
+        .getElementById("btn-step3a-next")
+        .classList.remove("btn-disabled");
     }
+  }
 
-    async function loadProjection(estId) {
-        if (!sbClient) return;
-        try {
-            const { data, error } = await sbClient.rpc('get_student_projections', { p_est_id: estId });
-            if (error) throw error;
-            projectedSubjectIds = data.map(p => p.mat_id);
-            // Refresh selects logic if needed, but usually done at step 5
-        } catch (err) {
-            console.error("Puntaje proyección no disponible", err);
-            projectedSubjectIds = [];
-        }
+  // --- MANEJO DE MATERIAS (DINÁMICO) ---
+  function generateSubjectOptionsHTML() {
+    let html = '<option value="">Seleccionar Asignatura...</option>';
+    if (projectedSubjectIds.length > 0) {
+      html += '<optgroup label="⭐ Proyectadas para ti">';
+      const projSubjects = allSubjects.filter((m) =>
+        projectedSubjectIds.includes(m.mat_id),
+      );
+      projSubjects.forEach((sub) => {
+        html += `<option value="${sub.mat_id}">${sub.mat_nombre} (${sub.mat_semestre})</option>`;
+      });
+      html += "</optgroup>";
     }
-
-    function showStudentData(data) {
-        studentData = data;
-        document.getElementById('val-cedula').textContent = data.est_cedula;
-        document.getElementById('val-nombre').textContent = data.est_nombre;
-        document.getElementById('val-correo').textContent = data.est_correo || '-';
-        
-        const rowCarrera = document.getElementById('row-carrera');
-        if (data.est_cod_programa) {
-            let carreraDisplay = data.est_cod_programa;
-            if (carreraDisplay === 'LICINFORM001') {
-                carreraDisplay = 'Ingeniería Informática';
-            }
-            document.getElementById('val-carrera').textContent = carreraDisplay;
-            rowCarrera.style.display = 'flex';
-        } else {
-            rowCarrera.style.display = 'none';
-        }
-
-        document.getElementById('student-result').style.display = 'block';
-        const nextBtn = document.getElementById('btn-step1-next');
-        nextBtn.disabled = false;
-        nextBtn.classList.remove('btn-disabled');
-    }
-
-    function showError(htmlMsg) {
-        const errorContainer = document.getElementById('student-error');
-        errorContainer.innerHTML = htmlMsg;
-        errorContainer.style.display = 'block';
-    }
-
-    function handleEnter(e) {
-        if (e.key === 'Enter') buscarEstudiante();
-    }
-
-    // --- LÓGICA DE NAVEGACIÓN Y PASOS ---
-
-    function validateStep2() {
-        const radionrc = document.querySelector('input[name="tipo_solicitud"][value="nrc"]');
-        const radioobs = document.querySelector('input[name="tipo_solicitud"][value="observacion"]');
-        if (radionrc && radionrc.checked) selectedRoute = 'nrc';
-        if (radioobs && radioobs.checked) selectedRoute = 'observacion';
-        
-        if (selectedRoute) {
-            document.getElementById('btn-next-step-2').disabled = false;
-            document.getElementById('btn-next-step-2').classList.remove('btn-disabled');
-        }
-    }
-
-    function goToNextStep2() {
-        if (selectedRoute === 'nrc') {
-            updateSelectsOptions(); 
-            slide(2); 
-        } else if (selectedRoute === 'observacion') {
-            slide(5);
-        }
-    }
-
-    function validateStep3A() {
-        const radioSi = document.querySelector('input[name="autorizacion_nrc"][value="si"]');
-        const radioNo = document.querySelector('input[name="autorizacion_nrc"][value="no"]');
-        if ((radioSi && radioSi.checked) || (radioNo && radioNo.checked)) {
-            document.getElementById('btn-step3a-next').disabled = false;
-            document.getElementById('btn-step3a-next').classList.remove('btn-disabled');
-        }
-    }
-
-    // --- MANEJO DE MATERIAS (DINÁMICO) ---
-    function generateSubjectOptionsHTML() {
-        let html = '<option value="">Seleccionar Asignatura...</option>';
-        if (projectedSubjectIds.length > 0) {
-            html += '<optgroup label="⭐ Proyectadas para ti">';
-            const projSubjects = allSubjects.filter(m => projectedSubjectIds.includes(m.mat_id));
-            projSubjects.forEach(sub => {
-                html += `<option value="${sub.mat_id}">${sub.mat_nombre} (${sub.mat_semestre})</option>`;
-            });
-            html += '</optgroup>';
-        }
-        const semesters = [...new Set(allSubjects.map(s => s.mat_semestre))].sort();
-        semesters.forEach(sem => {
-            const subjectsInSem = allSubjects.filter(s => s.mat_semestre === sem);
-            if (subjectsInSem.length > 0) {
-                html += `<optgroup label="Semestre ${sem}">`;
-                subjectsInSem.forEach(sub => {
-                    html += `<option value="${sub.mat_id}">${sub.mat_nombre}</option>`;
-                });
-                html += '</optgroup>';
-            }
+    const semesters = [
+      ...new Set(allSubjects.map((s) => s.mat_semestre)),
+    ].sort();
+    semesters.forEach((sem) => {
+      const subjectsInSem = allSubjects.filter((s) => s.mat_semestre === sem);
+      if (subjectsInSem.length > 0) {
+        html += `<optgroup label="Semestre ${sem}">`;
+        subjectsInSem.forEach((sub) => {
+          html += `<option value="${sub.mat_id}">${sub.mat_nombre}</option>`;
         });
-        return html;
+        html += "</optgroup>";
+      }
+    });
+    return html;
+  }
+
+  function updateNrcPlaceholder(select) {
+    const row = select.closest(".request-row");
+    const nrcInput = row.querySelector(".nrc-input");
+    const nrcLabel = row.querySelector(".nrc-label");
+    if (select.value === "eliminar") {
+      nrcLabel.textContent = "3. NRC a eliminar";
+      nrcInput.placeholder = "Ej: 54321";
+    } else {
+      nrcLabel.textContent = "3. NRC sugerido";
+      nrcInput.placeholder = "Ej: 12345";
+    }
+  }
+
+  function updateSelectsOptions() {
+    const selects = document.querySelectorAll(".subject-select");
+    const optionsHTML = generateSubjectOptionsHTML();
+    selects.forEach((sel) => {
+      const currentVal = sel.value;
+      sel.innerHTML = optionsHTML;
+      sel.value = currentVal;
+    });
+  }
+
+  function addRequestRow() {
+    const container = document.getElementById("requests-container");
+    const originalRow = document.getElementById("row-0");
+    const newRow = originalRow.cloneNode(true);
+    newRow.id = "";
+
+    const select = newRow.querySelector(".subject-select");
+    if (select) {
+      select.innerHTML = generateSubjectOptionsHTML();
+      select.selectedIndex = 0;
     }
 
-    function updateNrcPlaceholder(select) {
-        const row = select.closest('.request-row');
-        const nrcInput = row.querySelector('.nrc-input');
-        const nrcLabel = row.querySelector('.nrc-label');
-        if (select.value === 'eliminar') {
-            nrcLabel.textContent = '3. NRC a eliminar';
-            nrcInput.placeholder = 'Ej: 54321';
+    newRow.querySelector(".action-select").selectedIndex = 0;
+    newRow.querySelector(".nrc-input").value = "";
+
+    // Reset NRC Label/Placeholder for the new row
+    const nrcLabel = newRow.querySelector(".nrc-label");
+    if (nrcLabel) nrcLabel.textContent = "3. NRC sugerido";
+    const nrcInput = newRow.querySelector(".nrc-input");
+    if (nrcInput) nrcInput.placeholder = "Ej: 12345";
+
+    const btn = newRow.querySelector(".btn-action");
+    if (btn) {
+      btn.style.visibility = "visible";
+      btn.style.pointerEvents = "auto";
+      btn.onclick = function () {
+        this.closest(".request-row").remove();
+        requestAnimationFrame(updateViewportHeight);
+      };
+    }
+    container.appendChild(newRow);
+    requestAnimationFrame(updateViewportHeight);
+  }
+
+  function goBackFromStepConfirmation() {
+    if (selectedRoute === "nrc") slide(4);
+    else slide(5);
+  }
+
+  // --- ANIMACIÓN SLIDER Y PROGRESO ---
+  function updateViewportHeight() {
+    const viewport = document.querySelector(".obs-form-viewport");
+    const sections = document.querySelectorAll(".form-section");
+    if (!viewport || sections.length === 0) return;
+
+    const activeIndex = Math.min(currentLogicalStep, sections.length - 1);
+    const activeSection = sections[activeIndex];
+    if (!activeSection) return;
+
+    viewport.style.height = activeSection.offsetHeight + "px";
+  }
+
+  function slide(targetStepIndex) {
+    const slider = document.getElementById("obs-form-slider");
+    const sections = document.querySelectorAll(".form-section");
+
+    // Logic to determine visual progress (1 to 6)
+    // 0: Step 1
+    // 1: Step 2
+    // 2: Step 3 (Auth) - Route A
+    // 3: Step 4 (Info) - Route A
+    // 4: Step 5 (Reqs) - Route A
+    // 5: Step 3 (Obs) - Route B -> Visual Step 3
+    // 6: Confirmation -> Visual Step Last
+
+    let visualStepText = "";
+    let visualStepCurrent = 1;
+    let visualStepTotal = 5; // Default approx
+
+    if (targetStepIndex === 0) {
+      visualStepCurrent = 1;
+    } else if (targetStepIndex === 1) {
+      visualStepCurrent = 2;
+    } else if (selectedRoute === "nrc") {
+      visualStepTotal = 6;
+      if (targetStepIndex === 2) visualStepCurrent = 3;
+      if (targetStepIndex === 3) visualStepCurrent = 4;
+      if (targetStepIndex === 4) visualStepCurrent = 5;
+      if (targetStepIndex === 6) visualStepCurrent = 6;
+    } else {
+      visualStepTotal = 4;
+      if (targetStepIndex === 5) visualStepCurrent = 3;
+      if (targetStepIndex === 6) visualStepCurrent = 4;
+    }
+
+    const stepIndicator = document.getElementById("step-indicator");
+    if (stepIndicator) {
+      stepIndicator.textContent = `Paso ${visualStepCurrent} de ${visualStepTotal}`;
+    }
+
+    // Update dynamic message if moving to Step 3-B (index 3)
+    if (targetStepIndex === 3 && selectedRoute === "nrc") {
+      const radioSi = document.querySelector(
+        'input[name="autorizacion_nrc"][value="si"]',
+      );
+      const msgEl = document.getElementById("msg-autorizacion-dinamico");
+      if (msgEl) {
+        if (radioSi && radioSi.checked) {
+          msgEl.innerHTML =
+            "Como <strong>has autorizado</strong> cambios de horario, buscaremos las mejores opciones disponibles para procesar tu solicitud, incluso si esto implica ajustar tu inscripción actual.";
         } else {
-            nrcLabel.textContent = '3. NRC sugerido';
-            nrcInput.placeholder = 'Ej: 12345';
+          msgEl.innerHTML =
+            "Como <strong>no has autorizado</strong> cambios de horario, intentaremos realizar el ajuste solicitado sin alterar tus materias actuales. Si existe algún conflicto, mantendremos tu inscripción original.";
         }
+      }
     }
 
-    function updateSelectsOptions() {
-        const selects = document.querySelectorAll('.subject-select');
-        const optionsHTML = generateSubjectOptionsHTML();
-        selects.forEach(sel => {
-            const currentVal = sel.value;
-            sel.innerHTML = optionsHTML;
-            sel.value = currentVal; 
-        });
+    // Visibility handling
+    sections[targetStepIndex].style.display = "block";
+    const start = Math.min(currentLogicalStep, targetStepIndex);
+    const end = Math.max(currentLogicalStep, targetStepIndex);
+
+    // This loop keeps intermediate sections hidden but maintains DOM order for slide
+    for (let i = start + 1; i < end; i++) {
+      sections[i].style.display = "none";
     }
 
-    function addRequestRow() {
-        const container = document.getElementById('requests-container');
-        const originalRow = document.getElementById('row-0');
-        const newRow = originalRow.cloneNode(true);
-        newRow.id = ''; 
-        
-        const select = newRow.querySelector('.subject-select');
-        if(select) { select.innerHTML = generateSubjectOptionsHTML(); select.selectedIndex = 0; }
-        
-        newRow.querySelector('.action-select').selectedIndex = 0;
-        newRow.querySelector('.nrc-input').value = '';
-        
-        // Reset NRC Label/Placeholder for the new row
-        const nrcLabel = newRow.querySelector('.nrc-label');
-        if(nrcLabel) nrcLabel.textContent = '3. NRC sugerido';
-        const nrcInput = newRow.querySelector('.nrc-input');
-        if(nrcInput) nrcInput.placeholder = 'Ej: 12345';
-
-        const btn = newRow.querySelector('.btn-action');
-        if (btn) {
-            btn.style.visibility = 'visible';
-            btn.style.pointerEvents = 'auto';
-            btn.onclick = function () { this.closest('.request-row').remove(); };
-        }
-        container.appendChild(newRow);
+    // Calculate offset based on visible previous siblings
+    let visualIndex = 0;
+    for (let i = 0; i < targetStepIndex; i++) {
+      if (sections[i].style.display !== "none") visualIndex++;
     }
 
-    function goBackFromStepConfirmation() {
-        if (selectedRoute === 'nrc') slide(4);
-        else slide(5);
+    const percentage = -(visualIndex * 14.2857);
+    slider.style.transform = "translateX(" + percentage + "%)";
+    currentLogicalStep = targetStepIndex;
+    requestAnimationFrame(updateViewportHeight);
+
+    // Scroll to top of form
+    document
+      .querySelector(".obs-form-container")
+      .scrollIntoView({ behavior: "smooth" });
+  }
+
+  // --- SUBMIT ---
+  async function submitForm() {
+    if (!studentData) return alert("Faltan datos del estudiante");
+    if (!sbClient) return alert("Error de conexión");
+
+    let autoriza = false;
+    let comentarios = "Sin comentarios.";
+    let solicitudes = [];
+
+    if (selectedRoute === "nrc") {
+      const radioSi = document.querySelector(
+        'input[name="autorizacion_nrc"][value="si"]',
+      );
+      autoriza = radioSi ? radioSi.checked : false;
+
+      const finalComm = document.getElementById("final-comments-nrc");
+      if (finalComm && finalComm.value.trim() !== "")
+        comentarios = finalComm.value.trim();
+
+      const rows = document.querySelectorAll(".request-row");
+      rows.forEach((row) => {
+        const selSub = row.querySelector(".subject-select");
+        const inputNrc = row.querySelector(".nrc-input");
+        const selAct = row.querySelector(".action-select");
+
+        if (selSub && selSub.value) {
+          solicitudes.push({
+            mat_id: parseInt(selSub.value),
+            nrc_solicitado: inputNrc ? inputNrc.value.trim() : "",
+            accion: selAct ? selAct.value : "agregar",
+          });
+        }
+      });
+
+      if (solicitudes.length === 0)
+        return alert("Por favor seleccione al menos una asignatura.");
+    } else {
+      const msgObs = document.querySelector('textarea[name="mensaje_obs"]');
+      if (msgObs) comentarios = msgObs.value.trim();
+      if (!comentarios) return alert("Por favor escriba su observación.");
+
+      solicitudes.push({
+        mat_id: null,
+        nrc_solicitado: null,
+        accion: "observacion",
+      });
     }
 
-    // --- ANIMACIÓN SLIDER Y PROGRESO ---
-    function slide(targetStepIndex) {
-        const slider = document.getElementById('obs-form-slider');
-        const sections = document.querySelectorAll('.form-section');
-
-        // Logic to determine visual progress (1 to 6)
-        // 0: Step 1
-        // 1: Step 2
-        // 2: Step 3 (Auth) - Route A
-        // 3: Step 4 (Info) - Route A
-        // 4: Step 5 (Reqs) - Route A
-        // 5: Step 3 (Obs) - Route B -> Visual Step 3
-        // 6: Confirmation -> Visual Step Last
-        
-        let visualStepText = "";
-        let visualStepCurrent = 1;
-        let visualStepTotal = 5; // Default approx
-
-        if(targetStepIndex === 0) { visualStepCurrent = 1; }
-        else if(targetStepIndex === 1) { visualStepCurrent = 2; }
-        else if(selectedRoute === 'nrc') {
-             visualStepTotal = 6;
-             if(targetStepIndex === 2) visualStepCurrent = 3;
-             if(targetStepIndex === 3) visualStepCurrent = 4;
-             if(targetStepIndex === 4) visualStepCurrent = 5;
-             if(targetStepIndex === 6) visualStepCurrent = 6;
-        } else {
-             visualStepTotal = 4;
-             if(targetStepIndex === 5) visualStepCurrent = 3;
-             if(targetStepIndex === 6) visualStepCurrent = 4;
-        }
-
-        document.getElementById('step-indicator').textContent = `Paso ${visualStepCurrent} de ${visualStepTotal}`;
-
-        // Update dynamic message if moving to Step 3-B (index 3)
-        if(targetStepIndex === 3 && selectedRoute === 'nrc') {
-            const radioSi = document.querySelector('input[name="autorizacion_nrc"][value="si"]');
-            const msgEl = document.getElementById('msg-autorizacion-dinamico');
-            if(msgEl) {
-                if(radioSi && radioSi.checked) {
-                    msgEl.innerHTML = 'Como <strong>has autorizado</strong> cambios de horario, buscaremos las mejores opciones disponibles para procesar tu solicitud, incluso si esto implica ajustar tu inscripción actual.';
-                } else {
-                    msgEl.innerHTML = 'Como <strong>no has autorizado</strong> cambios de horario, intentaremos realizar el ajuste solicitado sin alterar tus materias actuales. Si existe algún conflicto, mantendremos tu inscripción original.';
-                }
-            }
-        }
-
-        // Visibility handling
-        sections[targetStepIndex].style.display = 'block';
-        const start = Math.min(currentLogicalStep, targetStepIndex);
-        const end = Math.max(currentLogicalStep, targetStepIndex);
-        
-        // This loop keeps intermediate sections hidden but maintains DOM order for slide
-        for (let i = start + 1; i < end; i++) {
-            sections[i].style.display = 'none';
-        }
-
-        // Calculate offset based on visible previous siblings
-        let visualIndex = 0;
-        for (let i = 0; i < targetStepIndex; i++) {
-            if (sections[i].style.display !== 'none') visualIndex++;
-        }
-
-        const percentage = -(visualIndex * 14.2857);
-        slider.style.transform = 'translateX(' + percentage + '%)';
-        currentLogicalStep = targetStepIndex;
-        
-        // Scroll to top of form
-        document.querySelector('.obs-form-container').scrollIntoView({behavior: 'smooth'});
+    const btnSend = document.querySelector('button[onclick="submitForm()"]');
+    const originalText = btnSend.textContent;
+    if (btnSend) {
+      btnSend.disabled = true;
+      btnSend.innerHTML = '<div class="spinner"></div> Enviando...';
     }
 
-    // --- SUBMIT ---
-    async function submitForm() {
-        if (!studentData) return alert("Faltan datos del estudiante");
-        if (!sbClient) return alert("Error de conexión");
+    try {
+      const { error } = await sbClient.rpc("create_observation_batch", {
+        p_est_id: studentData.est_id,
+        p_autoriza: autoriza,
+        p_comentarios: comentarios,
+        p_solicitudes: solicitudes,
+      });
 
-        let autoriza = false;
-        let comentarios = "Sin comentarios.";
-        let solicitudes = [];
+      if (error) throw error;
 
-        if (selectedRoute === 'nrc') {
-            const radioSi = document.querySelector('input[name="autorizacion_nrc"][value="si"]');
-            autoriza = radioSi ? radioSi.checked : false;
-
-            const finalComm = document.getElementById('final-comments-nrc');
-            if(finalComm && finalComm.value.trim() !== "") comentarios = finalComm.value.trim();
-
-            const rows = document.querySelectorAll('.request-row');
-            rows.forEach(row => {
-               const selSub = row.querySelector('.subject-select');
-               const inputNrc = row.querySelector('.nrc-input');
-               const selAct = row.querySelector('.action-select');
-               
-               if(selSub && selSub.value) {
-                   solicitudes.push({
-                       mat_id: parseInt(selSub.value),
-                       nrc_solicitado: inputNrc ? inputNrc.value.trim() : "",
-                       accion: selAct ? selAct.value : "agregar" 
-                   });
-               }
-            });
-
-            if(solicitudes.length === 0) return alert("Por favor seleccione al menos una asignatura.");
-
-        } else {
-            const msgObs = document.querySelector('textarea[name="mensaje_obs"]');
-            if(msgObs) comentarios = msgObs.value.trim();
-            if(!comentarios) return alert("Por favor escriba su observación.");
-            
-            solicitudes.push({ mat_id: null, nrc_solicitado: null, accion: "observacion" });
-        }
-        
-        const btnSend = document.querySelector('button[onclick="submitForm()"]');
-        const originalText = btnSend.textContent;
-        if(btnSend) { btnSend.disabled = true; btnSend.innerHTML = '<div class="spinner"></div> Enviando...'; }
-
-        try {
-            const { error } = await sbClient.rpc('create_observation_batch', {
-                p_est_id: studentData.est_id,
-                p_autoriza: autoriza,
-                p_comentarios: comentarios,
-                p_solicitudes: solicitudes 
-            });
-
-            if (error) throw error;
-            
-            // Success State - Styled with SVG and Scoped Classes
-            document.querySelector('.obs-form-viewport').innerHTML = `
+      // Success State - Styled with SVG and Scoped Classes
+      document.querySelector(".obs-form-viewport").innerHTML = `
                 <div class="obs-success-message">
                     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
                         <svg class="obs-success-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1289,17 +1439,21 @@ FRAGMENTO DE FORMULARIO - VERSIÓN PREMIUM (UCAB STYLE)
                         </svg>
                         <h3 class="obs-success-title">¡Solicitud Enviada!</h3>
                         <p class="obs-success-text">
-                            Hemos recibido tu solicitud correctamente. Puedes cerrar esta página.
+                            Hemos recibido tu solicitud correctamente.
                         </p>
                     </div>
                 </div>
             `;
-            // location.reload(); 
-
-        } catch (err) {
-            console.error("Error enviando:", err);
-            alert("Error al enviar solicitud: " + err.message);
-            if(btnSend) { btnSend.disabled = false; btnSend.textContent = originalText; }
-        }
+      const viewport = document.querySelector(".obs-form-viewport");
+      if (viewport) viewport.style.height = "auto";
+      // location.reload();
+    } catch (err) {
+      console.error("Error enviando:", err);
+      alert("Error al enviar solicitud: " + err.message);
+      if (btnSend) {
+        btnSend.disabled = false;
+        btnSend.textContent = originalText;
+      }
     }
+  }
 </script>
