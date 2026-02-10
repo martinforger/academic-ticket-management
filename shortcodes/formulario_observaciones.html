@@ -845,7 +845,12 @@
         </div>
 
         <div style="margin-top: 20px">
-          <button type="button" class="btn-add-row" onclick="addRequestRow()">
+          <button
+            type="button"
+            class="btn-add-row"
+            id="btn-add-request-row"
+            onclick="addRequestRow()"
+          >
             <svg
               viewBox="0 0 24 24"
               fill="none"
@@ -1201,6 +1206,7 @@
   }
 
   // --- MANEJO DE MATERIAS (DINÁMICO) ---
+  const MAX_REQUEST_ROWS = 10;
   function generateSubjectOptionsHTML() {
     let html = '<option value="">Seleccionar Asignatura...</option>';
     if (projectedSubjectIds.length > 0) {
@@ -1287,8 +1293,25 @@
     });
   }
 
+  function updateAddButtonVisibility() {
+    const addButton = document.getElementById("btn-add-request-row");
+    if (!addButton) return;
+    const rows = document.querySelectorAll(".request-row");
+    if (rows.length >= MAX_REQUEST_ROWS) {
+      addButton.style.display = "none";
+    } else {
+      addButton.style.display = "inline-flex";
+    }
+  }
+
   function addRequestRow() {
     const container = document.getElementById("requests-container");
+    if (!container) return;
+    const existingRows = container.querySelectorAll(".request-row");
+    if (existingRows.length >= MAX_REQUEST_ROWS) {
+      updateAddButtonVisibility();
+      return;
+    }
     const originalRow = document.getElementById("row-0");
     const newRow = originalRow.cloneNode(true);
     newRow.id = "";
@@ -1319,10 +1342,12 @@
       btn.style.pointerEvents = "auto";
       btn.onclick = function () {
         this.closest(".request-row").remove();
+        updateAddButtonVisibility();
         requestAnimationFrame(updateViewportHeight);
       };
     }
     container.appendChild(newRow);
+    updateAddButtonVisibility();
     requestAnimationFrame(updateViewportHeight);
   }
 
@@ -1419,6 +1444,7 @@
     slider.style.transform = "translateX(" + percentage + "%)";
     currentLogicalStep = targetStepIndex;
     requestAnimationFrame(updateViewportHeight);
+    updateAddButtonVisibility();
 
     // Scroll to top of form
     document

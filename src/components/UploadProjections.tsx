@@ -37,7 +37,19 @@ interface ScheduleRow {
   CUPO?: string | number;
 }
 
-type UploadType = 'proyecciones' | 'horarios';
+interface GeneralStudentRow {
+  est_cedula: number | string;
+  est_genero: string;
+  est_nombre: string;
+  est_correo: string;
+  est_cod_programa: string;
+  est_ubic_sem: string;
+  est_cumplimiento: string;
+  est_creditos_acum: number;
+  est_promedio: number;
+}
+
+type UploadType = 'proyecciones' | 'horarios' | 'estudiantes';
 
 export function UploadProjections() {
   const { profile } = useAuth();
@@ -49,6 +61,8 @@ export function UploadProjections() {
   // New State
   const [previewData, setPreviewData] = useState<StudentRow[]>([]);
   const [schedulePreview, setSchedulePreview] = useState<ScheduleRow[]>([]);
+  const [studentPreview, setStudentPreview] = useState<GeneralStudentRow[]>([]);
+  const [studentPreviewTotal, setStudentPreviewTotal] = useState(0);
   const [modal, setModal] = useState<{ isOpen: boolean; type: 'success' | 'error'; title: string; message: string }>({
     isOpen: false,
     type: 'success',
@@ -60,7 +74,34 @@ export function UploadProjections() {
   const resetPreview = () => {
     setPreviewData([]);
     setSchedulePreview([]);
+    setStudentPreview([]);
+    setStudentPreviewTotal(0);
     setProgress('');
+  };
+
+  const normalizeHeader = (header: string) => {
+    return header
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toUpperCase();
+  };
+
+  const parseDecimal = (value: unknown) => {
+    if (typeof value === 'number') return value;
+    if (typeof value !== 'string') return 0;
+    const cleaned = value.trim().replace(/\s/g, '').replace(',', '.');
+    const result = Number.parseFloat(cleaned);
+    return Number.isFinite(result) ? result : 0;
+  };
+
+  const parseInteger = (value: unknown) => {
+    if (typeof value === 'number') return Math.trunc(value);
+    if (typeof value !== 'string') return '';
+    const cleaned = value.trim().replace(/\s/g, '').replace(/\./g, '');
+    const result = Number.parseInt(cleaned, 10);
+    return Number.isFinite(result) ? result : '';
   };
 
   if (profile?.role !== 'administrador') {
@@ -218,6 +259,102 @@ export function UploadProjections() {
     reader.readAsText(file, 'utf-8');
   };
 
+  const handleStudentsFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setLoading(true);
+    setProgress('Leyendo archivo...');
+    setStudentPreview([]);
+    setStudentPreviewTotal(0);
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const content = evt.target?.result;
+        const csvText = typeof content === 'string' ? content : '';
+
+        if (!csvText) {
+          throw new Error('No se pudo leer el contenido del archivo CSV.');
+        }
+
+        const wb = XLSX.read(csvText, { type: 'string', FS: ';' });
+        const firstSheetName = wb.SheetNames[0];
+        if (!firstSheetName) {
+          throw new Error('El archivo CSV no contiene hojas válidas.');
+        }
+
+        const ws = wb.Sheets[firstSheetName];
+        const data = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: '' });
+
+        if (data.length === 0) {
+          throw new Error('El archivo CSV está vacío.');
+        }
+
+        const cleanedData = data.map((row) => {
+          const trimmedEntries = Object.entries(row).map(([key, value]) => [normalizeHeader(key), value]);
+          return Object.fromEntries(trimmedEntries);
+        });
+
+        const requiredColumns = [
+          'ESTU_CEDULA',
+          'ESTU_SEXO',
+          'ESTU_NOMBRE',
+          'EMAIL_ADDRESS',
+          'PROGRAM_CODE',
+          'SEMESTRE O ANO',
+          'CREDITOS',
+          'PROMEDIO'
+        ];
+        const missingColumns = requiredColumns.filter((column) => !(column in cleanedData[0]));
+        if (missingColumns.length > 0) {
+          throw new Error(`Faltan columnas requeridas: ${missingColumns.join(', ')}`);
+        }
+
+        const allowedPrograms = new Set(['LICINFORM001', 'LICINGINF001', 'TSUDIPRSO001']);
+        const mappedStudents = cleanedData
+          .map((row) => {
+            const programCode = String(row['PROGRAM_CODE'] ?? '').trim();
+            if (!allowedPrograms.has(programCode)) return null;
+
+            const semesterValue = String(row['SEMESTRE O ANO'] ?? '').trim();
+            return {
+              est_cedula: parseInteger(row['ESTU_CEDULA']),
+              est_genero: String(row['ESTU_SEXO'] ?? '').trim(),
+              est_nombre: String(row['ESTU_NOMBRE'] ?? '').trim(),
+              est_correo: String(row['EMAIL_ADDRESS'] ?? '').trim(),
+              est_cod_programa: programCode,
+              est_ubic_sem: semesterValue,
+              est_cumplimiento: semesterValue,
+              est_creditos_acum: parseDecimal(row['CREDITOS']),
+              est_promedio: parseDecimal(row['PROMEDIO'])
+            } satisfies GeneralStudentRow;
+          })
+          .filter((row): row is GeneralStudentRow => Boolean(row && row.est_cedula));
+
+        if (mappedStudents.length === 0) {
+          throw new Error('No se encontraron estudiantes válidos para los programas permitidos.');
+        }
+
+        setStudentPreviewTotal(cleanedData.length);
+        setStudentPreview(mappedStudents);
+        setProgress('');
+      } catch (err: any) {
+        console.error(err);
+        setModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Error de Lectura',
+          message: err.message || 'Error al procesar el archivo CSV.'
+        });
+        e.target.value = '';
+      } finally {
+        setLoading(false);
+      }
+    };
+    reader.readAsText(file, 'utf-8');
+  };
+
   const handleProcessUpload = async () => {
     if (uploadType === 'proyecciones') {
       if (previewData.length === 0) return;
@@ -292,24 +429,66 @@ export function UploadProjections() {
       return;
     }
 
-    if (schedulePreview.length === 0) return;
+    if (uploadType === 'horarios') {
+      if (schedulePreview.length === 0) return;
+
+      setLoading(true);
+      setProgress(`Iniciando carga de ${schedulePreview.length} registros...`);
+
+      try {
+        const { error: rpcError } = await supabase.rpc('upload_horarios_programa', {
+          p_data: schedulePreview
+        });
+
+        if (rpcError) throw rpcError;
+
+        setSchedulePreview([]);
+        setModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Carga Completada',
+          message: `Se han procesado ${schedulePreview.length} registros exitosamente.`
+        });
+      } catch (err: any) {
+        console.error(err);
+        setModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Error de Carga',
+          message: err.message || 'Ocurrió un error al insertar los datos en la base de datos.'
+        });
+      } finally {
+        setLoading(false);
+        setProgress('');
+      }
+      return;
+    }
+
+    if (studentPreview.length === 0) return;
 
     setLoading(true);
-    setProgress(`Iniciando carga de ${schedulePreview.length} registros...`);
+    setProgress(`Iniciando carga de ${studentPreview.length} registros...`);
 
     try {
-      const { error: rpcError } = await supabase.rpc('upload_horarios_programa', {
-        p_data: schedulePreview
-      });
+      const batchSize = 500;
+      for (let i = 0; i < studentPreview.length; i += batchSize) {
+        const batch = studentPreview.slice(i, i + batchSize);
+        setProgress(`Cargando registros ${i + 1}-${i + batch.length} de ${studentPreview.length}...`);
 
-      if (rpcError) throw rpcError;
+        const { error: uploadError } = await supabase.rpc('upload_estudiantes_general', {
+          p_data: batch
+        });
 
-      setSchedulePreview([]);
+        if (uploadError) throw uploadError;
+      }
+
+      setStudentPreview([]);
+      setStudentPreviewTotal(0);
       setModal({
         isOpen: true,
         type: 'success',
         title: 'Carga Completada',
-        message: `Se han procesado ${schedulePreview.length} registros exitosamente.`
+        message: `Se han procesado ${studentPreview.length} registros exitosamente.`
       });
     } catch (err: any) {
       console.error(err);
@@ -325,6 +504,14 @@ export function UploadProjections() {
     }
   };
 
+  const previewCount = uploadType === 'proyecciones'
+    ? previewData.length
+    : uploadType === 'horarios'
+      ? schedulePreview.length
+      : studentPreview.length;
+
+  const showUploadDropzone = previewCount === 0;
+
   return (
     <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-900 overflow-y-auto">
       <header className="px-8 py-6 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
@@ -332,7 +519,7 @@ export function UploadProjections() {
           <span className="material-symbols-outlined text-primary">upload_file</span>
           Carga Masiva de Datos
         </h1>
-        <p className="text-slate-500 dark:text-slate-400 mt-1">Sube archivos para actualizar proyecciones y horarios por programa</p>
+        <p className="text-slate-500 dark:text-slate-400 mt-1">Sube archivos para actualizar proyecciones, horarios y estudiantes por programa</p>
       </header>
 
       <main className="flex-1 p-8">
@@ -342,7 +529,7 @@ export function UploadProjections() {
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
               Tipo de carga
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <button
                 type="button"
                 onClick={() => {
@@ -371,6 +558,20 @@ export function UploadProjections() {
               >
                 Horarios por programa
               </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setUploadType('estudiantes');
+                  resetPreview();
+                }}
+                disabled={loading}
+                className={`px-4 py-3 rounded-lg border text-sm font-semibold transition-colors ${uploadType === 'estudiantes'
+                  ? 'border-primary/40 bg-primary/10 text-primary'
+                  : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                  }`}
+              >
+                General Estudiantes
+              </button>
             </div>
           </div>
 
@@ -388,7 +589,7 @@ export function UploadProjections() {
             </div>
           )}
 
-          {((uploadType === 'proyecciones' && !previewData.length) || (uploadType === 'horarios' && !schedulePreview.length)) ? (
+          {showUploadDropzone ? (
             <div className="mb-8">
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 {uploadType === 'proyecciones' ? 'Archivo Excel (.xlsx)' : 'Archivo CSV (.csv)'}
@@ -401,7 +602,9 @@ export function UploadProjections() {
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                       {uploadType === 'proyecciones'
                         ? `XLSX (Hoja: Poblaciones (${semester || 'CODIGO'}))`
-                        : 'CSV (Reporte de horarios por programa)'
+                        : uploadType === 'horarios'
+                          ? 'CSV (Reporte de horarios por programa)'
+                          : 'CSV (Reporte General Estudiantes)'
                       }
                     </p>
                   </div>
@@ -414,13 +617,22 @@ export function UploadProjections() {
                       onChange={handleProjectionsFileSelect}
                       disabled={loading || !semester}
                     />
-                  ) : (
+                  ) : uploadType === 'horarios' ? (
                     <input
                       id="dropzone-file"
                       type="file"
                       className="hidden"
                       accept=".csv"
                       onChange={handleScheduleFileSelect}
+                      disabled={loading}
+                    />
+                  ) : (
+                    <input
+                      id="dropzone-file"
+                      type="file"
+                      className="hidden"
+                      accept=".csv"
+                      onChange={handleStudentsFileSelect}
                       disabled={loading}
                     />
                   )}
@@ -435,7 +647,20 @@ export function UploadProjections() {
                 </div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">Archivo listo para procesar</h3>
                 <p className="text-slate-500 dark:text-slate-400 mb-6">
-                  Se han encontrado <strong className="text-slate-900 dark:text-white">{uploadType === 'proyecciones' ? previewData.length : schedulePreview.length}</strong> registros {uploadType === 'proyecciones' ? `para el semestre ${semester}` : 'en el reporte de horarios'}.
+                  {uploadType === 'estudiantes'
+                    ? (
+                      <>
+                        Se han encontrado <strong className="text-slate-900 dark:text-white">{studentPreview.length}</strong> estudiantes de los programas permitidos
+                        {studentPreviewTotal > 0 && (
+                          <> de un total de <strong className="text-slate-900 dark:text-white">{studentPreviewTotal}</strong> en el reporte</>
+                        )}.
+                      </>
+                    )
+                    : (
+                      <>
+                        Se han encontrado <strong className="text-slate-900 dark:text-white">{uploadType === 'proyecciones' ? previewData.length : schedulePreview.length}</strong> registros {uploadType === 'proyecciones' ? `para el semestre ${semester}` : 'en el reporte de horarios'}.
+                      </>
+                    )}
                 </p>
 
                 <div className="flex gap-3 justify-center">
@@ -459,7 +684,12 @@ export function UploadProjections() {
                     ) : (
                       <>
                         <span className="material-symbols-outlined">send</span>
-                        {uploadType === 'proyecciones' ? 'Procesar Datos' : 'Procesar Horarios'}
+                        {uploadType === 'proyecciones'
+                          ? 'Procesar Datos'
+                          : uploadType === 'horarios'
+                            ? 'Procesar Horarios'
+                            : 'Procesar Estudiantes'
+                        }
                       </>
                     )}
                   </button>
@@ -468,7 +698,7 @@ export function UploadProjections() {
             </div>
           )}
 
-          {loading && !previewData.length && !schedulePreview.length && (
+          {loading && !previewData.length && !schedulePreview.length && !studentPreview.length && (
             <div className="mb-6">
               <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400 mb-2">
                 <span>Estado</span>
