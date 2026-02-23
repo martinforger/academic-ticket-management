@@ -34,7 +34,7 @@ export const exportObservationsToExcel = async () => {
   if (error) throw error;
 
   if (!data || data.length === 0) {
-    throw new Error('No hay datos para exportar');
+    return 0; // Return 0 gracefully instead of throwing an error
   }
 
   // Flatten data for Excel export

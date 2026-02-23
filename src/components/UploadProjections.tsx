@@ -520,9 +520,17 @@ export function UploadProjections() {
       const { error } = await supabase
         .from('observacion')
         .delete()
-        .neq('obs_id', 0); // Deletes all records
+        .not('obs_id', 'is', null); // Deletes all records safely
 
       if (error) throw error;
+
+      // 3. Delete audit logs
+      const { error: auditError } = await supabase
+        .from('audit_logs')
+        .delete()
+        .not('id', 'is', null); // Deletes all records safely
+
+      if (auditError) throw auditError;
 
       setIsDeleteModalOpen(false);
       setModal({
