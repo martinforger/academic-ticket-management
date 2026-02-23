@@ -5,6 +5,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { OutcomeModal } from './OutcomeModal';
 import { SemesterInput } from './SemesterInput';
+import { DeleteConfirmationModal } from './DeleteConfirmationModal';
+import { exportObservationsToExcel } from '../utils/exportUtils';
 
 interface StudentRow {
   campus: string;
@@ -57,6 +59,10 @@ export function UploadProjections() {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState('');
   const [uploadType, setUploadType] = useState<UploadType>('proyecciones');
+
+  // Deletion logic hooks
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeletingData, setIsDeletingData] = useState(false);
 
   // New State
   const [previewData, setPreviewData] = useState<StudentRow[]>([]);
@@ -504,6 +510,42 @@ export function UploadProjections() {
     }
   };
 
+  const handleDownloadAndDelete = async () => {
+    setIsDeletingData(true);
+    try {
+      // 1. Download data
+      const count = await exportObservationsToExcel();
+
+      // 2. Delete data
+      const { error } = await supabase
+        .from('observacion')
+        .delete()
+        .neq('obs_id', 0); // Deletes all records
+
+      if (error) throw error;
+
+      setIsDeleteModalOpen(false);
+      setModal({
+        isOpen: true,
+        type: 'success',
+        title: 'Operación Exitosa',
+        message: `Se exportaron y eliminaron correctamente ${count} observaciones de la base de datos.`
+      });
+    } catch (err: any) {
+      console.error('Error during download/delete:', err);
+      // If it fails during download, we don't delete. If it fails during delete, they at least have the download.
+      setModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Error en la operación',
+        message: err.message || 'Se produjo un error al intentar descargar y eliminar los datos. Revise la consola para más detalles.'
+      });
+      setIsDeleteModalOpen(false);
+    } finally {
+      setIsDeletingData(false);
+    }
+  };
+
   const previewCount = uploadType === 'proyecciones'
     ? previewData.length
     : uploadType === 'horarios'
@@ -711,6 +753,37 @@ export function UploadProjections() {
           )}
 
         </div>
+
+        {/* Delete Data Card */}
+        <div className="max-w-2xl mx-auto w-full bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-rose-200 dark:border-rose-900/40 p-8 relative overflow-hidden group mt-8">
+          {/* Decorative background element */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-rose-50 dark:bg-rose-900/10 rounded-full translate-x-1/2 -translate-y-1/2 group-hover:scale-110 transition-transform pointer-events-none"></div>
+
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2.5 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-500 rounded-lg">
+                <span className="material-symbols-outlined text-2xl block">delete_sweep</span>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white leading-tight">Limpiar Observaciones</h3>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-0.5">Acción destructiva</p>
+              </div>
+            </div>
+
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-6 leading-relaxed max-w-xl">
+              Al ejecutar esta acción, el sistema generará automáticamente un archivo <strong>Excel</strong> con un respaldo de todas las observaciones inscritas actualmente, y posteriormente las <strong>eliminará</strong> de forma definitiva de la base de datos.
+            </p>
+
+            <button
+              onClick={() => setIsDeleteModalOpen(true)}
+              className="inline-flex items-center gap-2 px-5 py-3 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/40 hover:text-rose-700 rounded-xl font-bold text-sm transition-all border border-rose-200 dark:border-rose-800"
+            >
+              <span className="material-symbols-outlined text-lg">cloud_download</span>
+              Descargar y eliminar datos
+            </button>
+          </div>
+        </div>
+
       </main>
 
       <OutcomeModal
@@ -719,6 +792,13 @@ export function UploadProjections() {
         type={modal.type}
         title={modal.title}
         message={modal.message}
+      />
+
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDownloadAndDelete}
+        isDeleting={isDeletingData}
       />
     </div>
   );

@@ -2,7 +2,6 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Request, Status } from '../types';
 import { useAuth } from '../contexts/AuthContext';
-import * as XLSX from 'xlsx';
 import { RESPONSES_BY_CATEGORY } from '../data/predefinedResponses';
 import { DEPARTMENT_COLORS, DEPARTMENT_NAMES } from '../constants/departments';
 import { useRealtimeLock } from '../hooks/useRealtimeLock';
@@ -30,83 +29,12 @@ export const RequestsView: React.FC = () => {
   const exportToExcel = async () => {
     setExporting(true);
     try {
-      // Fetch ALL data from the normalized tables with joins
-      const { data, error } = await supabase
-        .from('observacion')
-        .select(`
-          obs_id,
-          obs_estatus,
-          obs_clasificacion,
-          obs_num_caso,
-          obs_fecha,
-          obs_autoriza,
-          obs_accion,
-          obs_nrc_solicitado,
-          obs_comentarios,
-          obs_responsable,
-          obs_respuesta_interna,
-          obs_respuesta_externa,
-          estudiante (
-            est_cedula,
-            est_nombre,
-            est_ubic_sem,
-            est_promedio,
-            est_creditos_acum,
-            est_correo
-          ),
-          materia (
-            mat_nombre
-          )
-        `);
-
-      if (error) throw error;
-
-      if (!data || data.length === 0) {
-        alert('No hay datos para exportar');
-        return;
-      }
-
-      // Flatten data for Excel export
-      const flattenedData = data.map((row: any) => ({
-        'ID': row.obs_id,
-        'Estatus': row.obs_estatus,
-        'Clasificación': row.obs_clasificacion,
-        '# de Caso': row.obs_num_caso,
-        'Fecha': row.obs_fecha,
-        'Cédula': row.estudiante?.est_cedula,
-        'Estudiante': row.estudiante?.est_nombre,
-        'Semestre': row.estudiante?.est_ubic_sem,
-        'Promedio': row.estudiante?.est_promedio,
-        'Créditos': row.estudiante?.est_creditos_acum,
-        'Materia': row.materia?.mat_nombre,
-        'Acción': row.obs_accion,
-        'NRC': row.obs_nrc_solicitado,
-        'Autoriza': row.obs_autoriza,
-        'Comentarios': row.obs_comentarios,
-        'Contacto': row.estudiante?.est_correo,
-        'Responsable': row.obs_responsable,
-        'Respuesta Interna': row.obs_respuesta_interna,
-        'Respuesta Estudiante': row.obs_respuesta_externa
-      }));
-
-      // Create workbook and worksheet
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(flattenedData);
-
-      // Add worksheet to workbook
-      XLSX.utils.book_append_sheet(wb, ws, 'Observaciones');
-
-      // Generate filename with current date
-      const date = new Date().toISOString().split('T')[0];
-      const filename = `observaciones_${date}.xlsx`;
-
-      // Download the file
-      XLSX.writeFile(wb, filename);
-
-      alert(`Archivo "${filename}" descargado exitosamente con ${data.length} registros.`);
-    } catch (err) {
+      const { exportObservationsToExcel } = await import('../utils/exportUtils');
+      const count = await exportObservationsToExcel();
+      alert(`Archivo descargado exitosamente con ${count} registros.`);
+    } catch (err: any) {
       console.error('Error exporting to Excel:', err);
-      alert('Error al exportar los datos');
+      alert(err.message || 'Error al exportar los datos');
     } finally {
       setExporting(false);
     }
