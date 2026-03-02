@@ -136,6 +136,142 @@
     .unique:only-child {
         display: block;
     }
+
+    /* Graphical Schedule CSS based on formulario_observaciones */
+    .er-schedule-container {
+        font-family: inherit;
+        background: #ffffff;
+        border: 1px solid #e1e4e8;
+        border-radius: 6px;
+        overflow: hidden;
+        margin-top: 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    .er-schedule-header {
+        background: #edf2f7;
+        padding: 12px 20px;
+        border-bottom: 1px solid #e1e4e8;
+        font-weight: 600;
+        color: #343434;
+        font-size: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .er-schedule-grid {
+        display: grid;
+        grid-template-columns: 60px repeat(6, 1fr);
+        grid-template-rows: auto repeat(28, minmax(28px, 1fr));
+        background-color: #eee;
+        gap: 1px;
+    }
+
+    .er-grid-header {
+        background-color: #f8f9fa;
+        text-align: center;
+        font-weight: 600;
+        color: #555;
+        padding: 8px 0;
+        font-size: 0.85rem;
+        border-bottom: 2px solid #ddd;
+    }
+
+    .er-time-label-col {
+        background-color: #fefefe;
+        text-align: right;
+        padding: 4px 8px;
+        font-size: 0.75rem;
+        color: #888;
+        border-right: 1px solid #ddd;
+        min-height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+    }
+
+    .er-grid-cell {
+        background-color: #fff;
+        position: relative;
+        z-index: 1;
+    }
+
+    .er-class-block {
+        background-color: #0071bb;
+        color: #fff;
+        border-radius: 4px;
+        padding: 4px;
+        font-size: 0.75rem;
+        line-height: 1.2;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
+        margin: 2px;
+        z-index: 5;
+    }
+
+    .er-class-block:hover {
+        transform: scale(1.02);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        z-index: 10;
+    }
+
+    .er-class-block .subject-acronym {
+        font-weight: bold;
+        font-size: 0.8rem;
+        margin-bottom: 2px;
+    }
+
+    .er-empty-state {
+        padding: 30px;
+        text-align: center;
+        color: #666;
+        font-style: italic;
+    }
+
+    @media (max-width: 768px) {
+        .er-schedule-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background: transparent;
+        }
+
+        .er-grid-header,
+        .er-time-label-col,
+        .er-grid-cell {
+            display: none;
+        }
+
+        .er-mobile-day {
+            background: #fff;
+            border: 1px solid #e1e4e8;
+            border-radius: 4px;
+            padding: 15px;
+        }
+
+        .er-mobile-day h4 {
+            margin: 0 0 10px 0;
+            color: #0071bb;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+
+        .er-mobile-class {
+            margin-bottom: 10px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-left: 4px solid #0071bb;
+            border-radius: 2px;
+        }
+    }
 </style>
 <div id="er-container">
     <form id="er-ssn-search-frm">
@@ -202,6 +338,10 @@
                 [box type="info"]Si consideras que hay un error en la proyección aquí desplegada, por favor
                 <a id="report-error-link" href="#" target="_blank" style="font-weight: bold">reporta el error haciendo
                     clic aquí</a>.[/box]
+            </div>
+
+            <div id="subject-schedules-container">
+                <!-- Se inyectará el horario gráfico aquí -->
             </div>
         </div>
     </div>
@@ -320,77 +460,165 @@
         }
 
         function renderSchedules() {
-            return; // ESC TEMP
-            // const selectedSchedules = studentSchedules.filter(
-            //   (s) =>
-            //     selectedSubjects.has(s.subjectId) ||
-            //     (s.type === 'ELEC-INFO' && (selectedSubjects.has('FING-ELEC1') || selectedSubjects.has('FING-ELEC2'))) ||
-            //     (s.type === 'ELEC-COMP' && selectedSubjects.has('FING-ELEC3'))
-            // );
+            const $container = jQuery('#subject-schedules-container');
 
-            // $schedulesModalContent.empty().html('<h2>Horarios y profesores de las asignaturas seleccionadas</h2>');
+            const selectedSchedules = studentSchedules.filter(
+                (s) =>
+                    selectedSubjects.has(s.subjectId) ||
+                    (s.type === 'ELEC-INFO' && (selectedSubjects.has('FING-ELEC1') || selectedSubjects.has('FING-ELEC2'))) ||
+                    (s.type === 'ELEC-COMP' && selectedSubjects.has('FING-ELEC3'))
+            );
 
-            // if (selectedSchedules.length === 0) {
-            //   $schedulesModalContent.append(
-            //     '<p>No hay horarios asociados a las asignaturas seleccionadas o no seleccionaste ninguna asignatura.</p>'
-            //   );
-            //   return;
-            // }
+            if (selectedSchedules.length === 0) {
+                $container.empty();
+                return;
+            }
 
-            // selectedSchedules.forEach((schedule) => {
-            //   const $schedule = jQuery('<div class="schedule"></div>');
-            //   const $header = jQuery('<div class="schedule-header"></div>');
-            //   const $body = jQuery('<div class="schedule-body"></div>');
-            //   const type =
-            //     schedule.type === 'ELEC-INFO'
-            //       ? 'Electiva (Informática)'
-            //       : schedule.type === 'ELEC-COMP'
-            //       ? 'Electiva (Complementaria)'
-            //       : 'Obligatoria';
+            const headerHtml = `
+                <div class="er-schedule-container">
+                    <div class="er-schedule-header">
+                        <span>Horario Sugerido (${selectedSchedules.length} materias)</span>
+                    </div>
+                    <div class="er-schedule-grid">
+                        <div class="er-grid-header" style="grid-column: 1; grid-row: 1;">Hora</div>
+                        <div class="er-grid-header" style="grid-column: 2; grid-row: 1;">Lunes</div>
+                        <div class="er-grid-header" style="grid-column: 3; grid-row: 1;">Martes</div>
+                        <div class="er-grid-header" style="grid-column: 4; grid-row: 1;">Miércoles</div>
+                        <div class="er-grid-header" style="grid-column: 5; grid-row: 1;">Jueves</div>
+                        <div class="er-grid-header" style="grid-column: 6; grid-row: 1;">Viernes</div>
+                        <div class="er-grid-header" style="grid-column: 7; grid-row: 1;">Sábado</div>
+            `;
 
-            //   $header.append(`<h3>${schedule.subjectId} - ${schedule.subjectName} (NRC ${schedule.crn})</h3>`);
-            //   $header.append(
-            //     `<p class="subject-info">${type} | ${schedule.taxonomy} | ${schedule.modality} | ${schedule.uc} UC | Sección ${schedule.section}</p>`
-            //   );
-            //   $header.append(`<p class="subject-professor">Profesor: ${schedule.professor}</p>`);
+            let timeRowsHtml = '';
+            for (let hour = 7; hour <= 20; hour++) {
+                // Generar dos bloques por hora (ej. 07:00 y 07:30)
+                const h1 = hour.toString().padStart(2, '0') + ':00';
+                const rowH1 = 2 + ((hour - 7) * 2);
+                timeRowsHtml += `<div class="er-time-label-col" style="grid-column: 1; grid-row: ${rowH1};"><span>${h1}</span></div>`;
 
-            //   const $table = jQuery('<table class="tablepress"></table>');
-            //   const $thead = jQuery('<thead></thead>');
-            //   const $tbody = jQuery('<tbody class="row-hover"></tbody>');
+                const h2 = hour.toString().padStart(2, '0') + ':30';
+                const rowH2 = 2 + ((hour - 7) * 2) + 1;
+                timeRowsHtml += `<div class="er-time-label-col" style="grid-column: 1; grid-row: ${rowH2};"><span style="color:#ccc">${h2}</span></div>`;
+            }
 
-            //   const $theadRow = jQuery('<tr></tr>');
-            //   $theadRow.append('<th style="text-align:center;">Día</th>');
-            //   $theadRow.append('<th style="text-align:center;">Hora</th>');
-            //   $theadRow.append('<th style="text-align:center;">Aula</th>');
+            // Make sure the empty grid cells are explicitly drawn for visual grid lines (optional, but good for structure)
+            for (let r = 2; r <= 29; r++) {
+                for (let c = 2; c <= 7; c++) {
+                    timeRowsHtml += `<div class="er-grid-cell" style="grid-column: ${c}; grid-row: ${r};"></div>`;
+                }
+            }
 
-            //   $thead.append($theadRow);
 
-            //   const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+            const activeColors = [
+                '#0071bb', '#1c7c54', '#f1b417', '#c4151c', '#6f42c1', '#fd7e14', '#e83e8c', '#20c997'
+            ];
 
-            //   days.forEach((day) => {
-            //     if (schedule.schedules[day]) {
-            //       const $row = jQuery('<tr></tr>');
+            let blocksHtml = '';
+            let mobileBlocksHtml = '';
+            const daysMap = { monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
+            const mobileDaysData = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
+            const dayNames = { 1: 'Lunes', 2: 'Martes', 3: 'Miércoles', 4: 'Jueves', 5: 'Viernes', 6: 'Sábado' };
 
-            //       $row.append(`<td style="text-align:center;">${weekDays[day]}</td>`);
-            //       $row.append(
-            //         `<td style="text-align:center;">${schedule.schedules[day].start} - ${schedule.schedules[day].end}</td>`
-            //       );
-            //       $row.append(`<td style="text-align:center;">${schedule.schedules[day].room}</td>`);
+            selectedSchedules.forEach((schedule, index) => {
+                const color = activeColors[index % activeColors.length];
 
-            //       $tbody.append($row);
-            //     }
-            //   });
+                Object.keys(daysMap).forEach(day => {
+                    const block = schedule.schedules[day];
+                    if (block) {
+                        const dayCol = daysMap[day];
 
-            //   $table.append($thead);
-            //   $table.append($tbody);
+                        // Parse times (e.g. "07:00_09:50") normally converted to .start .end
+                        const startParts = block.start.split(':');
+                        const endParts = block.end.split(':');
 
-            //   $body.append($table);
+                        const startHour = parseInt(startParts[0], 10);
+                        const startMin = parseInt(startParts[1], 10);
 
-            //   $schedule.append($header);
-            //   $schedule.append($body);
+                        // Grid starts at 7:00. Row 1 is headers.
+                        // Every 30 mins is 1 row. 
+                        // So 7:00 is row 2, 7:30 is row 3...
+                        const startRow = 2 + ((startHour - 7) * 2) + (startMin >= 30 ? 1 : 0);
 
-            //   $schedulesModalContent.append($schedule);
-            // });
+                        let endHour = parseInt(endParts[0], 10);
+                        let endMin = parseInt(endParts[1], 10);
+
+                        // Handle "P/A" or "A/B" suffix if it exists on frontend parser
+                        if (isNaN(endMin)) {
+                            // Extract just the numbers if there's text attached
+                            const cleanEnd = block.end.replace(/[^\d:]/g, '');
+                            if (cleanEnd.includes(':')) {
+                                const cleanEndParts = cleanEnd.split(':');
+                                endHour = parseInt(cleanEndParts[0], 10);
+                                endMin = parseInt(cleanEndParts[1], 10);
+                            }
+                        }
+
+                        let endRow = 2 + ((endHour - 7) * 2) + (endMin >= 30 ? 1 : 0);
+
+                        // Adjust if it ends at xx:50 (rounds up to the next hour for visual span)
+                        if (endMin >= 50) {
+                            endRow += 1;
+                        }
+
+                        // We add +1 to column because column 1 is for Time Labels
+                        blocksHtml += `
+                            <div class="er-class-block" style="grid-column: ${dayCol + 1}; grid-row: ${startRow} / ${endRow}; background-color: ${color};">
+                                <span class="subject-acronym">${schedule.subjectId}</span>
+                                <span>${block.start} - ${block.end}</span>
+                                <span>${block.room}</span>
+                            </div>
+                        `;
+
+                        mobileDaysData[dayCol].push({
+                            subject: schedule.subjectName,
+                            acronym: schedule.subjectId,
+                            time: `${block.start} - ${block.end}`,
+                            room: block.room,
+                            color: color
+                        });
+                    }
+                });
+            });
+
+            // Build mobile view from mobileDaysData
+            Object.keys(mobileDaysData).forEach(dayIndex => {
+                const dayClasses = mobileDaysData[dayIndex];
+                if (dayClasses.length > 0) {
+                    // Sort by time within the day
+                    dayClasses.sort((a, b) => a.time.localeCompare(b.time));
+
+                    mobileBlocksHtml += `<div class="er-mobile-day">`;
+                    mobileBlocksHtml += `<h4>${dayNames[dayIndex]}</h4>`;
+                    dayClasses.forEach(cls => {
+                        mobileBlocksHtml += `
+                            <div class="er-mobile-class" style="border-left-color: ${cls.color}">
+                                <strong>${cls.acronym}</strong> - ${cls.subject}<br>
+                                <small>${cls.time} | Aula: ${cls.room}</small>
+                            </div>
+                        `;
+                    });
+                    mobileBlocksHtml += `</div>`;
+                }
+            });
+
+            if (blocksHtml === '') {
+                mobileBlocksHtml = `<div class="er-empty-state">Las materias seleccionadas no tienen horarios publicados o son virtuales.</div>`;
+            }
+
+            const footerHtml = `
+                        ${blocksHtml}
+                    </div>
+                    ${mobileBlocksHtml !== '' && blocksHtml === '' ? mobileBlocksHtml : `<div class="er-schedule-grid" style="display:none;" id="er-mobile-grid-inject">${mobileBlocksHtml}</div>`}
+                </div>
+            `;
+
+            $container.html(headerHtml + timeRowsHtml + footerHtml);
+
+            // Hide normal grid on mobile and inject mobile blocks
+            if (window.innerWidth <= 768 && blocksHtml !== '') {
+                // Managed by media query where .er-schedule-grid flips to flex + hides headers
+                jQuery('#subject-schedules-container .er-schedule-grid').first().html(mobileBlocksHtml).css('display', 'flex');
+            }
         }
 
         function handleSsnSearchButtonClick(evt) {
