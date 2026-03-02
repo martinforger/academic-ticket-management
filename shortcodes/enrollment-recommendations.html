@@ -1,0 +1,748 @@
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<style>
+    #er-container table th {
+        padding: 7px !important;
+    }
+
+    #er-container table tr td {
+        padding: 0.857em 0.587em !important;
+    }
+
+    #er-error-message {
+        color: #c4151c;
+    }
+
+    .report-error {
+        margin-top: 22px;
+    }
+
+    #er-ssn-search {
+        position: relative;
+        top: -1px;
+        margin-right: 12px;
+        height: 3.08em;
+        width: calc(100% - 125px);
+        padding: 14px;
+        color: #999;
+        font-size: 1rem;
+        background-color: #eee;
+        border: 2px solid #c5c4c4;
+        border-radius: 3px;
+        -webkit-appearance: none;
+        appearance: none;
+    }
+
+    .form-button {
+        cursor: pointer;
+        line-height: 1.64em !important;
+    }
+
+    #optional-subject-warn,
+    #optional-subject-record {
+        margin-top: 22px;
+    }
+
+    #er-details p:first-child {
+        margin: 8px 0;
+        padding: 12px 0 8px 0;
+        border-bottom: 2px solid #c5c4c4;
+    }
+
+    #er-details .projected-info p {
+        border-bottom: none !important;
+    }
+
+    #er-details .alert {
+        color: #c4151c;
+    }
+
+    #total-projected-uc {
+        font-weight: 600;
+    }
+
+    input[type='checkbox'] {
+        box-sizing: border-box;
+        width: 20px;
+        height: 20px;
+        margin: 6px;
+        padding: 0;
+        border: 2px solid #c5c4c4;
+        appearance: none;
+        background-color: #eee;
+        outline: none;
+        transition: outline 0.1s;
+    }
+
+    input[type='checkbox']:checked {
+        background-size: cover;
+        padding: 2px;
+    }
+
+    input[type='checkbox']:not(:disabled):indeterminate {
+        border-color: #c5c4c4;
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="16" height="16" viewBox="0 0 412 420"><path style="fill:%230071bb" d="M28.21 250.35l0 -100.29 353.22 -0.01 -0.02 100.3 -353.2 0zm0 0l0 0 0 0z"/></svg>');
+    }
+
+    input[type='checkbox']:not(:disabled):checked {
+        border-color: #c5c4c4;
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" viewBox="0 0 34 34" xml:space="preserve"><path style="fill: %230071bb" d="M11.941,28.877l-11.941-11.942l5.695-5.696l6.246,6.246l14.364-14.364L32,8.818"/></svg>');
+    }
+
+    input[type='checkbox']:disabled {
+        background-color: var(--checkbox-disabled-bg-color);
+    }
+
+    input[type='checkbox']:disabled:checked {
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" viewBox="0 0 34 34" xml:space="preserve"><path style="fill: %238b8c89" d="M11.941,28.877l-11.941-11.942l5.695-5.696l6.246,6.246l14.364-14.364L32,8.818"/></svg>');
+    }
+
+    @media (hover: hover) {
+        input[type='checkbox']:not(:disabled):hover {
+            cursor: pointer;
+            outline: 2px solid #005288;
+            transform: scale(1.05);
+        }
+    }
+
+    input[type='checkbox']:focus-visible {
+        outline: 4px solid #0071bb;
+        transform: scale(1.05);
+    }
+
+    #schedules-container {
+        padding: 22px 0 0 0;
+    }
+
+    #subject-schedules-content .schedule-header h4,
+    #subject-schedules-content .schedule-header .subject-info {
+        padding: 0;
+    }
+
+    #subject-schedules-content .schedule-header .subject-professor {
+        padding: 0;
+    }
+
+    .projected-info .selected-credits {
+        margin-bottom: 22px;
+        padding: 1.25rem;
+        background-color: #eee;
+        text-align: center;
+    }
+
+    .unique:not(:only-child) {
+        display: none;
+    }
+
+    .unique:only-child {
+        display: block;
+    }
+</style>
+<div id="er-container">
+    <form id="er-ssn-search-frm">
+        <input id="er-ssn-search" name="ssn" type="text" placeholder="Introduce tu número de cédula de identidad" />
+        <button id="er-ssn-search-btn" class="form-button et_pb_button" type="submit">Buscar</button>
+    </form>
+    <img id="er-loader"
+        src="https://ingenieria.ucab.edu.ve/informatica/wp-content/uploads/sites/4/2019/07/popup_loading.gif"
+        style="display: none" />
+    <div id="er-details-container" style="display: none">
+        <div id="er-details">
+            <p>
+                <strong>Nombre:</strong> <span class="name"></span><br />
+                <strong>Programa:</strong> <span class="program"></span><br />
+                <strong>Promedio:</strong> <span class="agp"></span> / 20 puntos<br />
+                <strong>Ubicación:</strong> <span class="sem-loc"></span> (<span class="accum-uc"></span> UC acumuladas)
+            </p>
+            <p style="margin: 7px 0">
+                A continuación, se listan las asignaturas que podrás cursar en este período, de acuerdo a tu récord
+                académico.
+                <strong>Toma en especial consideración las asignaturas que se marcan en el cuadro de verificación, y el
+                    orden en que
+                    aparecen las mismas</strong>, pues constituyen la recomendación de inscripción que desde la Escuela
+                te hacemos, basados en la naturaleza de
+                las asignaturas disponibles y tu historial académico:
+            </p>
+            <div class="projected-subjects"></div>
+            <div class="projected-info">
+                <div class="selected-credits">
+                    Has seleccionado un total <span id="total-projected-uc">0</span> UC.<br />
+                    <div style="display: none">
+                        » <a href="#subject-schedules">Ver los horarios tentativos de las asignaturas seleccionadas</a>
+                        «
+                    </div>
+                </div>
+                [box type="download"]<div id="recommendations">
+                    Por tu ubicación en la malla curricular te recomendamos cursar hasta un máximo de
+                    <strong style="color: #0d793d"><span id="max-recommended-uc">0</span> UC</strong> en este semestre.
+                </div>[/box]
+            </div>
+            <div id="optional-subject-warn">
+                [box type="warning"]Toma en cuenta que no todas las asignaturas electivas ofrecidas en la Universidad
+                tienen la misma cantidad de
+                unidades crédito (UC). En la lista de asignaturas proyectadas se muestran las asignaturas electivas con
+                cuatro
+                (4) UC como referencia. Para obtener el título de Ingeniero/a en Informática
+                <strong>debes aprobar un total de doce (12) UC en asignaturas electivas</strong>.
+                [/box]
+                <p style="border:none;">&nbsp;</p>
+                [box type="alert"]
+                Si cursaste alguna asignatura electiva que es obligatoria en otras unidades académicas <strong>
+                    <a href="https://www.ucab.edu.ve/informacion-institucional/secretaria/servicios/solicitud-de-registro-de-materias-electivas/"
+                        target="_blank" style="color: rgba(196,21,28);text-decoration:underline;cursor:pointer;">debes
+                        registrarlas ante Secretaría General</a></strong>.
+                Si no lo has hecho, no aparecerán en tu récord académico, y por tanto, aparecerán como "pendientes por
+                cursar" en la presente lista de asignaturas.<br /><br />
+                Ahora bien, si hiciste el registro con antelación a este proceso de solicitud de inscripción en línea y
+                todavía te aparece proyectada alguna asignatura
+                electiva, a pesar de haberla cursado y registrado como tal ante Secretaría General, no dudes en
+                reportarlo a través del formulario respectivo.
+                [/box]
+            </div>
+            <div class="report-error">
+                [box type="info"]Si consideras que hay un error en la proyección aquí desplegada, por favor
+                <a id="report-error-link" href="#" target="_blank" style="font-weight: bold">reporta el error haciendo
+                    clic aquí</a>.[/box]
+            </div>
+        </div>
+    </div>
+    <div id="er-error-message" style="display: none"></div>
+</div>
+
+<script>
+    const term = '202525'; // '%%term:202515%%';
+    const { createClient } = supabase;
+    const supabaseUrl = 'https://zmvecicbbxbpuhbnexiz.supabase.co';
+    const supabaseAnonKey =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptdmVjaWNiYnhicHVoYm5leGl6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4ODQzMzAsImV4cCI6MjA4NTQ2MDMzMH0.m5lHEASg8lCo4qjajA4yLzjqYN12g3tlNkZh4h_vBmE';
+    const _supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const invalidSsn = 'Debes introducir un número de cédula de identidad válido.';
+    const notFound = 'No se encontró ninguna información asociada a la cédula de identidad N° <strong>@SSN@</strong>.';
+    const generalError = 'Hubo un error inesperado al intentar obtener la información. Intenta más tarde&hellip;';
+    const SPEED = 250;
+    const reportLink =
+        'https://docs.google.com/forms/d/e/1FAIpQLSfhMWpdDPe2EowqEAYkx6_lHwcGmaDc_pyOp244DOSuD14BXg/viewform?usp=pp_url&entry.66360717=@@SSN@@&entry.134787551=@@lastName@@&entry.1083683938=@@name@@&entry.875582967=@@report@@';
+
+    jQuery(() => {
+        const $frm = jQuery('#er-ssn-search-frm');
+        const $ssn = jQuery('#er-ssn-search');
+        const $detailsContainer = jQuery('#er-details-container');
+        const $errMsg = jQuery('#er-error-message');
+        const $loader = jQuery('#er-loader');
+        const $name = $detailsContainer.find('.name');
+        const $program = $detailsContainer.find('.program');
+        const $agp = $detailsContainer.find('.agp');
+        const $semLoc = $detailsContainer.find('.sem-loc');
+        const $accumUc = $detailsContainer.find('.accum-uc');
+        const $projectedSubjects = $detailsContainer.find('.projected-subjects');
+        const $totalUc = jQuery('#total-projected-uc');
+        const $maxRecommendedUc = jQuery('#max-recommended-uc');
+        const $schedulesContainer = $detailsContainer.find('.schedules-container');
+        const $schedulesModalContent = jQuery('#subject-schedules-content');
+
+        let ssn = null;
+        let totalCredits = 0;
+        let studentSchedules = [];
+        let hasOptionalSubjects = false;
+        let selectedSubjects = new Set();
+
+        $detailsContainer.on('click', 'input[type=checkbox]', handleCheckboxClick);
+        $frm.on('click', '#er-ssn-search-btn', handleSsnSearchButtonClick);
+
+        function validateSsn(ssn) {
+            const matched = ssn.match(/^(?:AS){0,1}(\d+)$/i);
+            return matched !== null;
+        }
+
+        async function handleFetchStudentResponse(data) {
+            $totalUc.text('0');
+            studentSchedules = [];
+            selectedSubjects.clear();
+
+            if (data === null) {
+                hideLoader(notFound.replace('@SSN@', ssn));
+            } else {
+                hideLoader();
+                updateStudentInfo(data);
+                await fetchSchedules(term, data.info.program, data.subjects).then(handleStudentSchedules).catch(handleError);
+                renderSubjects(data.subjects, semesterLoad[data.info.location]);
+                checkSubjects(data.subjects, semesterLoad[data.info.location]);
+                renderErrorReportLink(data);
+
+                $maxRecommendedUc.text(semesterLoad[data.info.location]);
+            }
+        }
+
+        function handleStudentSchedules(data) {
+            studentSchedules = data;
+        }
+
+        function handleError(err) {
+            console.error(err);
+            hideLoader(generalError);
+        }
+
+        function updateStudentInfo(data) {
+            $name.text(data.info.name);
+            $program.text(
+                `${studyPlans[data.info.program.slice(0, -3)]} (${data.info.program} | ${campus[data.info.campus]})`
+            );
+            $agp.text(data.info.agp.toLocaleString('es-VE'));
+            $semLoc.text(data.info.location);
+            $accumUc.text(data.info.accumUc);
+        }
+
+        function updateTotalUc(credits, isAdding) {
+            let totalUcValue = parseFloat($totalUc.text()) || 0;
+
+            if (isAdding) {
+                totalUcValue += credits;
+            } else {
+                totalUcValue -= credits;
+            }
+
+            $totalUc.text(totalUcValue.toFixed(0));
+
+            if (totalUcValue.toFixed(0) > semesterLoad[$semLoc.text()]) {
+                $totalUc.parent().addClass('alert');
+            } else {
+                $totalUc.parent().removeClass('alert');
+            }
+        }
+
+        function updateSelectedSubjects(subjectId, isSelected) {
+            if (isSelected) {
+                selectedSubjects.add(subjectId);
+            } else {
+                selectedSubjects.delete(subjectId);
+            }
+
+            renderSchedules();
+        }
+
+        function renderSchedules() {
+            return; // ESC TEMP
+            // const selectedSchedules = studentSchedules.filter(
+            //   (s) =>
+            //     selectedSubjects.has(s.subjectId) ||
+            //     (s.type === 'ELEC-INFO' && (selectedSubjects.has('FING-ELEC1') || selectedSubjects.has('FING-ELEC2'))) ||
+            //     (s.type === 'ELEC-COMP' && selectedSubjects.has('FING-ELEC3'))
+            // );
+
+            // $schedulesModalContent.empty().html('<h2>Horarios y profesores de las asignaturas seleccionadas</h2>');
+
+            // if (selectedSchedules.length === 0) {
+            //   $schedulesModalContent.append(
+            //     '<p>No hay horarios asociados a las asignaturas seleccionadas o no seleccionaste ninguna asignatura.</p>'
+            //   );
+            //   return;
+            // }
+
+            // selectedSchedules.forEach((schedule) => {
+            //   const $schedule = jQuery('<div class="schedule"></div>');
+            //   const $header = jQuery('<div class="schedule-header"></div>');
+            //   const $body = jQuery('<div class="schedule-body"></div>');
+            //   const type =
+            //     schedule.type === 'ELEC-INFO'
+            //       ? 'Electiva (Informática)'
+            //       : schedule.type === 'ELEC-COMP'
+            //       ? 'Electiva (Complementaria)'
+            //       : 'Obligatoria';
+
+            //   $header.append(`<h3>${schedule.subjectId} - ${schedule.subjectName} (NRC ${schedule.crn})</h3>`);
+            //   $header.append(
+            //     `<p class="subject-info">${type} | ${schedule.taxonomy} | ${schedule.modality} | ${schedule.uc} UC | Sección ${schedule.section}</p>`
+            //   );
+            //   $header.append(`<p class="subject-professor">Profesor: ${schedule.professor}</p>`);
+
+            //   const $table = jQuery('<table class="tablepress"></table>');
+            //   const $thead = jQuery('<thead></thead>');
+            //   const $tbody = jQuery('<tbody class="row-hover"></tbody>');
+
+            //   const $theadRow = jQuery('<tr></tr>');
+            //   $theadRow.append('<th style="text-align:center;">Día</th>');
+            //   $theadRow.append('<th style="text-align:center;">Hora</th>');
+            //   $theadRow.append('<th style="text-align:center;">Aula</th>');
+
+            //   $thead.append($theadRow);
+
+            //   const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+            //   days.forEach((day) => {
+            //     if (schedule.schedules[day]) {
+            //       const $row = jQuery('<tr></tr>');
+
+            //       $row.append(`<td style="text-align:center;">${weekDays[day]}</td>`);
+            //       $row.append(
+            //         `<td style="text-align:center;">${schedule.schedules[day].start} - ${schedule.schedules[day].end}</td>`
+            //       );
+            //       $row.append(`<td style="text-align:center;">${schedule.schedules[day].room}</td>`);
+
+            //       $tbody.append($row);
+            //     }
+            //   });
+
+            //   $table.append($thead);
+            //   $table.append($tbody);
+
+            //   $body.append($table);
+
+            //   $schedule.append($header);
+            //   $schedule.append($body);
+
+            //   $schedulesModalContent.append($schedule);
+            // });
+        }
+
+        function handleSsnSearchButtonClick(evt) {
+            evt.preventDefault();
+
+            if (ssn !== $ssn.val()) {
+                ssn = $ssn.val();
+
+                if (ssn) {
+                    if (!validateSsn(ssn)) {
+                        hideLoader(invalidSsn);
+                    } else {
+                        showLoader();
+                        fetchStudent(ssn).then(handleFetchStudentResponse).catch(handleError);
+                    }
+                } else {
+                    hideLoader(invalidSsn);
+                }
+            }
+        }
+
+        function handleCheckboxClick(evt) {
+            const idColumnIndex = 3;
+            const creditsColumnIndex = 5;
+            const $chkbox = jQuery(evt.target);
+            const $row = $chkbox.closest('tr');
+            const credits = parseFloat($row.find(`td:nth-child(${creditsColumnIndex})`).text());
+            const subjectId = $row.find(`td:nth-child(${idColumnIndex})`).text();
+
+            if ($chkbox.hasClass('select-all')) {
+                if ($chkbox.prop('checked') === true) {
+                    $detailsContainer.find('input[type=checkbox]').prop('checked', true);
+
+                    const totalCredits = $detailsContainer
+                        .find('input[type=checkbox]:not(.select-all)')
+                        .toArray()
+                        .reduce((sum, checkbox) => {
+                            const $row = jQuery(checkbox).closest('tr');
+                            selectedSubjects.add($row.find(`td:nth-child(${idColumnIndex})`).text());
+                            return sum + parseFloat($row.find(`td:nth-child(${creditsColumnIndex})`).text());
+                        }, 0);
+                    $totalUc.text(totalCredits.toFixed(0));
+
+                    if (totalCredits.toFixed(0) > semesterLoad[$semLoc.text()]) {
+                        $totalUc.parent().addClass('alert');
+                    } else {
+                        $totalUc.parent().removeClass('alert');
+                    }
+                } else {
+                    $detailsContainer.find('input[type=checkbox]').prop('checked', false);
+                    $totalUc.text('0');
+                    $totalUc.parent().removeClass('alert');
+                    selectedSubjects.clear();
+                }
+
+                renderSchedules();
+            } else {
+                const $chkboxes = $detailsContainer.find('input[type=checkbox]:not(.select-all)');
+                const $chkboxesChecked = $chkboxes.filter(':checked');
+
+                $detailsContainer.find('.select-all').prop('indeterminate', false);
+
+                if ($chkboxes.length === $chkboxesChecked.length) {
+                    $detailsContainer.find('.select-all').prop('checked', true);
+                } else if ($chkboxesChecked.length === 0) {
+                    $detailsContainer.find('.select-all').prop('checked', false);
+                } else {
+                    $detailsContainer.find('.select-all').prop('indeterminate', true);
+                }
+
+                updateTotalUc(credits, $chkbox.prop('checked'));
+                updateSelectedSubjects(subjectId, $chkbox.prop('checked'));
+            }
+        }
+
+        function checkSubjects(subjects, maxLoad) {
+            let totalCredits = 0;
+
+            subjects.forEach((subject) => {
+                totalCredits += subject.credits;
+
+                if (totalCredits <= maxLoad) {
+                    jQuery(`#sub-${subject.id.toLowerCase()} input[type=checkbox]`).trigger('click');
+                }
+            });
+        }
+
+        function showLoader() {
+            $detailsContainer.fadeOut(SPEED, () => {
+                $errMsg.fadeOut(SPEED, () => $loader.fadeIn());
+            });
+        }
+
+        function hideLoader(msg) {
+            if (msg) {
+                $loader.fadeOut(SPEED, () => {
+                    $detailsContainer.fadeOut(SPEED, () => {
+                        $errMsg.html(`<i class="fa fa-exclamation-circle" aria-hidden="true"></i> ${msg}`).fadeIn();
+                    });
+                });
+            } else {
+                $loader.fadeOut(SPEED, () => $detailsContainer.fadeIn());
+            }
+        }
+    });
+
+    function renderSubjects(subjects) {
+        const $projectedSubjects = jQuery('#er-details-container .projected-subjects');
+        $projectedSubjects.empty();
+
+        const $table = jQuery('<table class="tablepress"></table>');
+        const $thead = jQuery('<thead></thead>');
+        const $tbody = jQuery('<tbody class="row-hover"></tbody>');
+
+        const $theadRow = jQuery('<tr></tr>');
+        $theadRow.append(
+            '<th style="width:36px;text-align:center;line-height:1rem;"><input class="select-all" type="checkbox" /></th>'
+        );
+        $theadRow.append('<th style="width:66px;text-align:center;">Sem.</th>');
+        $theadRow.append('<th style="width:100px;text-align:center;">Cód.</th>');
+        $theadRow.append('<th style="text-align:center;">Nombre</th>');
+        $theadRow.append('<th style="width:50px;text-align:center;">UC</th>');
+
+        $thead.append($theadRow);
+
+        const optionalEquivs = [];
+        jQuery('div.temp').remove();
+
+        subjects.forEach((subject) => {
+            if (!subject.equiv) {
+                const $row = jQuery(`<tr id="sub-${subject.id.toLowerCase()}"></tr>`);
+
+                $row.append(`<td style="text-align:center;"><input type="checkbox" /></td>`);
+                $row.append(`<td style="text-align:center;">${subject.semester}</td>`);
+                $row.append(`<td style="text-align:center;">${subject.id}</td>`);
+                $row.append(`<td>${subject.name}</td>`);
+                $row.append(`<td style="text-align:center;">${subject.credits}</td>`);
+
+                $tbody.append($row);
+            } else {
+                optionalEquivs.push({
+                    subject: `${subject.id} - ${subject.name}`,
+                    equiv: subject.equiv,
+                });
+            }
+        });
+
+        $table.append($thead);
+        $table.append($tbody);
+
+        $projectedSubjects.append($table);
+
+        if (
+            subjects.some((s) => s.id === 'FING-ELEC1' || s.id === 'FING-ELEC2' || s.id === 'FING-ELEC3') &&
+            optionalEquivs.length < 1
+        ) {
+            jQuery('#optional-subject-warn').fadeIn();
+        } else {
+            jQuery('#optional-subject-warn').fadeOut();
+        }
+
+        if (optionalEquivs.length > 0) {
+            const equivs = optionalEquivs.length;
+
+            if (equivs > 0) {
+                let equivSubjects = `<p style="margin: 0;">Se está${equivs > 1 ? 'n' : ''} <strong>reconociendo</strong> la${equivs > 1 ? 's' : ''} siguiente${equivs > 1 ? 's' : ''
+                    } asignatura${equivs > 1 ? 's' : ''} ya cursada${equivs > 1 ? 's' : ''} por ti como electiva${equivs > 1 ? 's' : ''}: </p><ul>`;
+
+                optionalEquivs.forEach((equiv) => {
+                    equivSubjects += `<li> ${equiv.subject} (equivale a ${equiv.equiv})</li>`;
+                });
+
+                equivSubjects += '</ul>';
+
+                jQuery('#recommendations').append(`<div class="temp">${equivSubjects}</div>`);
+            }
+        }
+    }
+
+    function renderErrorReportLink(data) {
+        const $reportLink = jQuery('#report-error-link');
+        const subjects = data.subjects.map((s, idx) => `${idx + 1}) ${s.semester}: ${s.name} (${s.credits} UC)`);
+        const reportBody = `Hola. Considero que hay un error en el cálculo de las proyecciones mostradas. Las proyecciones desplegadas originalmente son: ${subjects.join(
+            ',\n '
+        )}.\n Y de acuerdo a mis cálculos, serían: \n\n[**** Inserta aquí el ajuste que consideres necesario ****].`;
+        const reportUrl = reportLink
+            .replace('@@SSN@@', data.info.ssn)
+            .replace('@@name@@', data.info.name.split(',')[1])
+            .replace('@@lastName@@', data.info.name.split(',')[0])
+            .replace('@@report@@', reportBody);
+
+        $reportLink.attr('href', reportUrl);
+    }
+
+    async function fetchSchedules(term, program, subjects) {
+        try {
+            const matIds = subjects.map((s) => s.id);
+            const { data, error } = await _supabase.rpc('er_get_subject_schedules', { p_mat_ids: matIds });
+
+            if (error) {
+                return [];
+            }
+
+            if (!data || data === null) {
+                return [];
+            }
+
+            const schedules = data.map((d) => {
+                const schedule = {
+                    type: d.type,
+                    crn: d.crn,
+                    subjectId: d.subject_id,
+                    subjectName: d.subject_name,
+                    taxonomy: d.taxonomy,
+                    modality: d.modality,
+                    uc: d.uc,
+                    section: d.section,
+                    professor: d.professor,
+                    schedules: {
+                        monday: parseSchedule(d.monday),
+                        tuesday: parseSchedule(d.tuesday),
+                        wednesday: parseSchedule(d.wednesday),
+                        thursday: parseSchedule(d.thursday),
+                        friday: parseSchedule(d.friday),
+                        saturday: parseSchedule(d.saturday),
+                        sunday: parseSchedule(d.sunday),
+                    },
+                };
+
+                return schedule;
+            });
+
+            return schedules;
+        } catch (err) {
+            console.error(`Error al consultar los horarios de clase para el TERM ${term} y PROGRAM "${program}"`, err);
+            return [];
+        }
+    }
+
+    async function fetchStudent(ssn) {
+        try {
+            const parsedSsn = parseInt(ssn.replace(/\D/g, ''), 10);
+            const { data, error } = await _supabase.rpc('er_get_student_projections', { p_cedula: parsedSsn });
+
+            if (error) {
+                return null;
+            }
+
+            if (!data || data === null || !data.info) {
+                return null;
+            }
+
+            const studentInfo = data.info;
+
+            const subjectInfo = data.subjects.map((d) => {
+                const subject = { ...d };
+                subject.priority = calculatePriority(subject, extractSemesterNumber(studentInfo.location));
+                return subject;
+            });
+
+            return {
+                info: studentInfo,
+                subjects: subjectInfo,
+            };
+        } catch (err) {
+            console.error(`Error al consultar la información del alumno "${ssn}"`, err);
+            return null;
+        }
+    }
+
+    function calculatePriority(subject, currentSemester) {
+        // Pesos de cada dimensión
+        const weights = {
+            semester: 0.3,
+            contributesTo: 0.1,
+            credits: 0.1,
+            attempts: 0.15,
+        };
+
+        // Calcular el valor de cada dimensión
+        const semesterValue = (currentSemester - extractSemesterNumber(subject.semester)) / currentSemester;
+        const contributesToValue = subject.contributesTo / 3; // Asumiendo que el valor máximo de contributesTo es 3
+        const creditsValue = subject.credits / 265; // Asumiendo que el valor máximo de credits es 265
+        const attemptsValue = subject.attempts / 4; // Asumiendo que el valor máximo de attempts es 4
+
+        // Calcular el porcentaje de recomendación
+        const priority =
+            semesterValue * weights.semester +
+            contributesToValue * weights.contributesTo +
+            creditsValue * weights.credits +
+            attemptsValue * weights.attempts;
+
+        // Convertir a porcentaje
+        return priority * 100;
+    }
+
+    function extractSemesterNumber(str) {
+        const match = str.match(/^(\d{2})SE$/);
+
+        if (match) {
+            return parseInt(match[1], 10);
+        }
+
+        return 0;
+    }
+
+    function parseSchedule(schedule) {
+        if (!schedule || schedule === null || schedule === '') {
+            return null;
+        }
+
+        const [timePart, room] = schedule.trim().split(' ');
+        const [start, end] = timePart.trim().split('_');
+
+        return {
+            start,
+            end,
+            room,
+        };
+    }
+
+    const studyPlans = {
+        LICINFORM: 'Pensum Nuevo',
+        LICINGINF: 'Pensum Viejo / Derogado',
+    };
+
+    const campus = {
+        '001': 'Caracas',
+        '004': 'Guayana',
+    };
+
+    const semesterLoad = {
+        '00SE': 25,
+        '01SE': 25,
+        '02SE': 31,
+        '03SE': 33,
+        '04SE': 31,
+        '05SE': 31,
+        '06SE': 31,
+        '07SE': 30,
+        '08SE': 28,
+        '09SE': 26,
+        '10SE': 17,
+    };
+
+    const weekDays = {
+        monday: 'Lunes',
+        tuesday: 'Martes',
+        wednesday: 'Miércoles',
+        thursday: 'Jueves',
+        friday: 'Viernes',
+        saturday: 'Sábado',
+        sunday: 'Domingo',
+    };
+</script>
