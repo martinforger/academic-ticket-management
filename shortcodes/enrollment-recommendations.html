@@ -129,6 +129,49 @@
     text-align: center;
   }
 
+  .er-mode-switch {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+
+  .er-mode-switch label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+  }
+
+  .er-mode-switch input[type="radio"] {
+    margin: 0;
+  }
+
+  .er-semester-tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 0 0 14px 0;
+  }
+
+  .er-semester-tab {
+    cursor: pointer;
+    border: 1px solid #c5c4c4;
+    background: #f8f9fa;
+    color: #343434;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .er-semester-tab.active {
+    background: #0071bb;
+    color: #fff;
+    border-color: #005288;
+  }
+
   .unique:not(:only-child) {
     display: none;
   }
@@ -407,6 +450,21 @@
         <div class="selected-credits">
           Has seleccionado un total
           <span id="total-projected-uc">0</span> UC.<br />
+          <div id="er-schedule-mode-container" class="er-mode-switch">
+            <label>
+              <input
+                type="radio"
+                name="er-schedule-mode"
+                value="projection"
+                checked
+              />
+              Ver horarios por proyección
+            </label>
+            <label>
+              <input type="radio" name="er-schedule-mode" value="semester" />
+              Ver horarios por semestre
+            </label>
+          </div>
           <div
             id="er-view-schedules-container"
             style="display: none; margin-top: 15px"
@@ -508,6 +566,28 @@
   const generalError =
     "Hubo un error inesperado al intentar obtener la información. Intenta más tarde&hellip;";
   const SPEED = 250;
+  const CAREER_ID = 2;
+  const SCHEDULE_MODE = {
+    PROJECTION: "projection",
+    SEMESTER: "semester",
+  };
+  const FIXED_SEMESTERS = [
+    "01SE",
+    "02SE",
+    "03SE",
+    "04SE",
+    "05SE",
+    "06SE",
+    "07SE",
+    "08SE",
+  ];
+  const excludedSubjects = [
+    "INFO-00192",
+    "INFO-IILCT",
+    "INFO-IILTG",
+    "CUSC",
+    "IISC",
+  ];
   const reportLink =
     "https://docs.google.com/forms/d/e/1FAIpQLSfhMWpdDPe2EowqEAYkx6_lHwcGmaDc_pyOp244DOSuD14BXg/viewform?usp=pp_url&entry.66360717=@@SSN@@&entry.134787551=@@lastName@@&entry.1083683938=@@name@@&entry.875582967=@@report@@";
 
@@ -525,6 +605,7 @@
     const $projectedSubjects = $detailsContainer.find(".projected-subjects");
     const $totalUc = jQuery("#total-projected-uc");
     const $maxRecommendedUc = jQuery("#max-recommended-uc");
+    const $modeSwitch = jQuery("#er-schedule-mode-container");
 
     // Modal references
     const $schedulesModal = jQuery("#er-schedule-modal");
@@ -540,11 +621,30 @@
     let ssn = null;
     let totalCredits = 0;
     let studentSchedules = [];
+    let projectionSchedules = [];
+    let projectionSubjects = [];
+    let semesterSubjectsBySemester = {};
+    let semesterSchedules = [];
     let hasOptionalSubjects = false;
     let selectedSubjects = new Set();
+    let scheduleMode = SCHEDULE_MODE.PROJECTION;
+    let activeSemesterTab = FIXED_SEMESTERS[0];
+    let activeModalSemesterTab = FIXED_SEMESTERS[0];
+    let hasLoadedSemesterModeData = false;
 
     $detailsContainer.on("click", "input[type=checkbox]", handleCheckboxClick);
+    $detailsContainer.on(
+      "click",
+      "#er-semester-tabs .er-semester-tab",
+      handleSemesterTabClick,
+    );
+    $schedulesContainer.on(
+      "click",
+      "#er-modal-semester-tabs .er-semester-tab",
+      handleModalSemesterTabClick,
+    );
     $frm.on("submit", handleSsnSearchSubmit);
+    $modeSwitch.on("change", "input[name=er-schedule-mode]", handleModeChange);
 
     // Modal events
     $viewSchedulesBtn.on("click", function (e) {
@@ -568,26 +668,108 @@
     async function handleFetchStudentResponse(data) {
       $totalUc.text("0");
       studentSchedules = [];
+      projectionSchedules = [];
+      semesterSchedules = [];
+      projectionSubjects = [];
+      semesterSubjectsBySemester = {};
+      hasLoadedSemesterModeData = false;
+      activeSemesterTab = FIXED_SEMESTERS[0];
+      activeModalSemesterTab = FIXED_SEMESTERS[0];
       selectedSubjects.clear();
+      $schedulesContainer.empty();
+      $detailsContainer
+        .find("input[name=er-schedule-mode][value=projection]")
+        .prop("checked", true);
+      scheduleMode = SCHEDULE_MODE.PROJECTION;
 
       if (data === null) {
         hideLoader(notFound.replace("@SSN@", ssn));
       } else {
         hideLoader();
         updateStudentInfo(data);
-        await fetchSchedules(term, data.info.program, data.subjects)
+        projectionSubjects = Array.isArray(data.subjects) ? data.subjects : [];
+
+        await fetchSchedules(term, data.info.program, projectionSubjects)
           .then(handleStudentSchedules)
           .catch(handleError);
-        renderSubjects(data.subjects, semesterLoad[data.info.location]);
-        checkSubjects(data.subjects, semesterLoad[data.info.location]);
+        renderSubjects(projectionSubjects, semesterLoad[data.info.location]);
+        if (projectionSubjects.length > 0) {
+          checkSubjects(projectionSubjects, semesterLoad[data.info.location]);
+        }
         renderErrorReportLink(data);
 
-        $maxRecommendedUc.text(semesterLoad[data.info.location]);
+        $maxRecommendedUc.text(semesterLoad[data.info.location] || 0);
       }
     }
 
     function handleStudentSchedules(data) {
+      projectionSchedules = data;
       studentSchedules = data;
+    }
+
+    function handleSemesterSchedules(data) {
+      semesterSchedules = data;
+      studentSchedules = data;
+      semesterSubjectsBySemester = buildSemesterSubjectsMap(data);
+      hasLoadedSemesterModeData = true;
+    }
+
+    async function ensureSemesterModeData() {
+      if (hasLoadedSemesterModeData) {
+        return;
+      }
+
+      await fetchSchedulesBySemester(CAREER_ID)
+        .then(handleSemesterSchedules)
+        .catch(handleError);
+    }
+
+    function handleModeChange(evt) {
+      scheduleMode = evt.target.value;
+      selectedSubjects.clear();
+      $totalUc.text("0");
+      $totalUc.parent().removeClass("alert");
+
+      if (scheduleMode === SCHEDULE_MODE.PROJECTION) {
+        studentSchedules = projectionSchedules;
+        renderSubjects(projectionSubjects, semesterLoad[$semLoc.text()]);
+        if (projectionSubjects.length > 0) {
+          checkSubjects(projectionSubjects, semesterLoad[$semLoc.text()]);
+        } else {
+          renderSchedules();
+        }
+      } else {
+        activeModalSemesterTab = activeSemesterTab;
+        showLoader();
+        ensureSemesterModeData()
+          .then(() => {
+            hideLoader();
+            renderSubjects(getSubjectsForSemester(activeSemesterTab), null, {
+              mode: SCHEDULE_MODE.SEMESTER,
+            });
+            renderSemesterTabs();
+            renderSchedules();
+          })
+          .catch(handleError);
+      }
+    }
+
+    function handleSemesterTabClick(evt) {
+      const targetSemester = jQuery(evt.currentTarget).data("semester");
+      if (!targetSemester || activeSemesterTab === targetSemester) {
+        return;
+      }
+
+      activeSemesterTab = targetSemester;
+      activeModalSemesterTab = targetSemester;
+      selectedSubjects.clear();
+      $totalUc.text("0");
+      $totalUc.parent().removeClass("alert");
+      renderSubjects(getSubjectsForSemester(activeSemesterTab), null, {
+        mode: SCHEDULE_MODE.SEMESTER,
+      });
+      renderSemesterTabs();
+      renderSchedules();
     }
 
     function handleError(err) {
@@ -616,7 +798,10 @@
 
       $totalUc.text(totalUcValue.toFixed(0));
 
-      if (totalUcValue.toFixed(0) > semesterLoad[$semLoc.text()]) {
+      if (
+        scheduleMode === SCHEDULE_MODE.PROJECTION &&
+        totalUcValue.toFixed(0) > (semesterLoad[$semLoc.text()] || 0)
+      ) {
         $totalUc.parent().addClass("alert");
       } else {
         $totalUc.parent().removeClass("alert");
@@ -675,17 +860,13 @@
       return false;
     }
 
-    function renderSchedules() {
-      const $container = jQuery("#subject-schedules-container");
-
-      const selectedSchedules = studentSchedules.filter((s) => {
-        // Si el usuario seleccionó directamente esta materia (muy raro para prácticas pero válido)
+    function getSelectedSchedules() {
+      return studentSchedules.filter((s) => {
         if (selectedSubjects.has(s.subjectId)) return true;
 
-        // Si la materia es una práctica (ej: INFO-P2028), verificamos si seleccionó su equivalente teórica
         if (s.subjectId.includes("-P")) {
-          const theoryFormat0 = s.subjectId.replace("-P", "-0"); // Ej INFO-02028
-          const theoryFormat1 = s.subjectId.replace("-P", "-1"); // Casos excepcionales ej INFO-1xxxx
+          const theoryFormat0 = s.subjectId.replace("-P", "-0");
+          const theoryFormat1 = s.subjectId.replace("-P", "-1");
           if (
             selectedSubjects.has(theoryFormat0) ||
             selectedSubjects.has(theoryFormat1)
@@ -694,33 +875,26 @@
           }
         }
 
-        // Lógicas previas de electivas
         if (
           s.type === "ELEC-INFO" &&
           (selectedSubjects.has("FING-ELEC1") ||
             selectedSubjects.has("FING-ELEC2"))
-        )
+        ) {
           return true;
-        if (s.type === "ELEC-COMP" && selectedSubjects.has("FING-ELEC3"))
+        }
+
+        if (s.type === "ELEC-COMP" && selectedSubjects.has("FING-ELEC3")) {
           return true;
+        }
 
         return false;
       });
+    }
 
-      if (selectedSchedules.length === 0) {
-        $container.empty();
-        $viewSchedulesContainer.hide();
-        $container.html(
-          '<div class="er-empty-state">No se seleccionaron asignaturas con horarios.</div>',
-        );
-        return;
-      } else {
-        $viewSchedulesContainer.show();
-      }
+    function groupSchedulesWithoutOverlap(schedules) {
+      const groupedBlocks = [];
 
-      // Group sections into non-overlapping timetables (Greedy bin-packing)
-      const groupedBlocks = []; // Array of Arrays
-      for (const section of selectedSchedules) {
+      for (const section of schedules) {
         let placed = false;
         for (const block of groupedBlocks) {
           if (!checkOverlap(block, section)) {
@@ -734,8 +908,87 @@
         }
       }
 
+      return groupedBlocks;
+    }
+
+    function renderSchedules() {
+      const $container = jQuery("#subject-schedules-container");
+      const selectedSchedules = getSelectedSchedules();
+
+      if (selectedSchedules.length === 0) {
+        $container.empty();
+        $viewSchedulesContainer.hide();
+        $container.html(
+          '<div class="er-empty-state">No se seleccionaron asignaturas con horarios.</div>',
+        );
+        return;
+      }
+
+      $viewSchedulesContainer.show();
       $container.empty();
 
+      if (scheduleMode === SCHEDULE_MODE.SEMESTER) {
+        renderSemesterSchedulesInModal(selectedSchedules, $container);
+      } else {
+        renderScheduleBlocks(
+          groupSchedulesWithoutOverlap(selectedSchedules),
+          $container,
+        );
+      }
+    }
+
+    function renderSemesterSchedulesInModal(selectedSchedules, $container) {
+      const groupedBySemester = FIXED_SEMESTERS.reduce((acc, semester) => {
+        acc[semester] = [];
+        return acc;
+      }, {});
+
+      selectedSchedules.forEach((schedule) => {
+        const semester = schedule.subjectSemester || "01SE";
+        if (!groupedBySemester[semester]) {
+          groupedBySemester[semester] = [];
+        }
+        groupedBySemester[semester].push(schedule);
+      });
+
+      if (!groupedBySemester[activeModalSemesterTab]) {
+        activeModalSemesterTab = FIXED_SEMESTERS[0];
+      }
+
+      const tabsHtml = FIXED_SEMESTERS.map(
+        (semester) =>
+          `<button type="button" class="er-semester-tab ${activeModalSemesterTab === semester ? "active" : ""}" data-semester="${semester}">Semestre ${extractSemesterNumber(semester)}</button>`,
+      ).join("");
+
+      $container.append(
+        `<div id="er-modal-semester-tabs" class="er-semester-tabs">${tabsHtml}</div>`,
+      );
+
+      const activeSchedules = groupedBySemester[activeModalSemesterTab] || [];
+      if (activeSchedules.length === 0) {
+        $container.append(
+          `<div class="er-empty-state">No hay horarios para las asignaturas seleccionadas en el semestre ${extractSemesterNumber(activeModalSemesterTab)}.</div>`,
+        );
+        return;
+      }
+
+      renderScheduleBlocks(
+        groupSchedulesWithoutOverlap(activeSchedules),
+        $container,
+      );
+    }
+
+    function handleModalSemesterTabClick(evt) {
+      const targetSemester = jQuery(evt.currentTarget).data("semester");
+      if (!targetSemester || activeModalSemesterTab === targetSemester) {
+        return;
+      }
+
+      activeModalSemesterTab = targetSemester;
+      renderSchedules();
+    }
+
+    function renderScheduleBlocks(groupedBlocks, $container) {
       const activeColors = [
         "#0071bb",
         "#1c7c54",
@@ -748,6 +1001,7 @@
         "#005288",
         "#d35400",
       ];
+
       const daysMap = {
         monday: 1,
         tuesday: 2,
@@ -813,7 +1067,6 @@
             const block = schedule.schedules[day];
             if (block) {
               const dayCol = daysMap[day];
-
               const startParts = block.start.split(":");
               const endParts = block.end.split(":");
 
@@ -835,7 +1088,6 @@
               }
 
               let endRow = 2 + (endHour - 7) * 2 + (endMin >= 30 ? 1 : 0);
-
               if (endMin >= 50) {
                 endRow += 1;
               }
@@ -863,7 +1115,6 @@
           const dayClasses = mobileDaysData[dayIndex];
           if (dayClasses.length > 0) {
             dayClasses.sort((a, b) => a.time.localeCompare(b.time));
-
             mobileBlocksHtml += `<div class="er-mobile-day">`;
             mobileBlocksHtml += `<h4>${dayNames[dayIndex]}</h4>`;
             dayClasses.forEach((cls) => {
@@ -894,10 +1145,57 @@
       });
 
       if (window.innerWidth <= 768) {
-        // Apply fallback mobile blocks for all generated layouts
         $container.find(".er-schedule-grid:not(.er-mobile-grid-inject)").hide();
         $container.find(".er-mobile-grid-inject").css("display", "flex");
       }
+    }
+
+    function buildSemesterSubjectsMap(schedules) {
+      const semestersMap = FIXED_SEMESTERS.reduce((acc, semester) => {
+        acc[semester] = {};
+        return acc;
+      }, {});
+
+      schedules.forEach((schedule) => {
+        const semester = schedule.subjectSemester;
+        if (!semester || !semestersMap[semester]) {
+          return;
+        }
+
+        if (!semestersMap[semester][schedule.subjectId]) {
+          semestersMap[semester][schedule.subjectId] = {
+            id: schedule.subjectId,
+            semester,
+            name: schedule.subjectName,
+            credits: schedule.uc || 0,
+          };
+        }
+      });
+
+      const normalized = {};
+      FIXED_SEMESTERS.forEach((semester) => {
+        normalized[semester] = Object.values(semestersMap[semester]).sort(
+          (a, b) => a.id.localeCompare(b.id),
+        );
+      });
+
+      return normalized;
+    }
+
+    function getSubjectsForSemester(semester) {
+      return semesterSubjectsBySemester[semester] || [];
+    }
+
+    function renderSemesterTabs() {
+      const tabsHtml = FIXED_SEMESTERS.map((semester) => {
+        const count = getSubjectsForSemester(semester).length;
+        return `<button type="button" class="er-semester-tab ${activeSemesterTab === semester ? "active" : ""}" data-semester="${semester}">Semestre ${extractSemesterNumber(semester)} (${count})</button>`;
+      }).join("");
+
+      $projectedSubjects.find("#er-semester-tabs").remove();
+      $projectedSubjects.prepend(
+        `<div id="er-semester-tabs" class="er-semester-tabs">${tabsHtml}</div>`,
+      );
     }
 
     function handleSsnSearchSubmit(evt) {
@@ -952,7 +1250,10 @@
             }, 0);
           $totalUc.text(totalCredits.toFixed(0));
 
-          if (totalCredits.toFixed(0) > semesterLoad[$semLoc.text()]) {
+          if (
+            scheduleMode === SCHEDULE_MODE.PROJECTION &&
+            totalCredits.toFixed(0) > (semesterLoad[$semLoc.text()] || 0)
+          ) {
             $totalUc.parent().addClass("alert");
           } else {
             $totalUc.parent().removeClass("alert");
@@ -1024,11 +1325,13 @@
     }
   });
 
-  function renderSubjects(subjects) {
+  function renderSubjects(subjects, maxLoad, options = {}) {
+    const mode = options.mode || SCHEDULE_MODE.PROJECTION;
     const $projectedSubjects = jQuery(
       "#er-details-container .projected-subjects",
     );
     $projectedSubjects.empty();
+    jQuery("#er-view-schedules-container").hide();
 
     const $table = jQuery('<table class="tablepress"></table>');
     const $thead = jQuery("<thead></thead>");
@@ -1049,7 +1352,12 @@
     jQuery("div.temp").remove();
 
     subjects.forEach((subject) => {
-      if (!subject.equiv) {
+      if (mode === SCHEDULE_MODE.PROJECTION && subject.equiv) {
+        optionalEquivs.push({
+          subject: `${subject.id} - ${subject.name}`,
+          equiv: subject.equiv,
+        });
+      } else {
         const $row = jQuery(`<tr id="sub-${subject.id.toLowerCase()}"></tr>`);
 
         $row.append(
@@ -1061,18 +1369,31 @@
         $row.append(`<td style="text-align:center;">${subject.credits}</td>`);
 
         $tbody.append($row);
-      } else {
-        optionalEquivs.push({
-          subject: `${subject.id} - ${subject.name}`,
-          equiv: subject.equiv,
-        });
       }
     });
 
     $table.append($thead);
     $table.append($tbody);
 
-    $projectedSubjects.append($table);
+    if (subjects.length > 0) {
+      $projectedSubjects.append($table);
+    } else if (mode === SCHEDULE_MODE.SEMESTER) {
+      $projectedSubjects.append(
+        '<div class="er-empty-state">No hay materias disponibles para este semestre.</div>',
+      );
+    } else {
+      $projectedSubjects.append(
+        '<div class="er-empty-state">Este estudiante no tiene proyecciones para el período activo.</div>',
+      );
+    }
+
+    if (mode === SCHEDULE_MODE.SEMESTER) {
+      jQuery("#optional-subject-warn").fadeOut();
+      return;
+    }
+
+    const defaultLoad = maxLoad || 0;
+    jQuery("#max-recommended-uc").text(defaultLoad);
 
     if (
       subjects.some(
@@ -1128,13 +1449,11 @@
 
   async function fetchSchedules(term, program, subjects) {
     try {
-      const excludedSubjects = [
-        "INFO-00192",
-        "INFO-IILCT",
-        "INFO-IILTG",
-        "CUSC",
-        "IISC",
-      ];
+      const semesterBySubjectId = subjects.reduce((acc, subject) => {
+        acc[subject.id] = subject.semester;
+        return acc;
+      }, {});
+
       const matIds = subjects
         .filter((s) => !excludedSubjects.includes(s.id))
         .map((s) => s.id);
@@ -1157,6 +1476,7 @@
           crn: d.crn,
           subjectId: d.subject_id,
           subjectName: d.subject_name,
+          subjectSemester: semesterBySubjectId[d.subject_id] || null,
           taxonomy: d.taxonomy,
           modality: d.modality,
           uc: d.uc,
@@ -1186,16 +1506,75 @@
     }
   }
 
+  async function fetchSchedulesBySemester(careerId) {
+    try {
+      const { data, error } = await _supabase.rpc(
+        "er_get_semester_subject_schedules",
+        { p_career_id: careerId },
+      );
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data || data === null) {
+        return [];
+      }
+
+      const schedules = data
+        .filter(
+          (d) =>
+            d.subject_id &&
+            !excludedSubjects.includes(d.subject_id) &&
+            FIXED_SEMESTERS.includes(d.subject_semester),
+        )
+        .map((d) => ({
+          type: d.type,
+          crn: d.crn,
+          subjectId: d.subject_id,
+          subjectName: d.subject_name,
+          subjectSemester: d.subject_semester,
+          taxonomy: d.taxonomy,
+          modality: d.modality,
+          uc: d.uc,
+          section: d.section,
+          professor: d.professor,
+          schedules: {
+            monday: parseSchedule(d.monday),
+            tuesday: parseSchedule(d.tuesday),
+            wednesday: parseSchedule(d.wednesday),
+            thursday: parseSchedule(d.thursday),
+            friday: parseSchedule(d.friday),
+            saturday: parseSchedule(d.saturday),
+            sunday: parseSchedule(d.sunday),
+          },
+        }));
+
+      return schedules;
+    } catch (err) {
+      console.error(
+        `Error al consultar horarios por semestre para carrera ${careerId}`,
+        err,
+      );
+      return [];
+    }
+  }
+
   async function fetchStudent(ssn) {
     try {
       const parsedSsn = parseInt(ssn.replace(/\D/g, ""), 10);
+
+      if (!Number.isInteger(parsedSsn) || parsedSsn <= 0) {
+        return null;
+      }
+
       const { data, error } = await _supabase.rpc(
         "er_get_student_projections",
         { p_cedula: parsedSsn },
       );
 
       if (error) {
-        return null;
+        throw error;
       }
 
       if (!data || data === null || !data.info) {
@@ -1204,7 +1583,8 @@
 
       const studentInfo = data.info;
 
-      const subjectInfo = data.subjects.map((d) => {
+      const baseSubjects = Array.isArray(data.subjects) ? data.subjects : [];
+      const subjectInfo = baseSubjects.map((d) => {
         const subject = { ...d };
         subject.priority = calculatePriority(
           subject,
