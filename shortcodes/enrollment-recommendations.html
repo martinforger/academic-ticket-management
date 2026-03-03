@@ -64,7 +64,8 @@
     box-sizing: border-box;
     width: 20px;
     height: 20px;
-    margin: 6px;
+    margin: 6px auto;
+    display: block;
     padding: 0;
     border: 2px solid #c5c4c4;
     appearance: none;
@@ -134,18 +135,42 @@
     justify-content: center;
     gap: 12px;
     flex-wrap: wrap;
-    margin-top: 12px;
+    margin: 0 0 16px 0;
+    padding: 12px;
   }
 
   .er-mode-switch label {
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    padding: 8px 14px;
+    border: 1px solid #c5c4c4;
+    border-radius: 4px;
+    background: #fff;
     font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .er-mode-switch label:hover {
+    border-color: #0071bb;
+  }
+
+  .er-mode-switch label.is-active {
+    background: #0071bb;
+    border-color: #005288;
+    color: #fff;
   }
 
   .er-mode-switch input[type="radio"] {
     margin: 0;
+    width: 16px;
+    height: 16px;
+    accent-color: #0071bb;
+  }
+
+  .er-mode-switch label.is-active input[type="radio"] {
+    accent-color: #fff;
   }
 
   .er-semester-tabs {
@@ -404,6 +429,16 @@
   }
 </style>
 <div id="er-container">
+  <div id="er-schedule-mode-container" class="er-mode-switch">
+    <label>
+      <input type="radio" name="er-schedule-mode" value="projection" checked />
+      Ver horarios por proyección
+    </label>
+    <label>
+      <input type="radio" name="er-schedule-mode" value="semester" />
+      Ver horarios por semestre
+    </label>
+  </div>
   <form id="er-ssn-search-frm">
     <input
       id="er-ssn-search"
@@ -426,7 +461,7 @@
   />
   <div id="er-details-container" style="display: none">
     <div id="er-details">
-      <p>
+      <p id="er-student-summary">
         <strong>Nombre:</strong> <span class="name"></span><br />
         <strong>Programa:</strong> <span class="program"></span><br />
         <strong>Promedio:</strong> <span class="agp"></span> / 20 puntos<br />
@@ -435,7 +470,7 @@
         ></span>
         UC acumuladas)
       </p>
-      <p style="margin: 7px 0">
+      <p id="er-projection-intro" style="margin: 7px 0">
         A continuación, se listan las asignaturas que podrás cursar en este
         período, de acuerdo a tu récord académico.
         <strong
@@ -450,21 +485,6 @@
         <div class="selected-credits">
           Has seleccionado un total
           <span id="total-projected-uc">0</span> UC.<br />
-          <div id="er-schedule-mode-container" class="er-mode-switch">
-            <label>
-              <input
-                type="radio"
-                name="er-schedule-mode"
-                value="projection"
-                checked
-              />
-              Ver horarios por proyección
-            </label>
-            <label>
-              <input type="radio" name="er-schedule-mode" value="semester" />
-              Ver horarios por semestre
-            </label>
-          </div>
           <div
             id="er-view-schedules-container"
             style="display: none; margin-top: 15px"
@@ -592,6 +612,7 @@
     "https://docs.google.com/forms/d/e/1FAIpQLSfhMWpdDPe2EowqEAYkx6_lHwcGmaDc_pyOp244DOSuD14BXg/viewform?usp=pp_url&entry.66360717=@@SSN@@&entry.134787551=@@lastName@@&entry.1083683938=@@name@@&entry.875582967=@@report@@";
 
   jQuery(() => {
+    const $searchForm = jQuery("#er-ssn-search-frm");
     const $frm = jQuery("#er-ssn-search-frm");
     const $ssn = jQuery("#er-ssn-search");
     const $detailsContainer = jQuery("#er-details-container");
@@ -606,6 +627,10 @@
     const $totalUc = jQuery("#total-projected-uc");
     const $maxRecommendedUc = jQuery("#max-recommended-uc");
     const $modeSwitch = jQuery("#er-schedule-mode-container");
+    const $studentSummary = jQuery("#er-student-summary");
+    const $projectionIntro = jQuery("#er-projection-intro");
+    const $reportError = $detailsContainer.find(".report-error");
+    const $recommendations = jQuery("#recommendations");
 
     // Modal references
     const $schedulesModal = jQuery("#er-schedule-modal");
@@ -645,6 +670,8 @@
     );
     $frm.on("submit", handleSsnSearchSubmit);
     $modeSwitch.on("change", "input[name=er-schedule-mode]", handleModeChange);
+    applyModeLayout(SCHEDULE_MODE.PROJECTION);
+    refreshModeSwitchStyles();
 
     // Modal events
     $viewSchedulesBtn.on("click", function (e) {
@@ -677,10 +704,11 @@
       activeModalSemesterTab = FIXED_SEMESTERS[0];
       selectedSubjects.clear();
       $schedulesContainer.empty();
-      $detailsContainer
+      $modeSwitch
         .find("input[name=er-schedule-mode][value=projection]")
         .prop("checked", true);
       scheduleMode = SCHEDULE_MODE.PROJECTION;
+      applyModeLayout(SCHEDULE_MODE.PROJECTION);
 
       if (data === null) {
         hideLoader(notFound.replace("@SSN@", ssn));
@@ -726,19 +754,22 @@
 
     function handleModeChange(evt) {
       scheduleMode = evt.target.value;
+      refreshModeSwitchStyles();
       selectedSubjects.clear();
       $totalUc.text("0");
       $totalUc.parent().removeClass("alert");
+      applyModeLayout(scheduleMode);
 
       if (scheduleMode === SCHEDULE_MODE.PROJECTION) {
         studentSchedules = projectionSchedules;
-        renderSubjects(projectionSubjects, semesterLoad[$semLoc.text()]);
         if (projectionSubjects.length > 0) {
+          renderSubjects(projectionSubjects, semesterLoad[$semLoc.text()]);
           checkSubjects(projectionSubjects, semesterLoad[$semLoc.text()]);
         } else {
-          renderSchedules();
+          $detailsContainer.hide();
         }
       } else {
+        studentSchedules = semesterSchedules;
         activeModalSemesterTab = activeSemesterTab;
         showLoader();
         ensureSemesterModeData()
@@ -752,6 +783,40 @@
           })
           .catch(handleError);
       }
+    }
+
+    function applyModeLayout(mode) {
+      const isProjectionMode = mode === SCHEDULE_MODE.PROJECTION;
+
+      if (isProjectionMode) {
+        $searchForm.show();
+        $studentSummary.show();
+        $projectionIntro.show();
+        $recommendations.show();
+        $reportError.show();
+        jQuery("#optional-subject-warn").show();
+
+        if (projectionSubjects.length === 0) {
+          $detailsContainer.hide();
+          $schedulesContainer.empty();
+        }
+      } else {
+        $searchForm.hide();
+        $studentSummary.hide();
+        $projectionIntro.hide();
+        $recommendations.show();
+        $reportError.show();
+        jQuery("#optional-subject-warn").show();
+        $detailsContainer.show();
+      }
+    }
+
+    function refreshModeSwitchStyles() {
+      $modeSwitch.find("label").removeClass("is-active");
+      $modeSwitch
+        .find('input[name="er-schedule-mode"]:checked')
+        .closest("label")
+        .addClass("is-active");
     }
 
     function handleSemesterTabClick(evt) {
@@ -1388,7 +1453,6 @@
     }
 
     if (mode === SCHEDULE_MODE.SEMESTER) {
-      jQuery("#optional-subject-warn").fadeOut();
       return;
     }
 
