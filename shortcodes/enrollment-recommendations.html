@@ -1,660 +1,766 @@
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <style>
-    #er-container table th {
-        padding: 7px !important;
-    }
+  #er-container table th {
+    padding: 7px !important;
+  }
 
-    #er-container table tr td {
-        padding: 0.857em 0.587em !important;
-    }
+  #er-container table tr td {
+    padding: 0.857em 0.587em !important;
+  }
 
-    #er-error-message {
-        color: #c4151c;
-    }
+  #er-error-message {
+    color: #c4151c;
+  }
 
-    .report-error {
-        margin-top: 22px;
-    }
+  .report-error {
+    margin-top: 22px;
+  }
 
-    #er-ssn-search {
-        position: relative;
-        top: -1px;
-        margin-right: 12px;
-        height: 3.08em;
-        width: calc(100% - 125px);
-        padding: 14px;
-        color: #999;
-        font-size: 1rem;
-        background-color: #eee;
-        border: 2px solid #c5c4c4;
-        border-radius: 3px;
-        -webkit-appearance: none;
-        appearance: none;
-    }
+  #er-ssn-search {
+    position: relative;
+    top: -1px;
+    margin-right: 12px;
+    height: 3.08em;
+    width: calc(100% - 125px);
+    padding: 14px;
+    color: #999;
+    font-size: 1rem;
+    background-color: #eee;
+    border: 2px solid #c5c4c4;
+    border-radius: 3px;
+    -webkit-appearance: none;
+    appearance: none;
+  }
 
-    .form-button {
-        cursor: pointer;
-        line-height: 1.64em !important;
-    }
+  .form-button {
+    cursor: pointer;
+    line-height: 1.64em !important;
+  }
 
-    #optional-subject-warn,
-    #optional-subject-record {
-        margin-top: 22px;
-    }
+  #optional-subject-warn,
+  #optional-subject-record {
+    margin-top: 22px;
+  }
 
-    #er-details p:first-child {
-        margin: 8px 0;
-        padding: 12px 0 8px 0;
-        border-bottom: 2px solid #c5c4c4;
-    }
+  #er-details p:first-child {
+    margin: 8px 0;
+    padding: 12px 0 8px 0;
+    border-bottom: 2px solid #c5c4c4;
+  }
 
-    #er-details .projected-info p {
-        border-bottom: none !important;
-    }
+  #er-details .projected-info p {
+    border-bottom: none !important;
+  }
 
-    #er-details .alert {
-        color: #c4151c;
-    }
+  #er-details .alert {
+    color: #c4151c;
+  }
 
-    #total-projected-uc {
-        font-weight: 600;
-    }
+  #total-projected-uc {
+    font-weight: 600;
+  }
 
-    input[type='checkbox'] {
-        box-sizing: border-box;
-        width: 20px;
-        height: 20px;
-        margin: 6px;
-        padding: 0;
-        border: 2px solid #c5c4c4;
-        appearance: none;
-        background-color: #eee;
-        outline: none;
-        transition: outline 0.1s;
-    }
+  input[type="checkbox"] {
+    box-sizing: border-box;
+    width: 20px;
+    height: 20px;
+    margin: 6px;
+    padding: 0;
+    border: 2px solid #c5c4c4;
+    appearance: none;
+    background-color: #eee;
+    outline: none;
+    transition: outline 0.1s;
+  }
 
-    input[type='checkbox']:checked {
-        background-size: cover;
-        padding: 2px;
-    }
+  input[type="checkbox"]:checked {
+    background-size: cover;
+    padding: 2px;
+  }
 
-    input[type='checkbox']:not(:disabled):indeterminate {
-        border-color: #c5c4c4;
-        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="16" height="16" viewBox="0 0 412 420"><path style="fill:%230071bb" d="M28.21 250.35l0 -100.29 353.22 -0.01 -0.02 100.3 -353.2 0zm0 0l0 0 0 0z"/></svg>');
-    }
+  input[type="checkbox"]:not(:disabled):indeterminate {
+    border-color: #c5c4c4;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="16" height="16" viewBox="0 0 412 420"><path style="fill:%230071bb" d="M28.21 250.35l0 -100.29 353.22 -0.01 -0.02 100.3 -353.2 0zm0 0l0 0 0 0z"/></svg>');
+  }
 
-    input[type='checkbox']:not(:disabled):checked {
-        border-color: #c5c4c4;
-        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" viewBox="0 0 34 34" xml:space="preserve"><path style="fill: %230071bb" d="M11.941,28.877l-11.941-11.942l5.695-5.696l6.246,6.246l14.364-14.364L32,8.818"/></svg>');
-    }
+  input[type="checkbox"]:not(:disabled):checked {
+    border-color: #c5c4c4;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" viewBox="0 0 34 34" xml:space="preserve"><path style="fill: %230071bb" d="M11.941,28.877l-11.941-11.942l5.695-5.696l6.246,6.246l14.364-14.364L32,8.818"/></svg>');
+  }
 
-    input[type='checkbox']:disabled {
-        background-color: var(--checkbox-disabled-bg-color);
-    }
+  input[type="checkbox"]:disabled {
+    background-color: var(--checkbox-disabled-bg-color);
+  }
 
-    input[type='checkbox']:disabled:checked {
-        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" viewBox="0 0 34 34" xml:space="preserve"><path style="fill: %238b8c89" d="M11.941,28.877l-11.941-11.942l5.695-5.696l6.246,6.246l14.364-14.364L32,8.818"/></svg>');
-    }
+  input[type="checkbox"]:disabled:checked {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" viewBox="0 0 34 34" xml:space="preserve"><path style="fill: %238b8c89" d="M11.941,28.877l-11.941-11.942l5.695-5.696l6.246,6.246l14.364-14.364L32,8.818"/></svg>');
+  }
 
-    @media (hover: hover) {
-        input[type='checkbox']:not(:disabled):hover {
-            cursor: pointer;
-            outline: 2px solid #005288;
-            transform: scale(1.05);
-        }
+  @media (hover: hover) {
+    input[type="checkbox"]:not(:disabled):hover {
+      cursor: pointer;
+      outline: 2px solid #005288;
+      transform: scale(1.05);
     }
+  }
 
-    input[type='checkbox']:focus-visible {
-        outline: 4px solid #0071bb;
-        transform: scale(1.05);
-    }
+  input[type="checkbox"]:focus-visible {
+    outline: 4px solid #0071bb;
+    transform: scale(1.05);
+  }
 
-    #schedules-container {
-        padding: 22px 0 0 0;
-    }
+  #schedules-container {
+    padding: 22px 0 0 0;
+  }
 
-    #subject-schedules-content .schedule-header h4,
-    #subject-schedules-content .schedule-header .subject-info {
-        padding: 0;
-    }
+  #subject-schedules-content .schedule-header h4,
+  #subject-schedules-content .schedule-header .subject-info {
+    padding: 0;
+  }
 
-    #subject-schedules-content .schedule-header .subject-professor {
-        padding: 0;
-    }
+  #subject-schedules-content .schedule-header .subject-professor {
+    padding: 0;
+  }
 
-    .projected-info .selected-credits {
-        margin-bottom: 22px;
-        padding: 1.25rem;
-        background-color: #eee;
-        text-align: center;
-    }
+  .projected-info .selected-credits {
+    margin-bottom: 22px;
+    padding: 1.25rem;
+    background-color: #eee;
+    text-align: center;
+  }
 
-    .unique:not(:only-child) {
-        display: none;
-    }
+  .unique:not(:only-child) {
+    display: none;
+  }
 
-    .unique:only-child {
-        display: block;
-    }
+  .unique:only-child {
+    display: block;
+  }
 
-    /* Graphical Schedule CSS based on formulario_observaciones */
-    .er-schedule-container {
-        font-family: inherit;
-        background: #ffffff;
-        border: 1px solid #e1e4e8;
-        border-radius: 6px;
-        overflow: hidden;
-        margin-top: 20px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-    }
+  /* Graphical Schedule CSS based on formulario_observaciones */
+  .er-schedule-container {
+    font-family: inherit;
+    background: #ffffff;
+    border: 1px solid #e1e4e8;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-top: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  }
 
-    .er-schedule-header {
-        background: #edf2f7;
-        padding: 12px 20px;
-        border-bottom: 1px solid #e1e4e8;
-        font-weight: 600;
-        color: #343434;
-        font-size: 1rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
+  .er-schedule-header {
+    background: #edf2f7;
+    padding: 12px 20px;
+    border-bottom: 1px solid #e1e4e8;
+    font-weight: 600;
+    color: #343434;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
 
+  .er-schedule-grid {
+    display: grid;
+    grid-template-columns: 60px repeat(6, 1fr);
+    grid-template-rows: auto repeat(28, minmax(28px, 1fr));
+    background-color: #eee;
+    gap: 1px;
+  }
+
+  .er-grid-header {
+    background-color: #f8f9fa;
+    text-align: center;
+    font-weight: 600;
+    color: #555;
+    padding: 8px 0;
+    font-size: 0.85rem;
+    border-bottom: 2px solid #ddd;
+  }
+
+  .er-time-label-col {
+    background-color: #fefefe;
+    text-align: right;
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    color: #888;
+    border-right: 1px solid #ddd;
+    min-height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .er-grid-cell {
+    background-color: #fff;
+    position: relative;
+    z-index: 1;
+  }
+
+  .er-class-block {
+    background-color: #0071bb;
+    color: #fff;
+    border-radius: 4px;
+    padding: 4px;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition:
+      transform 0.2s,
+      box-shadow 0.2s;
+    margin: 2px;
+    z-index: 5;
+  }
+
+  .er-class-block:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    z-index: 10;
+  }
+
+  .er-class-block .subject-title {
+    font-weight: bold;
+    font-size: 0.8rem;
+    margin-bottom: 2px;
+  }
+
+  .er-class-block .subject-acronym {
+    font-size: 0.65rem;
+    opacity: 0.8;
+  }
+
+  .er-empty-state {
+    padding: 30px;
+    text-align: center;
+    color: #666;
+    font-style: italic;
+  }
+
+  /* Modal Styles */
+  .er-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 999999;
+    display: none;
+    /* Hidden by default */
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(3px);
+  }
+
+  .er-modal-content {
+    background: #fff;
+    width: 95%;
+    max-width: 1100px;
+    max-height: 90vh;
+    border-radius: 8px;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .er-modal-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #e1e4e8;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #edf2f7;
+  }
+
+  .er-modal-header h3 {
+    margin: 0;
+    color: #0071bb;
+    font-size: 1.25rem;
+  }
+
+  .er-modal-close {
+    cursor: pointer;
+    font-size: 1.5rem;
+    color: #888;
+    background: none;
+    border: none;
+    padding: 0;
+    line-height: 1;
+  }
+
+  .er-modal-close:hover {
+    color: #c4151c;
+  }
+
+  .er-modal-body {
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+  .er-schedule-wrapper {
+    margin-bottom: 30px;
+    border: 3px solid #ccc;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .er-schedule-wrapper-title {
+    background: #f8f9fa;
+    padding: 10px 15px;
+    font-weight: bold;
+    border-bottom: 1px solid #ccc;
+    font-size: 1.1rem;
+    color: #333;
+  }
+
+  @media (max-width: 768px) {
     .er-schedule-grid {
-        display: grid;
-        grid-template-columns: 60px repeat(6, 1fr);
-        grid-template-rows: auto repeat(28, minmax(28px, 1fr));
-        background-color: #eee;
-        gap: 1px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      background: transparent;
     }
 
-    .er-grid-header {
-        background-color: #f8f9fa;
-        text-align: center;
-        font-weight: 600;
-        color: #555;
-        padding: 8px 0;
-        font-size: 0.85rem;
-        border-bottom: 2px solid #ddd;
-    }
-
-    .er-time-label-col {
-        background-color: #fefefe;
-        text-align: right;
-        padding: 4px 8px;
-        font-size: 0.75rem;
-        color: #888;
-        border-right: 1px solid #ddd;
-        min-height: 28px;
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-    }
-
+    .er-grid-header,
+    .er-time-label-col,
     .er-grid-cell {
-        background-color: #fff;
-        position: relative;
-        z-index: 1;
+      display: none;
     }
 
-    .er-class-block {
-        background-color: #0071bb;
-        color: #fff;
-        border-radius: 4px;
-        padding: 4px;
-        font-size: 0.75rem;
-        line-height: 1.2;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        text-align: center;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        transition: transform 0.2s, box-shadow 0.2s;
-        margin: 2px;
-        z-index: 5;
+    .er-mobile-day {
+      background: #fff;
+      border: 1px solid #e1e4e8;
+      border-radius: 4px;
+      padding: 15px;
     }
 
-    .er-class-block:hover {
-        transform: scale(1.02);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-        z-index: 10;
+    .er-mobile-day h4 {
+      margin: 0 0 10px 0;
+      color: #0071bb;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 5px;
     }
 
-    .er-class-block .subject-title {
-        font-weight: bold;
-        font-size: 0.8rem;
-        margin-bottom: 2px;
+    .er-mobile-class {
+      margin-bottom: 10px;
+      padding: 8px;
+      background: #f8f9fa;
+      border-left: 4px solid #0071bb;
+      border-radius: 2px;
     }
-
-    .er-class-block .subject-acronym {
-        font-size: 0.65rem;
-        opacity: 0.8;
-    }
-
-    .er-empty-state {
-        padding: 30px;
-        text-align: center;
-        color: #666;
-        font-style: italic;
-    }
-
-    /* Modal Styles */
-    .er-modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.6);
-        z-index: 999999;
-        display: none;
-        /* Hidden by default */
-        justify-content: center;
-        align-items: center;
-        backdrop-filter: blur(3px);
-    }
-
-    .er-modal-content {
-        background: #fff;
-        width: 95%;
-        max-width: 1100px;
-        max-height: 90vh;
-        border-radius: 8px;
-        box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-    }
-
-    .er-modal-header {
-        padding: 15px 20px;
-        border-bottom: 1px solid #e1e4e8;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: #edf2f7;
-    }
-
-    .er-modal-header h3 {
-        margin: 0;
-        color: #0071bb;
-        font-size: 1.25rem;
-    }
-
-    .er-modal-close {
-        cursor: pointer;
-        font-size: 1.5rem;
-        color: #888;
-        background: none;
-        border: none;
-        padding: 0;
-        line-height: 1;
-    }
-
-    .er-modal-close:hover {
-        color: #c4151c;
-    }
-
-    .er-modal-body {
-        padding: 20px;
-        overflow-y: auto;
-    }
-
-    .er-schedule-wrapper {
-        margin-bottom: 30px;
-        border: 3px solid #ccc;
-        border-radius: 6px;
-        overflow: hidden;
-    }
-
-    .er-schedule-wrapper-title {
-        background: #f8f9fa;
-        padding: 10px 15px;
-        font-weight: bold;
-        border-bottom: 1px solid #ccc;
-        font-size: 1.1rem;
-        color: #333;
-    }
-
-    @media (max-width: 768px) {
-        .er-schedule-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            background: transparent;
-        }
-
-        .er-grid-header,
-        .er-time-label-col,
-        .er-grid-cell {
-            display: none;
-        }
-
-        .er-mobile-day {
-            background: #fff;
-            border: 1px solid #e1e4e8;
-            border-radius: 4px;
-            padding: 15px;
-        }
-
-        .er-mobile-day h4 {
-            margin: 0 0 10px 0;
-            color: #0071bb;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 5px;
-        }
-
-        .er-mobile-class {
-            margin-bottom: 10px;
-            padding: 8px;
-            background: #f8f9fa;
-            border-left: 4px solid #0071bb;
-            border-radius: 2px;
-        }
-    }
+  }
 </style>
 <div id="er-container">
-    <form id="er-ssn-search-frm">
-        <input id="er-ssn-search" name="ssn" type="text" placeholder="Introduce tu número de cédula de identidad" />
-        <button id="er-ssn-search-btn" class="form-button et_pb_button" type="submit">Buscar</button>
-    </form>
-    <img id="er-loader"
-        src="https://ingenieria.ucab.edu.ve/informatica/wp-content/uploads/sites/4/2019/07/popup_loading.gif"
-        style="display: none" />
-    <div id="er-details-container" style="display: none">
-        <div id="er-details">
-            <p>
-                <strong>Nombre:</strong> <span class="name"></span><br />
-                <strong>Programa:</strong> <span class="program"></span><br />
-                <strong>Promedio:</strong> <span class="agp"></span> / 20 puntos<br />
-                <strong>Ubicación:</strong> <span class="sem-loc"></span> (<span class="accum-uc"></span> UC acumuladas)
-            </p>
-            <p style="margin: 7px 0">
-                A continuación, se listan las asignaturas que podrás cursar en este período, de acuerdo a tu récord
-                académico.
-                <strong>Toma en especial consideración las asignaturas que se marcan en el cuadro de verificación, y el
-                    orden en que
-                    aparecen las mismas</strong>, pues constituyen la recomendación de inscripción que desde la Escuela
-                te hacemos, basados en la naturaleza de
-                las asignaturas disponibles y tu historial académico:
-            </p>
-            <div class="projected-subjects"></div>
-            <div class="projected-info">
-                <div class="selected-credits">
-                    Has seleccionado un total <span id="total-projected-uc">0</span> UC.<br />
-                    <div id="er-view-schedules-container" style="display: none; margin-top: 15px;">
-                        <button id="er-view-schedules-btn" class="form-button et_pb_button">Ver horarios</button>
-                    </div>
-                </div>
-                [box type="download"]<div id="recommendations">
-                    Por tu ubicación en la malla curricular te recomendamos cursar hasta un máximo de
-                    <strong style="color: #0d793d"><span id="max-recommended-uc">0</span> UC</strong> en este semestre.
-                </div>[/box]
-            </div>
-            <div id="optional-subject-warn">
-                [box type="warning"]Toma en cuenta que no todas las asignaturas electivas ofrecidas en la Universidad
-                tienen la misma cantidad de
-                unidades crédito (UC). En la lista de asignaturas proyectadas se muestran las asignaturas electivas con
-                cuatro
-                (4) UC como referencia. Para obtener el título de Ingeniero/a en Informática
-                <strong>debes aprobar un total de doce (12) UC en asignaturas electivas</strong>.
-                [/box]
-                <p style="border:none;">&nbsp;</p>
-                [box type="alert"]
-                Si cursaste alguna asignatura electiva que es obligatoria en otras unidades académicas <strong>
-                    <a href="https://www.ucab.edu.ve/informacion-institucional/secretaria/servicios/solicitud-de-registro-de-materias-electivas/"
-                        target="_blank" style="color: rgba(196,21,28);text-decoration:underline;cursor:pointer;">debes
-                        registrarlas ante Secretaría General</a></strong>.
-                Si no lo has hecho, no aparecerán en tu récord académico, y por tanto, aparecerán como "pendientes por
-                cursar" en la presente lista de asignaturas.<br /><br />
-                Ahora bien, si hiciste el registro con antelación a este proceso de solicitud de inscripción en línea y
-                todavía te aparece proyectada alguna asignatura
-                electiva, a pesar de haberla cursado y registrado como tal ante Secretaría General, no dudes en
-                reportarlo a través del formulario respectivo.
-                [/box]
-            </div>
-            <div class="report-error">
-                [box type="info"]Si consideras que hay un error en la proyección aquí desplegada, por favor
-                <a id="report-error-link" href="#" target="_blank" style="font-weight: bold">reporta el error haciendo
-                    clic aquí</a>.[/box]
-            </div>
-
-            <div id="er-schedule-modal" class="er-modal-overlay">
-                <div class="er-modal-content">
-                    <div class="er-modal-header">
-                        <h3>Horarios de Clase</h3>
-                        <button type="button" class="er-modal-close" id="er-close-modal-btn">&times;</button>
-                    </div>
-                    <div class="er-modal-body" id="subject-schedules-container">
-                        <!-- Se inyectarán los horarios gráficos aquí -->
-                    </div>
-                </div>
-            </div>
+  <form id="er-ssn-search-frm">
+    <input
+      id="er-ssn-search"
+      name="ssn"
+      type="text"
+      placeholder="Introduce tu número de cédula de identidad"
+    />
+    <button
+      id="er-ssn-search-btn"
+      class="form-button et_pb_button"
+      type="submit"
+    >
+      Buscar
+    </button>
+  </form>
+  <img
+    id="er-loader"
+    src="https://ingenieria.ucab.edu.ve/informatica/wp-content/uploads/sites/4/2019/07/popup_loading.gif"
+    style="display: none"
+  />
+  <div id="er-details-container" style="display: none">
+    <div id="er-details">
+      <p>
+        <strong>Nombre:</strong> <span class="name"></span><br />
+        <strong>Programa:</strong> <span class="program"></span><br />
+        <strong>Promedio:</strong> <span class="agp"></span> / 20 puntos<br />
+        <strong>Ubicación:</strong> <span class="sem-loc"></span> (<span
+          class="accum-uc"
+        ></span>
+        UC acumuladas)
+      </p>
+      <p style="margin: 7px 0">
+        A continuación, se listan las asignaturas que podrás cursar en este
+        período, de acuerdo a tu récord académico.
+        <strong
+          >Toma en especial consideración las asignaturas que se marcan en el
+          cuadro de verificación, y el orden en que aparecen las mismas</strong
+        >, pues constituyen la recomendación de inscripción que desde la Escuela
+        te hacemos, basados en la naturaleza de las asignaturas disponibles y tu
+        historial académico:
+      </p>
+      <div class="projected-subjects"></div>
+      <div class="projected-info">
+        <div class="selected-credits">
+          Has seleccionado un total
+          <span id="total-projected-uc">0</span> UC.<br />
+          <div
+            id="er-view-schedules-container"
+            style="display: none; margin-top: 15px"
+          >
+            <button id="er-view-schedules-btn" class="form-button et_pb_button">
+              Ver horarios
+            </button>
+          </div>
         </div>
+        [box type="download"]
+        <div id="recommendations">
+          Por tu ubicación en la malla curricular te recomendamos cursar hasta
+          un máximo de
+          <strong style="color: #0d793d"
+            ><span id="max-recommended-uc">0</span> UC</strong
+          >
+          en este semestre.
+        </div>
+        [/box]
+      </div>
+      <div id="optional-subject-warn">
+        [box type="warning"]Toma en cuenta que no todas las asignaturas
+        electivas ofrecidas en la Universidad tienen la misma cantidad de
+        unidades crédito (UC). En la lista de asignaturas proyectadas se
+        muestran las asignaturas electivas con cuatro (4) UC como referencia.
+        Para obtener el título de Ingeniero/a en Informática
+        <strong
+          >debes aprobar un total de doce (12) UC en asignaturas
+          electivas</strong
+        >. [/box]
+        <p style="border: none">&nbsp;</p>
+        [box type="alert"] Si cursaste alguna asignatura electiva que es
+        obligatoria en otras unidades académicas
+        <strong>
+          <a
+            href="https://www.ucab.edu.ve/informacion-institucional/secretaria/servicios/solicitud-de-registro-de-materias-electivas/"
+            target="_blank"
+            style="
+              color: rgba(196, 21, 28);
+              text-decoration: underline;
+              cursor: pointer;
+            "
+            >debes registrarlas ante Secretaría General</a
+          ></strong
+        >. Si no lo has hecho, no aparecerán en tu récord académico, y por
+        tanto, aparecerán como "pendientes por cursar" en la presente lista de
+        asignaturas.<br /><br />
+        Ahora bien, si hiciste el registro con antelación a este proceso de
+        solicitud de inscripción en línea y todavía te aparece proyectada alguna
+        asignatura electiva, a pesar de haberla cursado y registrado como tal
+        ante Secretaría General, no dudes en reportarlo a través del formulario
+        respectivo. [/box]
+      </div>
+      <div class="report-error">
+        [box type="info"]Si consideras que hay un error en la proyección aquí
+        desplegada, por favor
+        <a
+          id="report-error-link"
+          href="#"
+          target="_blank"
+          style="font-weight: bold"
+          >reporta el error haciendo clic aquí</a
+        >.[/box]
+      </div>
+
+      <div id="er-schedule-modal" class="er-modal-overlay">
+        <div class="er-modal-content">
+          <div class="er-modal-header">
+            <h3>Horarios de Clase</h3>
+            <button
+              type="button"
+              class="er-modal-close"
+              id="er-close-modal-btn"
+            >
+              &times;
+            </button>
+          </div>
+          <div class="er-modal-body" id="subject-schedules-container">
+            <!-- Se inyectarán los horarios gráficos aquí -->
+          </div>
+        </div>
+      </div>
     </div>
-    <div id="er-error-message" style="display: none"></div>
+  </div>
+  <div id="er-error-message" style="display: none"></div>
 </div>
 
 <script>
-    const term = '202525'; // '%%term:202515%%';
-    const { createClient } = supabase;
-    const supabaseUrl = 'https://zmvecicbbxbpuhbnexiz.supabase.co';
-    const supabaseAnonKey =
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptdmVjaWNiYnhicHVoYm5leGl6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4ODQzMzAsImV4cCI6MjA4NTQ2MDMzMH0.m5lHEASg8lCo4qjajA4yLzjqYN12g3tlNkZh4h_vBmE';
-    const _supabase = createClient(supabaseUrl, supabaseAnonKey);
-    const invalidSsn = 'Debes introducir un número de cédula de identidad válido.';
-    const notFound = 'No se encontró ninguna información asociada a la cédula de identidad N° <strong>@SSN@</strong>.';
-    const generalError = 'Hubo un error inesperado al intentar obtener la información. Intenta más tarde&hellip;';
-    const SPEED = 250;
-    const reportLink =
-        'https://docs.google.com/forms/d/e/1FAIpQLSfhMWpdDPe2EowqEAYkx6_lHwcGmaDc_pyOp244DOSuD14BXg/viewform?usp=pp_url&entry.66360717=@@SSN@@&entry.134787551=@@lastName@@&entry.1083683938=@@name@@&entry.875582967=@@report@@';
+  const term = "202525"; // '%%term:202515%%';
+  const { createClient } = supabase;
+  const supabaseUrl = "https://zmvecicbbxbpuhbnexiz.supabase.co";
+  const supabaseAnonKey =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptdmVjaWNiYnhicHVoYm5leGl6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4ODQzMzAsImV4cCI6MjA4NTQ2MDMzMH0.m5lHEASg8lCo4qjajA4yLzjqYN12g3tlNkZh4h_vBmE";
+  const _supabase = createClient(supabaseUrl, supabaseAnonKey);
+  const invalidSsn =
+    "Debes introducir un número de cédula de identidad válido.";
+  const notFound =
+    "No se encontró ninguna información asociada a la cédula de identidad N° <strong>@SSN@</strong>.";
+  const generalError =
+    "Hubo un error inesperado al intentar obtener la información. Intenta más tarde&hellip;";
+  const SPEED = 250;
+  const reportLink =
+    "https://docs.google.com/forms/d/e/1FAIpQLSfhMWpdDPe2EowqEAYkx6_lHwcGmaDc_pyOp244DOSuD14BXg/viewform?usp=pp_url&entry.66360717=@@SSN@@&entry.134787551=@@lastName@@&entry.1083683938=@@name@@&entry.875582967=@@report@@";
 
-    jQuery(() => {
-        const $frm = jQuery('#er-ssn-search-frm');
-        const $ssn = jQuery('#er-ssn-search');
-        const $detailsContainer = jQuery('#er-details-container');
-        const $errMsg = jQuery('#er-error-message');
-        const $loader = jQuery('#er-loader');
-        const $name = $detailsContainer.find('.name');
-        const $program = $detailsContainer.find('.program');
-        const $agp = $detailsContainer.find('.agp');
-        const $semLoc = $detailsContainer.find('.sem-loc');
-        const $accumUc = $detailsContainer.find('.accum-uc');
-        const $projectedSubjects = $detailsContainer.find('.projected-subjects');
-        const $totalUc = jQuery('#total-projected-uc');
-        const $maxRecommendedUc = jQuery('#max-recommended-uc');
+  jQuery(() => {
+    const $frm = jQuery("#er-ssn-search-frm");
+    const $ssn = jQuery("#er-ssn-search");
+    const $detailsContainer = jQuery("#er-details-container");
+    const $errMsg = jQuery("#er-error-message");
+    const $loader = jQuery("#er-loader");
+    const $name = $detailsContainer.find(".name");
+    const $program = $detailsContainer.find(".program");
+    const $agp = $detailsContainer.find(".agp");
+    const $semLoc = $detailsContainer.find(".sem-loc");
+    const $accumUc = $detailsContainer.find(".accum-uc");
+    const $projectedSubjects = $detailsContainer.find(".projected-subjects");
+    const $totalUc = jQuery("#total-projected-uc");
+    const $maxRecommendedUc = jQuery("#max-recommended-uc");
 
-        // Modal references
-        const $schedulesModal = jQuery('#er-schedule-modal');
-        const $viewSchedulesContainer = jQuery('#er-view-schedules-container');
-        const $viewSchedulesBtn = jQuery('#er-view-schedules-btn');
-        const $closeModalBtn = jQuery('#er-close-modal-btn');
-        const $schedulesContainer = jQuery('#subject-schedules-container');
+    // Modal references
+    const $schedulesModal = jQuery("#er-schedule-modal");
+    const $viewSchedulesContainer = jQuery("#er-view-schedules-container");
+    const $viewSchedulesBtn = jQuery("#er-view-schedules-btn");
+    const $closeModalBtn = jQuery("#er-close-modal-btn");
+    const $schedulesContainer = jQuery("#subject-schedules-container");
 
-        let ssn = null;
-        let totalCredits = 0;
-        let studentSchedules = [];
-        let hasOptionalSubjects = false;
-        let selectedSubjects = new Set();
+    let ssn = null;
+    let totalCredits = 0;
+    let studentSchedules = [];
+    let hasOptionalSubjects = false;
+    let selectedSubjects = new Set();
 
-        $detailsContainer.on('click', 'input[type=checkbox]', handleCheckboxClick);
-        $frm.on('click', '#er-ssn-search-btn', handleSsnSearchButtonClick);
+    $detailsContainer.on("click", "input[type=checkbox]", handleCheckboxClick);
+    $frm.on("submit", handleSsnSearchSubmit);
 
-        // Modal events
-        $viewSchedulesBtn.on('click', function (e) {
-            e.preventDefault();
-            $schedulesModal.css('display', 'flex');
-        });
-        $closeModalBtn.on('click', function () {
-            $schedulesModal.hide();
-        });
-        $schedulesModal.on('click', function (e) {
-            if (e.target === this) {
-                $schedulesModal.hide();
+    // Modal events
+    $viewSchedulesBtn.on("click", function (e) {
+      e.preventDefault();
+      $schedulesModal.css("display", "flex");
+    });
+    $closeModalBtn.on("click", function () {
+      $schedulesModal.hide();
+    });
+    $schedulesModal.on("click", function (e) {
+      if (e.target === this) {
+        $schedulesModal.hide();
+      }
+    });
+
+    function validateSsn(ssn) {
+      const matched = ssn.match(/^(?:AS){0,1}(\d+)$/i);
+      return matched !== null;
+    }
+
+    async function handleFetchStudentResponse(data) {
+      $totalUc.text("0");
+      studentSchedules = [];
+      selectedSubjects.clear();
+
+      if (data === null) {
+        hideLoader(notFound.replace("@SSN@", ssn));
+      } else {
+        hideLoader();
+        updateStudentInfo(data);
+        await fetchSchedules(term, data.info.program, data.subjects)
+          .then(handleStudentSchedules)
+          .catch(handleError);
+        renderSubjects(data.subjects, semesterLoad[data.info.location]);
+        checkSubjects(data.subjects, semesterLoad[data.info.location]);
+        renderErrorReportLink(data);
+
+        $maxRecommendedUc.text(semesterLoad[data.info.location]);
+      }
+    }
+
+    function handleStudentSchedules(data) {
+      studentSchedules = data;
+    }
+
+    function handleError(err) {
+      console.error(err);
+      hideLoader(generalError);
+    }
+
+    function updateStudentInfo(data) {
+      $name.text(data.info.name);
+      $program.text(
+        `${studyPlans[data.info.program.slice(0, -3)]} (${data.info.program} | ${campus[data.info.campus]})`,
+      );
+      $agp.text(data.info.agp.toLocaleString("es-VE"));
+      $semLoc.text(data.info.location);
+      $accumUc.text(data.info.accumUc);
+    }
+
+    function updateTotalUc(credits, isAdding) {
+      let totalUcValue = parseFloat($totalUc.text()) || 0;
+
+      if (isAdding) {
+        totalUcValue += credits;
+      } else {
+        totalUcValue -= credits;
+      }
+
+      $totalUc.text(totalUcValue.toFixed(0));
+
+      if (totalUcValue.toFixed(0) > semesterLoad[$semLoc.text()]) {
+        $totalUc.parent().addClass("alert");
+      } else {
+        $totalUc.parent().removeClass("alert");
+      }
+    }
+
+    function updateSelectedSubjects(subjectId, isSelected) {
+      if (isSelected) {
+        selectedSubjects.add(subjectId);
+      } else {
+        selectedSubjects.delete(subjectId);
+      }
+
+      renderSchedules();
+    }
+
+    function checkOverlap(blockSchedules, newSection) {
+      const daysMap = [
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday",
+      ];
+
+      for (let existingSection of blockSchedules) {
+        for (let day of daysMap) {
+          const ex = existingSection.schedules[day];
+          const nw = newSection.schedules[day];
+
+          if (ex && nw) {
+            // Normalize parsing
+            const exStart =
+              parseInt(ex.start.split(":")[0]) * 60 +
+              parseInt(ex.start.split(":")[1]);
+            const exEnd =
+              parseInt(ex.end.split(":")[0]) * 60 +
+              parseInt(ex.end.split(":")[1] || "0");
+
+            const nwStart =
+              parseInt(nw.start.split(":")[0]) * 60 +
+              parseInt(nw.start.split(":")[1]);
+            const nwEnd =
+              parseInt(nw.end.split(":")[0]) * 60 +
+              parseInt(nw.end.split(":")[1] || "0");
+
+            // Overlap condition: start1 < end2 && end1 > start2
+            if (exStart < nwEnd && exEnd > nwStart) {
+              return true; // Overlap found
             }
-        });
+          }
+        }
+      }
+      return false;
+    }
 
-        function validateSsn(ssn) {
-            const matched = ssn.match(/^(?:AS){0,1}(\d+)$/i);
-            return matched !== null;
+    function renderSchedules() {
+      const $container = jQuery("#subject-schedules-container");
+
+      const selectedSchedules = studentSchedules.filter((s) => {
+        // Si el usuario seleccionó directamente esta materia (muy raro para prácticas pero válido)
+        if (selectedSubjects.has(s.subjectId)) return true;
+
+        // Si la materia es una práctica (ej: INFO-P2028), verificamos si seleccionó su equivalente teórica
+        if (s.subjectId.includes("-P")) {
+          const theoryFormat0 = s.subjectId.replace("-P", "-0"); // Ej INFO-02028
+          const theoryFormat1 = s.subjectId.replace("-P", "-1"); // Casos excepcionales ej INFO-1xxxx
+          if (
+            selectedSubjects.has(theoryFormat0) ||
+            selectedSubjects.has(theoryFormat1)
+          ) {
+            return true;
+          }
         }
 
-        async function handleFetchStudentResponse(data) {
-            $totalUc.text('0');
-            studentSchedules = [];
-            selectedSubjects.clear();
+        // Lógicas previas de electivas
+        if (
+          s.type === "ELEC-INFO" &&
+          (selectedSubjects.has("FING-ELEC1") ||
+            selectedSubjects.has("FING-ELEC2"))
+        )
+          return true;
+        if (s.type === "ELEC-COMP" && selectedSubjects.has("FING-ELEC3"))
+          return true;
 
-            if (data === null) {
-                hideLoader(notFound.replace('@SSN@', ssn));
-            } else {
-                hideLoader();
-                updateStudentInfo(data);
-                await fetchSchedules(term, data.info.program, data.subjects).then(handleStudentSchedules).catch(handleError);
-                renderSubjects(data.subjects, semesterLoad[data.info.location]);
-                checkSubjects(data.subjects, semesterLoad[data.info.location]);
-                renderErrorReportLink(data);
+        return false;
+      });
 
-                $maxRecommendedUc.text(semesterLoad[data.info.location]);
-            }
+      if (selectedSchedules.length === 0) {
+        $container.empty();
+        $viewSchedulesContainer.hide();
+        $container.html(
+          '<div class="er-empty-state">No se seleccionaron asignaturas con horarios.</div>',
+        );
+        return;
+      } else {
+        $viewSchedulesContainer.show();
+      }
+
+      // Group sections into non-overlapping timetables (Greedy bin-packing)
+      const groupedBlocks = []; // Array of Arrays
+      for (const section of selectedSchedules) {
+        let placed = false;
+        for (const block of groupedBlocks) {
+          if (!checkOverlap(block, section)) {
+            block.push(section);
+            placed = true;
+            break;
+          }
         }
-
-        function handleStudentSchedules(data) {
-            studentSchedules = data;
+        if (!placed) {
+          groupedBlocks.push([section]);
         }
+      }
 
-        function handleError(err) {
-            console.error(err);
-            hideLoader(generalError);
-        }
+      $container.empty();
 
-        function updateStudentInfo(data) {
-            $name.text(data.info.name);
-            $program.text(
-                `${studyPlans[data.info.program.slice(0, -3)]} (${data.info.program} | ${campus[data.info.campus]})`
-            );
-            $agp.text(data.info.agp.toLocaleString('es-VE'));
-            $semLoc.text(data.info.location);
-            $accumUc.text(data.info.accumUc);
-        }
+      const activeColors = [
+        "#0071bb",
+        "#1c7c54",
+        "#f1b417",
+        "#c4151c",
+        "#6f42c1",
+        "#fd7e14",
+        "#e83e8c",
+        "#20c997",
+        "#005288",
+        "#d35400",
+      ];
+      const daysMap = {
+        monday: 1,
+        tuesday: 2,
+        wednesday: 3,
+        thursday: 4,
+        friday: 5,
+        saturday: 6,
+      };
+      const dayNames = {
+        1: "Lunes",
+        2: "Martes",
+        3: "Miércoles",
+        4: "Jueves",
+        5: "Viernes",
+        6: "Sábado",
+      };
 
-        function updateTotalUc(credits, isAdding) {
-            let totalUcValue = parseFloat($totalUc.text()) || 0;
-
-            if (isAdding) {
-                totalUcValue += credits;
-            } else {
-                totalUcValue -= credits;
-            }
-
-            $totalUc.text(totalUcValue.toFixed(0));
-
-            if (totalUcValue.toFixed(0) > semesterLoad[$semLoc.text()]) {
-                $totalUc.parent().addClass('alert');
-            } else {
-                $totalUc.parent().removeClass('alert');
-            }
-        }
-
-        function updateSelectedSubjects(subjectId, isSelected) {
-            if (isSelected) {
-                selectedSubjects.add(subjectId);
-            } else {
-                selectedSubjects.delete(subjectId);
-            }
-
-            renderSchedules();
-        }
-
-        function checkOverlap(blockSchedules, newSection) {
-            const daysMap = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-
-            for (let existingSection of blockSchedules) {
-                for (let day of daysMap) {
-                    const ex = existingSection.schedules[day];
-                    const nw = newSection.schedules[day];
-
-                    if (ex && nw) {
-                        // Normalize parsing
-                        const exStart = parseInt(ex.start.split(':')[0]) * 60 + parseInt(ex.start.split(':')[1]);
-                        const exEnd = parseInt(ex.end.split(':')[0]) * 60 + parseInt(ex.end.split(':')[1] || "0");
-
-                        const nwStart = parseInt(nw.start.split(':')[0]) * 60 + parseInt(nw.start.split(':')[1]);
-                        const nwEnd = parseInt(nw.end.split(':')[0]) * 60 + parseInt(nw.end.split(':')[1] || "0");
-
-                        // Overlap condition: start1 < end2 && end1 > start2
-                        if (exStart < nwEnd && exEnd > nwStart) {
-                            return true; // Overlap found
-                        }
-                    }
-                }
-            }
-            return false;
-        }
-
-        function renderSchedules() {
-            const $container = jQuery('#subject-schedules-container');
-
-            const selectedSchedules = studentSchedules.filter(
-                (s) => {
-                    // Si el usuario seleccionó directamente esta materia (muy raro para prácticas pero válido)
-                    if (selectedSubjects.has(s.subjectId)) return true;
-
-                    // Si la materia es una práctica (ej: INFO-P2028), verificamos si seleccionó su equivalente teórica
-                    if (s.subjectId.includes('-P')) {
-                        const theoryFormat0 = s.subjectId.replace('-P', '-0'); // Ej INFO-02028
-                        const theoryFormat1 = s.subjectId.replace('-P', '-1'); // Casos excepcionales ej INFO-1xxxx
-                        if (selectedSubjects.has(theoryFormat0) || selectedSubjects.has(theoryFormat1)) {
-                            return true;
-                        }
-                    }
-
-                    // Lógicas previas de electivas
-                    if (s.type === 'ELEC-INFO' && (selectedSubjects.has('FING-ELEC1') || selectedSubjects.has('FING-ELEC2'))) return true;
-                    if (s.type === 'ELEC-COMP' && selectedSubjects.has('FING-ELEC3')) return true;
-
-                    return false;
-                }
-            );
-
-            if (selectedSchedules.length === 0) {
-                $container.empty();
-                $viewSchedulesContainer.hide();
-                $container.html('<div class="er-empty-state">No se seleccionaron asignaturas con horarios.</div>');
-                return;
-            } else {
-                $viewSchedulesContainer.show();
-            }
-
-            // Group sections into non-overlapping timetables (Greedy bin-packing)
-            const groupedBlocks = []; // Array of Arrays
-            for (const section of selectedSchedules) {
-                let placed = false;
-                for (const block of groupedBlocks) {
-                    if (!checkOverlap(block, section)) {
-                        block.push(section);
-                        placed = true;
-                        break;
-                    }
-                }
-                if (!placed) {
-                    groupedBlocks.push([section]);
-                }
-            }
-
-            $container.empty();
-
-            const activeColors = [
-                '#0071bb', '#1c7c54', '#f1b417', '#c4151c', '#6f42c1', '#fd7e14', '#e83e8c', '#20c997', '#005288', '#d35400'
-            ];
-            const daysMap = { monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
-            const dayNames = { 1: 'Lunes', 2: 'Martes', 3: 'Miércoles', 4: 'Jueves', 5: 'Viernes', 6: 'Sábado' };
-
-            groupedBlocks.forEach((blockSchedules, blockIndex) => {
-
-                const headerHtml = `
+      groupedBlocks.forEach((blockSchedules, blockIndex) => {
+        const headerHtml = `
                     <div class="er-schedule-wrapper">
                         <div class="er-schedule-wrapper-title">
                             Bloque ${blockIndex + 1} (${blockSchedules.length} secciones)
@@ -669,63 +775,66 @@
                             <div class="er-grid-header" style="grid-column: 7; grid-row: 1;">Sábado</div>
                 `;
 
-                let timeRowsHtml = '';
-                for (let hour = 7; hour <= 20; hour++) {
-                    const h1 = hour.toString().padStart(2, '0') + ':00';
-                    const rowH1 = 2 + ((hour - 7) * 2);
-                    timeRowsHtml += `<div class="er-time-label-col" style="grid-column: 1; grid-row: ${rowH1};"><span>${h1}</span></div>`;
+        let timeRowsHtml = "";
+        for (let hour = 7; hour <= 20; hour++) {
+          const h1 = hour.toString().padStart(2, "0") + ":00";
+          const rowH1 = 2 + (hour - 7) * 2;
+          timeRowsHtml += `<div class="er-time-label-col" style="grid-column: 1; grid-row: ${rowH1};"><span>${h1}</span></div>`;
 
-                    const h2 = hour.toString().padStart(2, '0') + ':30';
-                    const rowH2 = 2 + ((hour - 7) * 2) + 1;
-                    timeRowsHtml += `<div class="er-time-label-col" style="grid-column: 1; grid-row: ${rowH2};"><span style="color:#ccc">${h2}</span></div>`;
+          const h2 = hour.toString().padStart(2, "0") + ":30";
+          const rowH2 = 2 + (hour - 7) * 2 + 1;
+          timeRowsHtml += `<div class="er-time-label-col" style="grid-column: 1; grid-row: ${rowH2};"><span style="color:#ccc">${h2}</span></div>`;
+        }
+
+        for (let r = 2; r <= 29; r++) {
+          for (let c = 2; c <= 7; c++) {
+            timeRowsHtml += `<div class="er-grid-cell" style="grid-column: ${c}; grid-row: ${r};"></div>`;
+          }
+        }
+
+        let blocksHtml = "";
+        let mobileBlocksHtml = "";
+        const mobileDaysData = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
+
+        const sortedSchedules = [...blockSchedules].sort((a, b) =>
+          a.subjectId.localeCompare(b.subjectId),
+        );
+
+        sortedSchedules.forEach((schedule, index) => {
+          const color = activeColors[index % activeColors.length];
+
+          Object.keys(daysMap).forEach((day) => {
+            const block = schedule.schedules[day];
+            if (block) {
+              const dayCol = daysMap[day];
+
+              const startParts = block.start.split(":");
+              const endParts = block.end.split(":");
+
+              const startHour = parseInt(startParts[0], 10);
+              const startMin = parseInt(startParts[1], 10);
+              const startRow =
+                2 + (startHour - 7) * 2 + (startMin >= 30 ? 1 : 0);
+
+              let endHour = parseInt(endParts[0], 10);
+              let endMin = parseInt(endParts[1], 10);
+
+              if (isNaN(endMin)) {
+                const cleanEnd = block.end.replace(/[^\d:]/g, "");
+                if (cleanEnd.includes(":")) {
+                  const cleanEndParts = cleanEnd.split(":");
+                  endHour = parseInt(cleanEndParts[0], 10);
+                  endMin = parseInt(cleanEndParts[1], 10);
                 }
+              }
 
-                for (let r = 2; r <= 29; r++) {
-                    for (let c = 2; c <= 7; c++) {
-                        timeRowsHtml += `<div class="er-grid-cell" style="grid-column: ${c}; grid-row: ${r};"></div>`;
-                    }
-                }
+              let endRow = 2 + (endHour - 7) * 2 + (endMin >= 30 ? 1 : 0);
 
-                let blocksHtml = '';
-                let mobileBlocksHtml = '';
-                const mobileDaysData = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
+              if (endMin >= 50) {
+                endRow += 1;
+              }
 
-                const sortedSchedules = [...blockSchedules].sort((a, b) => a.subjectId.localeCompare(b.subjectId));
-
-                sortedSchedules.forEach((schedule, index) => {
-                    const color = activeColors[index % activeColors.length];
-
-                    Object.keys(daysMap).forEach(day => {
-                        const block = schedule.schedules[day];
-                        if (block) {
-                            const dayCol = daysMap[day];
-
-                            const startParts = block.start.split(':');
-                            const endParts = block.end.split(':');
-
-                            const startHour = parseInt(startParts[0], 10);
-                            const startMin = parseInt(startParts[1], 10);
-                            const startRow = 2 + ((startHour - 7) * 2) + (startMin >= 30 ? 1 : 0);
-
-                            let endHour = parseInt(endParts[0], 10);
-                            let endMin = parseInt(endParts[1], 10);
-
-                            if (isNaN(endMin)) {
-                                const cleanEnd = block.end.replace(/[^\d:]/g, '');
-                                if (cleanEnd.includes(':')) {
-                                    const cleanEndParts = cleanEnd.split(':');
-                                    endHour = parseInt(cleanEndParts[0], 10);
-                                    endMin = parseInt(cleanEndParts[1], 10);
-                                }
-                            }
-
-                            let endRow = 2 + ((endHour - 7) * 2) + (endMin >= 30 ? 1 : 0);
-
-                            if (endMin >= 50) {
-                                endRow += 1;
-                            }
-
-                            blocksHtml += `
+              blocksHtml += `
                                 <div class="er-class-block" style="grid-column: ${dayCol + 1}; grid-row: ${startRow} / ${endRow}; background-color: ${color};">
                                     <span class="subject-title">${schedule.subjectName}</span>
                                     <span class="subject-acronym">${schedule.subjectId} (NRC ${schedule.crn})</span>
@@ -733,412 +842,468 @@
                                 </div>
                             `;
 
-                            mobileDaysData[dayCol].push({
-                                subject: schedule.subjectName,
-                                acronym: schedule.subjectId,
-                                crn: schedule.crn,
-                                time: `${block.start} - ${block.end}`,
-                                color: color
-                            });
-                        }
-                    });
-                });
+              mobileDaysData[dayCol].push({
+                subject: schedule.subjectName,
+                acronym: schedule.subjectId,
+                crn: schedule.crn,
+                time: `${block.start} - ${block.end}`,
+                color: color,
+              });
+            }
+          });
+        });
 
-                Object.keys(mobileDaysData).forEach(dayIndex => {
-                    const dayClasses = mobileDaysData[dayIndex];
-                    if (dayClasses.length > 0) {
-                        dayClasses.sort((a, b) => a.time.localeCompare(b.time));
+        Object.keys(mobileDaysData).forEach((dayIndex) => {
+          const dayClasses = mobileDaysData[dayIndex];
+          if (dayClasses.length > 0) {
+            dayClasses.sort((a, b) => a.time.localeCompare(b.time));
 
-                        mobileBlocksHtml += `<div class="er-mobile-day">`;
-                        mobileBlocksHtml += `<h4>${dayNames[dayIndex]}</h4>`;
-                        dayClasses.forEach(cls => {
-                            mobileBlocksHtml += `
+            mobileBlocksHtml += `<div class="er-mobile-day">`;
+            mobileBlocksHtml += `<h4>${dayNames[dayIndex]}</h4>`;
+            dayClasses.forEach((cls) => {
+              mobileBlocksHtml += `
                                 <div class="er-mobile-class" style="border-left-color: ${cls.color}">
                                     <strong>${cls.subject}</strong><br>
                                     <small>${cls.acronym} (NRC ${cls.crn})</small><br>
                                     <small>${cls.time}</small>
                                 </div>
                             `;
-                        });
-                        mobileBlocksHtml += `</div>`;
-                    }
-                });
+            });
+            mobileBlocksHtml += `</div>`;
+          }
+        });
 
-                if (blocksHtml === '') {
-                    blocksHtml = `<div class="er-empty-state" style="grid-column: 1 / -1; grid-row: 2 / -1;">Las materias seleccionadas para este bloque no tienen horarios publicados o son virtuales.</div>`;
-                }
+        if (blocksHtml === "") {
+          blocksHtml = `<div class="er-empty-state" style="grid-column: 1 / -1; grid-row: 2 / -1;">Las materias seleccionadas para este bloque no tienen horarios publicados o son virtuales.</div>`;
+        }
 
-                const footerHtml = `
+        const footerHtml = `
                             ${blocksHtml}
                         </div>
-                        ${mobileBlocksHtml !== '' && blocksHtml.includes('er-empty-state') ? mobileBlocksHtml : `<div class="er-schedule-grid er-mobile-grid-inject" style="display:none;">${mobileBlocksHtml}</div>`}
+                        ${mobileBlocksHtml !== "" && blocksHtml.includes("er-empty-state") ? mobileBlocksHtml : `<div class="er-schedule-grid er-mobile-grid-inject" style="display:none;">${mobileBlocksHtml}</div>`}
                     </div>
                 `;
 
-                $container.append(headerHtml + timeRowsHtml + footerHtml);
-            });
+        $container.append(headerHtml + timeRowsHtml + footerHtml);
+      });
 
-            if (window.innerWidth <= 768) {
-                // Apply fallback mobile blocks for all generated layouts
-                $container.find('.er-schedule-grid:not(.er-mobile-grid-inject)').hide();
-                $container.find('.er-mobile-grid-inject').css('display', 'flex');
-            }
+      if (window.innerWidth <= 768) {
+        // Apply fallback mobile blocks for all generated layouts
+        $container.find(".er-schedule-grid:not(.er-mobile-grid-inject)").hide();
+        $container.find(".er-mobile-grid-inject").css("display", "flex");
+      }
+    }
+
+    function handleSsnSearchSubmit(evt) {
+      evt.preventDefault();
+
+      if (ssn !== $ssn.val()) {
+        ssn = $ssn.val();
+
+        if (ssn) {
+          if (!validateSsn(ssn)) {
+            hideLoader(invalidSsn);
+          } else {
+            showLoader();
+            fetchStudent(ssn)
+              .then(handleFetchStudentResponse)
+              .catch(handleError);
+          }
+        } else {
+          hideLoader(invalidSsn);
+        }
+      }
+    }
+
+    function handleCheckboxClick(evt) {
+      const idColumnIndex = 3;
+      const creditsColumnIndex = 5;
+      const $chkbox = jQuery(evt.target);
+      const $row = $chkbox.closest("tr");
+      const credits = parseFloat(
+        $row.find(`td:nth-child(${creditsColumnIndex})`).text(),
+      );
+      const subjectId = $row.find(`td:nth-child(${idColumnIndex})`).text();
+
+      if ($chkbox.hasClass("select-all")) {
+        if ($chkbox.prop("checked") === true) {
+          $detailsContainer.find("input[type=checkbox]").prop("checked", true);
+
+          const totalCredits = $detailsContainer
+            .find("input[type=checkbox]:not(.select-all)")
+            .toArray()
+            .reduce((sum, checkbox) => {
+              const $row = jQuery(checkbox).closest("tr");
+              selectedSubjects.add(
+                $row.find(`td:nth-child(${idColumnIndex})`).text(),
+              );
+              return (
+                sum +
+                parseFloat(
+                  $row.find(`td:nth-child(${creditsColumnIndex})`).text(),
+                )
+              );
+            }, 0);
+          $totalUc.text(totalCredits.toFixed(0));
+
+          if (totalCredits.toFixed(0) > semesterLoad[$semLoc.text()]) {
+            $totalUc.parent().addClass("alert");
+          } else {
+            $totalUc.parent().removeClass("alert");
+          }
+        } else {
+          $detailsContainer.find("input[type=checkbox]").prop("checked", false);
+          $totalUc.text("0");
+          $totalUc.parent().removeClass("alert");
+          selectedSubjects.clear();
         }
 
-        function handleSsnSearchButtonClick(evt) {
-            evt.preventDefault();
+        renderSchedules();
+      } else {
+        const $chkboxes = $detailsContainer.find(
+          "input[type=checkbox]:not(.select-all)",
+        );
+        const $chkboxesChecked = $chkboxes.filter(":checked");
 
-            if (ssn !== $ssn.val()) {
-                ssn = $ssn.val();
+        $detailsContainer.find(".select-all").prop("indeterminate", false);
 
-                if (ssn) {
-                    if (!validateSsn(ssn)) {
-                        hideLoader(invalidSsn);
-                    } else {
-                        showLoader();
-                        fetchStudent(ssn).then(handleFetchStudentResponse).catch(handleError);
-                    }
-                } else {
-                    hideLoader(invalidSsn);
-                }
-            }
+        if ($chkboxes.length === $chkboxesChecked.length) {
+          $detailsContainer.find(".select-all").prop("checked", true);
+        } else if ($chkboxesChecked.length === 0) {
+          $detailsContainer.find(".select-all").prop("checked", false);
+        } else {
+          $detailsContainer.find(".select-all").prop("indeterminate", true);
         }
 
-        function handleCheckboxClick(evt) {
-            const idColumnIndex = 3;
-            const creditsColumnIndex = 5;
-            const $chkbox = jQuery(evt.target);
-            const $row = $chkbox.closest('tr');
-            const credits = parseFloat($row.find(`td:nth-child(${creditsColumnIndex})`).text());
-            const subjectId = $row.find(`td:nth-child(${idColumnIndex})`).text();
+        updateTotalUc(credits, $chkbox.prop("checked"));
+        updateSelectedSubjects(subjectId, $chkbox.prop("checked"));
+      }
+    }
 
-            if ($chkbox.hasClass('select-all')) {
-                if ($chkbox.prop('checked') === true) {
-                    $detailsContainer.find('input[type=checkbox]').prop('checked', true);
+    function checkSubjects(subjects, maxLoad) {
+      let totalCredits = 0;
 
-                    const totalCredits = $detailsContainer
-                        .find('input[type=checkbox]:not(.select-all)')
-                        .toArray()
-                        .reduce((sum, checkbox) => {
-                            const $row = jQuery(checkbox).closest('tr');
-                            selectedSubjects.add($row.find(`td:nth-child(${idColumnIndex})`).text());
-                            return sum + parseFloat($row.find(`td:nth-child(${creditsColumnIndex})`).text());
-                        }, 0);
-                    $totalUc.text(totalCredits.toFixed(0));
+      subjects.forEach((subject) => {
+        totalCredits += subject.credits;
 
-                    if (totalCredits.toFixed(0) > semesterLoad[$semLoc.text()]) {
-                        $totalUc.parent().addClass('alert');
-                    } else {
-                        $totalUc.parent().removeClass('alert');
-                    }
-                } else {
-                    $detailsContainer.find('input[type=checkbox]').prop('checked', false);
-                    $totalUc.text('0');
-                    $totalUc.parent().removeClass('alert');
-                    selectedSubjects.clear();
-                }
-
-                renderSchedules();
-            } else {
-                const $chkboxes = $detailsContainer.find('input[type=checkbox]:not(.select-all)');
-                const $chkboxesChecked = $chkboxes.filter(':checked');
-
-                $detailsContainer.find('.select-all').prop('indeterminate', false);
-
-                if ($chkboxes.length === $chkboxesChecked.length) {
-                    $detailsContainer.find('.select-all').prop('checked', true);
-                } else if ($chkboxesChecked.length === 0) {
-                    $detailsContainer.find('.select-all').prop('checked', false);
-                } else {
-                    $detailsContainer.find('.select-all').prop('indeterminate', true);
-                }
-
-                updateTotalUc(credits, $chkbox.prop('checked'));
-                updateSelectedSubjects(subjectId, $chkbox.prop('checked'));
-            }
+        if (totalCredits <= maxLoad) {
+          jQuery(
+            `#sub-${subject.id.toLowerCase()} input[type=checkbox]`,
+          ).trigger("click");
         }
+      });
+    }
 
-        function checkSubjects(subjects, maxLoad) {
-            let totalCredits = 0;
+    function showLoader() {
+      $detailsContainer.stop(true, true).hide();
+      $errMsg.stop(true, true).hide();
+      $loader.stop(true, true).fadeIn(SPEED);
+    }
 
-            subjects.forEach((subject) => {
-                totalCredits += subject.credits;
+    function hideLoader(msg) {
+      if (msg) {
+        $loader.stop(true, true).hide();
+        $detailsContainer.stop(true, true).hide();
+        $errMsg
+          .stop(true, true)
+          .html(
+            `<i class="fa fa-exclamation-circle" aria-hidden="true"></i> ${msg}`,
+          )
+          .fadeIn(SPEED);
+      } else {
+        $loader.stop(true, true).hide();
+        $errMsg.stop(true, true).hide();
+        $detailsContainer.stop(true, true).fadeIn(SPEED);
+      }
+    }
+  });
 
-                if (totalCredits <= maxLoad) {
-                    jQuery(`#sub-${subject.id.toLowerCase()} input[type=checkbox]`).trigger('click');
-                }
-            });
-        }
+  function renderSubjects(subjects) {
+    const $projectedSubjects = jQuery(
+      "#er-details-container .projected-subjects",
+    );
+    $projectedSubjects.empty();
 
-        function showLoader() {
-            $detailsContainer.fadeOut(SPEED, () => {
-                $errMsg.fadeOut(SPEED, () => $loader.fadeIn());
-            });
-        }
+    const $table = jQuery('<table class="tablepress"></table>');
+    const $thead = jQuery("<thead></thead>");
+    const $tbody = jQuery('<tbody class="row-hover"></tbody>');
 
-        function hideLoader(msg) {
-            if (msg) {
-                $loader.fadeOut(SPEED, () => {
-                    $detailsContainer.fadeOut(SPEED, () => {
-                        $errMsg.html(`<i class="fa fa-exclamation-circle" aria-hidden="true"></i> ${msg}`).fadeIn();
-                    });
-                });
-            } else {
-                $loader.fadeOut(SPEED, () => $detailsContainer.fadeIn());
-            }
-        }
+    const $theadRow = jQuery("<tr></tr>");
+    $theadRow.append(
+      '<th style="width:36px;text-align:center;line-height:1rem;"><input class="select-all" type="checkbox" /></th>',
+    );
+    $theadRow.append('<th style="width:66px;text-align:center;">Sem.</th>');
+    $theadRow.append('<th style="width:100px;text-align:center;">Cód.</th>');
+    $theadRow.append('<th style="text-align:center;">Nombre</th>');
+    $theadRow.append('<th style="width:50px;text-align:center;">UC</th>');
+
+    $thead.append($theadRow);
+
+    const optionalEquivs = [];
+    jQuery("div.temp").remove();
+
+    subjects.forEach((subject) => {
+      if (!subject.equiv) {
+        const $row = jQuery(`<tr id="sub-${subject.id.toLowerCase()}"></tr>`);
+
+        $row.append(
+          `<td style="text-align:center;"><input type="checkbox" /></td>`,
+        );
+        $row.append(`<td style="text-align:center;">${subject.semester}</td>`);
+        $row.append(`<td style="text-align:center;">${subject.id}</td>`);
+        $row.append(`<td>${subject.name}</td>`);
+        $row.append(`<td style="text-align:center;">${subject.credits}</td>`);
+
+        $tbody.append($row);
+      } else {
+        optionalEquivs.push({
+          subject: `${subject.id} - ${subject.name}`,
+          equiv: subject.equiv,
+        });
+      }
     });
 
-    function renderSubjects(subjects) {
-        const $projectedSubjects = jQuery('#er-details-container .projected-subjects');
-        $projectedSubjects.empty();
+    $table.append($thead);
+    $table.append($tbody);
 
-        const $table = jQuery('<table class="tablepress"></table>');
-        const $thead = jQuery('<thead></thead>');
-        const $tbody = jQuery('<tbody class="row-hover"></tbody>');
+    $projectedSubjects.append($table);
 
-        const $theadRow = jQuery('<tr></tr>');
-        $theadRow.append(
-            '<th style="width:36px;text-align:center;line-height:1rem;"><input class="select-all" type="checkbox" /></th>'
-        );
-        $theadRow.append('<th style="width:66px;text-align:center;">Sem.</th>');
-        $theadRow.append('<th style="width:100px;text-align:center;">Cód.</th>');
-        $theadRow.append('<th style="text-align:center;">Nombre</th>');
-        $theadRow.append('<th style="width:50px;text-align:center;">UC</th>');
+    if (
+      subjects.some(
+        (s) =>
+          s.id === "FING-ELEC1" ||
+          s.id === "FING-ELEC2" ||
+          s.id === "FING-ELEC3",
+      ) &&
+      optionalEquivs.length < 1
+    ) {
+      jQuery("#optional-subject-warn").fadeIn();
+    } else {
+      jQuery("#optional-subject-warn").fadeOut();
+    }
 
-        $thead.append($theadRow);
+    if (optionalEquivs.length > 0) {
+      const equivs = optionalEquivs.length;
 
-        const optionalEquivs = [];
-        jQuery('div.temp').remove();
+      if (equivs > 0) {
+        let equivSubjects = `<p style="margin: 0;">Se está${equivs > 1 ? "n" : ""} <strong>reconociendo</strong> la${equivs > 1 ? "s" : ""} siguiente${
+          equivs > 1 ? "s" : ""
+        } asignatura${equivs > 1 ? "s" : ""} ya cursada${equivs > 1 ? "s" : ""} por ti como electiva${equivs > 1 ? "s" : ""}: </p><ul>`;
 
-        subjects.forEach((subject) => {
-            if (!subject.equiv) {
-                const $row = jQuery(`<tr id="sub-${subject.id.toLowerCase()}"></tr>`);
-
-                $row.append(`<td style="text-align:center;"><input type="checkbox" /></td>`);
-                $row.append(`<td style="text-align:center;">${subject.semester}</td>`);
-                $row.append(`<td style="text-align:center;">${subject.id}</td>`);
-                $row.append(`<td>${subject.name}</td>`);
-                $row.append(`<td style="text-align:center;">${subject.credits}</td>`);
-
-                $tbody.append($row);
-            } else {
-                optionalEquivs.push({
-                    subject: `${subject.id} - ${subject.name}`,
-                    equiv: subject.equiv,
-                });
-            }
+        optionalEquivs.forEach((equiv) => {
+          equivSubjects += `<li> ${equiv.subject} (equivale a ${equiv.equiv})</li>`;
         });
 
-        $table.append($thead);
-        $table.append($tbody);
+        equivSubjects += "</ul>";
 
-        $projectedSubjects.append($table);
-
-        if (
-            subjects.some((s) => s.id === 'FING-ELEC1' || s.id === 'FING-ELEC2' || s.id === 'FING-ELEC3') &&
-            optionalEquivs.length < 1
-        ) {
-            jQuery('#optional-subject-warn').fadeIn();
-        } else {
-            jQuery('#optional-subject-warn').fadeOut();
-        }
-
-        if (optionalEquivs.length > 0) {
-            const equivs = optionalEquivs.length;
-
-            if (equivs > 0) {
-                let equivSubjects = `<p style="margin: 0;">Se está${equivs > 1 ? 'n' : ''} <strong>reconociendo</strong> la${equivs > 1 ? 's' : ''} siguiente${equivs > 1 ? 's' : ''
-                    } asignatura${equivs > 1 ? 's' : ''} ya cursada${equivs > 1 ? 's' : ''} por ti como electiva${equivs > 1 ? 's' : ''}: </p><ul>`;
-
-                optionalEquivs.forEach((equiv) => {
-                    equivSubjects += `<li> ${equiv.subject} (equivale a ${equiv.equiv})</li>`;
-                });
-
-                equivSubjects += '</ul>';
-
-                jQuery('#recommendations').append(`<div class="temp">${equivSubjects}</div>`);
-            }
-        }
+        jQuery("#recommendations").append(
+          `<div class="temp">${equivSubjects}</div>`,
+        );
+      }
     }
+  }
 
-    function renderErrorReportLink(data) {
-        const $reportLink = jQuery('#report-error-link');
-        const subjects = data.subjects.map((s, idx) => `${idx + 1}) ${s.semester}: ${s.name} (${s.credits} UC)`);
-        const reportBody = `Hola. Considero que hay un error en el cálculo de las proyecciones mostradas. Las proyecciones desplegadas originalmente son: ${subjects.join(
-            ',\n '
-        )}.\n Y de acuerdo a mis cálculos, serían: \n\n[**** Inserta aquí el ajuste que consideres necesario ****].`;
-        const reportUrl = reportLink
-            .replace('@@SSN@@', data.info.ssn)
-            .replace('@@name@@', data.info.name.split(',')[1])
-            .replace('@@lastName@@', data.info.name.split(',')[0])
-            .replace('@@report@@', reportBody);
+  function renderErrorReportLink(data) {
+    const $reportLink = jQuery("#report-error-link");
+    const subjects = data.subjects.map(
+      (s, idx) => `${idx + 1}) ${s.semester}: ${s.name} (${s.credits} UC)`,
+    );
+    const reportBody = `Hola. Considero que hay un error en el cálculo de las proyecciones mostradas. Las proyecciones desplegadas originalmente son: ${subjects.join(
+      ",\n ",
+    )}.\n Y de acuerdo a mis cálculos, serían: \n\n[**** Inserta aquí el ajuste que consideres necesario ****].`;
+    const reportUrl = reportLink
+      .replace("@@SSN@@", data.info.ssn)
+      .replace("@@name@@", data.info.name.split(",")[1])
+      .replace("@@lastName@@", data.info.name.split(",")[0])
+      .replace("@@report@@", reportBody);
 
-        $reportLink.attr('href', reportUrl);
-    }
+    $reportLink.attr("href", reportUrl);
+  }
 
-    async function fetchSchedules(term, program, subjects) {
-        try {
-            const excludedSubjects = ['INFO-00192', 'INFO-IILCT', 'INFO-IILTG', 'CUSC', 'IISC'];
-            const matIds = subjects
-                .filter(s => !excludedSubjects.includes(s.id))
-                .map(s => s.id);
+  async function fetchSchedules(term, program, subjects) {
+    try {
+      const excludedSubjects = [
+        "INFO-00192",
+        "INFO-IILCT",
+        "INFO-IILTG",
+        "CUSC",
+        "IISC",
+      ];
+      const matIds = subjects
+        .filter((s) => !excludedSubjects.includes(s.id))
+        .map((s) => s.id);
 
-            const { data, error } = await _supabase.rpc('er_get_subject_schedules', { p_mat_ids: matIds });
+      const { data, error } = await _supabase.rpc("er_get_subject_schedules", {
+        p_mat_ids: matIds,
+      });
 
-            if (error) {
-                return [];
-            }
+      if (error) {
+        return [];
+      }
 
-            if (!data || data === null) {
-                return [];
-            }
+      if (!data || data === null) {
+        return [];
+      }
 
-            const schedules = data.map((d) => {
-                const schedule = {
-                    type: d.type,
-                    crn: d.crn,
-                    subjectId: d.subject_id,
-                    subjectName: d.subject_name,
-                    taxonomy: d.taxonomy,
-                    modality: d.modality,
-                    uc: d.uc,
-                    section: d.section,
-                    professor: d.professor,
-                    schedules: {
-                        monday: parseSchedule(d.monday),
-                        tuesday: parseSchedule(d.tuesday),
-                        wednesday: parseSchedule(d.wednesday),
-                        thursday: parseSchedule(d.thursday),
-                        friday: parseSchedule(d.friday),
-                        saturday: parseSchedule(d.saturday),
-                        sunday: parseSchedule(d.sunday),
-                    },
-                };
-
-                return schedule;
-            });
-
-            return schedules;
-        } catch (err) {
-            console.error(`Error al consultar los horarios de clase para el TERM ${term} y PROGRAM "${program}"`, err);
-            return [];
-        }
-    }
-
-    async function fetchStudent(ssn) {
-        try {
-            const parsedSsn = parseInt(ssn.replace(/\D/g, ''), 10);
-            const { data, error } = await _supabase.rpc('er_get_student_projections', { p_cedula: parsedSsn });
-
-            if (error) {
-                return null;
-            }
-
-            if (!data || data === null || !data.info) {
-                return null;
-            }
-
-            const studentInfo = data.info;
-
-            const subjectInfo = data.subjects.map((d) => {
-                const subject = { ...d };
-                subject.priority = calculatePriority(subject, extractSemesterNumber(studentInfo.location));
-                return subject;
-            });
-
-            return {
-                info: studentInfo,
-                subjects: subjectInfo,
-            };
-        } catch (err) {
-            console.error(`Error al consultar la información del alumno "${ssn}"`, err);
-            return null;
-        }
-    }
-
-    function calculatePriority(subject, currentSemester) {
-        // Pesos de cada dimensión
-        const weights = {
-            semester: 0.3,
-            contributesTo: 0.1,
-            credits: 0.1,
-            attempts: 0.15,
+      const schedules = data.map((d) => {
+        const schedule = {
+          type: d.type,
+          crn: d.crn,
+          subjectId: d.subject_id,
+          subjectName: d.subject_name,
+          taxonomy: d.taxonomy,
+          modality: d.modality,
+          uc: d.uc,
+          section: d.section,
+          professor: d.professor,
+          schedules: {
+            monday: parseSchedule(d.monday),
+            tuesday: parseSchedule(d.tuesday),
+            wednesday: parseSchedule(d.wednesday),
+            thursday: parseSchedule(d.thursday),
+            friday: parseSchedule(d.friday),
+            saturday: parseSchedule(d.saturday),
+            sunday: parseSchedule(d.sunday),
+          },
         };
 
-        // Calcular el valor de cada dimensión
-        const semesterValue = (currentSemester - extractSemesterNumber(subject.semester)) / currentSemester;
-        const contributesToValue = subject.contributesTo / 3; // Asumiendo que el valor máximo de contributesTo es 3
-        const creditsValue = subject.credits / 265; // Asumiendo que el valor máximo de credits es 265
-        const attemptsValue = subject.attempts / 4; // Asumiendo que el valor máximo de attempts es 4
+        return schedule;
+      });
 
-        // Calcular el porcentaje de recomendación
-        const priority =
-            semesterValue * weights.semester +
-            contributesToValue * weights.contributesTo +
-            creditsValue * weights.credits +
-            attemptsValue * weights.attempts;
+      return schedules;
+    } catch (err) {
+      console.error(
+        `Error al consultar los horarios de clase para el TERM ${term} y PROGRAM "${program}"`,
+        err,
+      );
+      return [];
+    }
+  }
 
-        // Convertir a porcentaje
-        return priority * 100;
+  async function fetchStudent(ssn) {
+    try {
+      const parsedSsn = parseInt(ssn.replace(/\D/g, ""), 10);
+      const { data, error } = await _supabase.rpc(
+        "er_get_student_projections",
+        { p_cedula: parsedSsn },
+      );
+
+      if (error) {
+        return null;
+      }
+
+      if (!data || data === null || !data.info) {
+        return null;
+      }
+
+      const studentInfo = data.info;
+
+      const subjectInfo = data.subjects.map((d) => {
+        const subject = { ...d };
+        subject.priority = calculatePriority(
+          subject,
+          extractSemesterNumber(studentInfo.location),
+        );
+        return subject;
+      });
+
+      return {
+        info: studentInfo,
+        subjects: subjectInfo,
+      };
+    } catch (err) {
+      console.error(
+        `Error al consultar la información del alumno "${ssn}"`,
+        err,
+      );
+      return null;
+    }
+  }
+
+  function calculatePriority(subject, currentSemester) {
+    // Pesos de cada dimensión
+    const weights = {
+      semester: 0.3,
+      contributesTo: 0.1,
+      credits: 0.1,
+      attempts: 0.15,
+    };
+
+    // Calcular el valor de cada dimensión
+    const semesterValue =
+      (currentSemester - extractSemesterNumber(subject.semester)) /
+      currentSemester;
+    const contributesToValue = subject.contributesTo / 3; // Asumiendo que el valor máximo de contributesTo es 3
+    const creditsValue = subject.credits / 265; // Asumiendo que el valor máximo de credits es 265
+    const attemptsValue = subject.attempts / 4; // Asumiendo que el valor máximo de attempts es 4
+
+    // Calcular el porcentaje de recomendación
+    const priority =
+      semesterValue * weights.semester +
+      contributesToValue * weights.contributesTo +
+      creditsValue * weights.credits +
+      attemptsValue * weights.attempts;
+
+    // Convertir a porcentaje
+    return priority * 100;
+  }
+
+  function extractSemesterNumber(str) {
+    const match = str.match(/^(\d{2})SE$/);
+
+    if (match) {
+      return parseInt(match[1], 10);
     }
 
-    function extractSemesterNumber(str) {
-        const match = str.match(/^(\d{2})SE$/);
+    return 0;
+  }
 
-        if (match) {
-            return parseInt(match[1], 10);
-        }
-
-        return 0;
+  function parseSchedule(schedule) {
+    if (!schedule || schedule === null || schedule === "") {
+      return null;
     }
 
-    function parseSchedule(schedule) {
-        if (!schedule || schedule === null || schedule === '') {
-            return null;
-        }
+    const [timePart, room] = schedule.trim().split(" ");
+    const [start, end] = timePart.trim().split("_");
 
-        const [timePart, room] = schedule.trim().split(' ');
-        const [start, end] = timePart.trim().split('_');
-
-        return {
-            start,
-            end,
-            room,
-        };
-    }
-
-    const studyPlans = {
-        LICINFORM: 'Pensum Nuevo',
-        LICINGINF: 'Pensum Viejo / Derogado',
+    return {
+      start,
+      end,
+      room,
     };
+  }
 
-    const campus = {
-        '001': 'Caracas',
-        '004': 'Guayana',
-    };
+  const studyPlans = {
+    LICINFORM: "Pensum Nuevo",
+    LICINGINF: "Pensum Viejo / Derogado",
+  };
 
-    const semesterLoad = {
-        '00SE': 25,
-        '01SE': 25,
-        '02SE': 31,
-        '03SE': 33,
-        '04SE': 31,
-        '05SE': 31,
-        '06SE': 31,
-        '07SE': 30,
-        '08SE': 28,
-        '09SE': 26,
-        '10SE': 17,
-    };
+  const campus = {
+    "001": "Caracas",
+    "004": "Guayana",
+  };
 
-    const weekDays = {
-        monday: 'Lunes',
-        tuesday: 'Martes',
-        wednesday: 'Miércoles',
-        thursday: 'Jueves',
-        friday: 'Viernes',
-        saturday: 'Sábado',
-        sunday: 'Domingo',
-    };
+  const semesterLoad = {
+    "00SE": 25,
+    "01SE": 25,
+    "02SE": 31,
+    "03SE": 33,
+    "04SE": 31,
+    "05SE": 31,
+    "06SE": 31,
+    "07SE": 30,
+    "08SE": 28,
+    "09SE": 26,
+    "10SE": 17,
+  };
+
+  const weekDays = {
+    monday: "Lunes",
+    tuesday: "Martes",
+    wednesday: "Miércoles",
+    thursday: "Jueves",
+    friday: "Viernes",
+    saturday: "Sábado",
+    sunday: "Domingo",
+  };
 </script>
