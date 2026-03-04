@@ -57,20 +57,41 @@ interface SemesterData {
   TERM: string;
 }
 
+interface CarreraData {
+  car_id: number;
+  car_codigo: string;
+  car_nombre: string;
+}
+
 type UploadType = 'proyecciones' | 'horarios' | 'estudiantes' | 'semestres';
+
+const getExpectedSheetSemester = (sem: string) => {
+  if (!sem || sem.length !== 6) return sem;
+  const year = parseInt(sem.slice(0, 4), 10);
+  const period = sem.slice(4, 6);
+
+  if (period === '25') return `${year}15`;
+  if (period === '15') return `${year - 1}25`;
+  if (period === '30') return `${year}20`; // Intensive
+  if (period === '20') return `${year - 1}30`;
+  return sem;
+};
 
 export function UploadProjections() {
   const { profile } = useAuth();
   const [semester, setSemester] = useState('');
+  const [carrera, setCarrera] = useState('');
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState('');
   const [uploadType, setUploadType] = useState<UploadType>('proyecciones');
 
   const [semestersList, setSemestersList] = useState<SemesterData[]>([]);
   const [newSemesterTerm, setNewSemesterTerm] = useState('');
+  const [carrerasList, setCarrerasList] = useState<CarreraData[]>([]);
 
   useEffect(() => {
     fetchSemesters();
+    fetchCarreras();
   }, []);
 
   const fetchSemesters = async () => {
@@ -88,6 +109,15 @@ export function UploadProjections() {
       // Let's auto-select the active one by default if 'semester' is empty
       const active = data.find((s) => s.sem_is_active);
       if (active && !semester) setSemester(active.TERM);
+    }
+  };
+
+  const fetchCarreras = async () => {
+    const { data, error } = await supabase.rpc('get_carreras_for_upload');
+    if (data && !error) {
+      setCarrerasList(data as CarreraData[]);
+    } else if (error) {
+      console.error("Error fetching carreras:", error);
     }
   };
 
@@ -218,6 +248,17 @@ export function UploadProjections() {
       return;
     }
 
+    if (!carrera) {
+      setModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Carrera Inválida',
+        message: 'Por favor seleccione una carrera antes de subir el archivo.'
+      });
+      e.target.value = '';
+      return;
+    }
+
     const suffix = semester.slice(4, 6);
     if (!['15', '20', '25', '30'].includes(suffix)) {
       setModal({
@@ -240,7 +281,8 @@ export function UploadProjections() {
         const bstr = evt.target?.result;
         const wb = XLSX.read(bstr, { type: 'binary' });
 
-        const sheetName = `Poblaciones (${semester})`;
+        const expectedSem = getExpectedSheetSemester(semester);
+        const sheetName = `Poblaciones (${expectedSem})`;
         const ws = wb.Sheets[sheetName];
 
         if (!ws) {
@@ -274,6 +316,17 @@ export function UploadProjections() {
   const handleScheduleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!carrera) {
+      setModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Carrera Inválida',
+        message: 'Por favor seleccione una carrera antes de subir el archivo.'
+      });
+      e.target.value = '';
+      return;
+    }
 
     setLoading(true);
     setProgress('Leyendo archivo...');
@@ -488,6 +541,7 @@ export function UploadProjections() {
 
         const { error: rpcError } = await supabase.rpc('upload_proyecciones', {
           p_semestre: semester,
+          p_carrera: parseInt(carrera),
           p_data: previewData
         });
 
@@ -525,6 +579,7 @@ export function UploadProjections() {
       try {
         const { error: rpcError } = await supabase.rpc('upload_horarios_programa', {
           p_semestre: semester,
+          p_carrera: parseInt(carrera),
           p_data: schedulePreview
         });
 
@@ -816,6 +871,27 @@ export function UploadProjections() {
                 </div>
               )}
 
+              {(uploadType === 'horarios' || uploadType === 'proyecciones') && (
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    Seleccionar Carrera
+                  </label>
+                  <select
+                    value={carrera}
+                    onChange={(e) => setCarrera(e.target.value)}
+                    disabled={loading || schedulePreview.length > 0 || previewData.length > 0}
+                    className="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                  >
+                    <option value="" disabled>-- Seleccione una carrera --</option>
+                    {carrerasList.map(car => (
+                      <option key={car.car_id} value={car.car_id}>
+                        {car.car_nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               {showUploadDropzone ? (
                 <div className="mb-8">
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
@@ -828,7 +904,7 @@ export function UploadProjections() {
                         <p className="mb-2 text-sm text-slate-500 dark:text-slate-400"><span className="font-semibold">Click para subir</span> o arrastrar y soltar</p>
                         <p className="text-xs text-slate-500 dark:text-slate-400">
                           {uploadType === 'proyecciones'
-                            ? `XLSX (Hoja: Poblaciones (${semester || 'CODIGO'}))`
+                            ? `XLSX (Hoja: Poblaciones (${semester ? getExpectedSheetSemester(semester) : 'CODIGO'}))`
                             : uploadType === 'horarios'
                               ? 'CSV (Reporte de horarios por programa)'
                               : 'CSV (Reporte General Estudiantes)'
@@ -842,7 +918,7 @@ export function UploadProjections() {
                           className="hidden"
                           accept=".xlsx"
                           onChange={handleProjectionsFileSelect}
-                          disabled={loading || !semester}
+                          disabled={loading || !semester || !carrera}
                         />
                       ) : uploadType === 'horarios' ? (
                         <input
@@ -851,7 +927,7 @@ export function UploadProjections() {
                           className="hidden"
                           accept=".csv"
                           onChange={handleScheduleFileSelect}
-                          disabled={loading || !semester}
+                          disabled={loading || !semester || !carrera}
                         />
                       ) : (
                         <input
