@@ -565,21 +565,23 @@
   const generalError =
     "Hubo un error inesperado al intentar obtener la información. Intenta más tarde&hellip;";
   const SPEED = 250;
-  const CAREER_ID = 2;
+
+  const careerMap = {
+    'INFO': 2,
+    'IIDS': 1
+  };
+
+  const CAREER_ID = careerMap["%%careerName%%"] || 2;
+
   const SCHEDULE_MODE = {
     PROJECTION: "projection",
     SEMESTER: "semester",
   };
-  const FIXED_SEMESTERS = [
-    "01SE",
-    "02SE",
-    "03SE",
-    "04SE",
-    "05SE",
-    "06SE",
-    "07SE",
-    "08SE",
-  ];
+  const maxSemesters = CAREER_ID === 1 ? 4 : 8;
+  const FIXED_SEMESTERS = Array.from(
+    { length: maxSemesters },
+    (_, i) => `${(i + 1).toString().padStart(2, "0")}SE`
+  );
   const excludedSubjects = [
     "INFO-00192",
     "INFO-IILCT",
