@@ -6,6 +6,7 @@ import { RESPONSES_BY_CATEGORY } from '../data/predefinedResponses';
 import { DEPARTMENT_COLORS, DEPARTMENT_NAMES } from '../constants/departments';
 import { useRealtimeLockMultiple } from '../hooks/useRealtimeLock';
 import { LockedBadge } from './LockedBanner';
+import { SuccessModal } from './SuccessModal';
 
 interface StudentRequestDetailModalProps {
   isOpen: boolean;
@@ -186,7 +187,8 @@ const RequestItem = ({ request, allRequests, onChange, isReader, isLockedByOther
                   <option value="EN REVISIÓN">En Revisión</option>
                   <option value="NO PROCEDE">No Procede</option>
                   <option value="POR REVISAR">Por Revisar</option>
-                  <option value="REPETIDO/IGNORADO">Repetido/Ignorado</option>
+                  <option value="IGNORADO">Ignorado</option>
+                  <option value="REPETIDO">Repetido</option>
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
                   <span className="material-symbols-outlined text-[20px]">expand_more</span>
@@ -272,6 +274,7 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
   const { profile } = useAuth();
   const [requestChanges, setRequestChanges] = useState<Record<number, Partial<Request>>>({});
   const [saving, setSaving] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const isReader = profile?.role === 'lector';
 
   // Track IDs of requests that were auto-claimed
@@ -433,6 +436,28 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
     if (Object.keys(requestChanges).length === 0) return;
     if (isReader || !profile) return;
 
+    // Estados que NO requieren respuesta externa
+    const statesWithoutExternalResponse = ['POR REVISAR', 'EN REVISIÓN', 'IGNORADO', 'REPETIDO'];
+
+    // Validar que todas las solicitudes con estados que requieren respuesta externa tengan respuesta externa
+    const invalidRequests = Object.entries(requestChanges).filter(([reqIdStr, changes]) => {
+      const reqId = parseInt(reqIdStr);
+      const originalReq = student.requests.find(r => r.id === reqId);
+      const status = changes.status || originalReq?.status;
+      const studentResponse = changes.studentResponse !== undefined ? changes.studentResponse : originalReq?.studentResponse;
+
+      // Si el estado requiere respuesta externa y no tiene respuesta externa, es inválido
+      if (status && !statesWithoutExternalResponse.includes(status) && (!studentResponse || studentResponse.trim() === '')) {
+        return true;
+      }
+      return false;
+    });
+
+    if (invalidRequests.length > 0) {
+      alert('No se pueden guardar los cambios. Las solicitudes con estado "Solucionado", "No Procede" o "Revisado" deben tener una respuesta al estudiante.');
+      return;
+    }
+
     // IMPORTANT: Set closing flag BEFORE any async operations to prevent
     // the autoclaim useEffect from re-claiming after we save
     isClosingRef.current = true;
@@ -491,8 +516,7 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
       autoClaimedIdsRef.current = [];
       setRequestChanges({});
       if (onRefresh) onRefresh();
-      onClose();
-      alert('Cambios guardados correctamente');
+      setShowSuccessModal(true);
     } catch (err) {
       console.error("Error saving batch:", err);
       alert('Error al guardar cambios');
@@ -623,6 +647,16 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
           </div>
         </div>
       </div>
+
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => {
+          setShowSuccessModal(false);
+          onClose();
+        }}
+        title="¡Cambios Guardados!"
+        message="Las solicitudes del estudiante han sido actualizadas correctamente."
+      />
     </div>
   );
 };

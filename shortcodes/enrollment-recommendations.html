@@ -427,56 +427,45 @@
       border-radius: 2px;
     }
   }
+
+  .er-small-btn {
+    padding: 8px 16px !important;
+    font-size: 0.9em !important;
+    line-height: 1.4em !important;
+  }
 </style>
 <div id="er-container">
-  <div id="er-schedule-mode-container" class="er-mode-switch">
-    <label>
-      <input type="radio" name="er-schedule-mode" value="projection" checked />
-      Ver horarios por proyección
-    </label>
-    <label>
-      <input type="radio" name="er-schedule-mode" value="semester" />
-      Ver horarios por semestre
-    </label>
+  <div id="er-projection-controls">
+    <form id="er-ssn-search-frm">
+      <input id="er-ssn-search" name="ssn" type="text" placeholder="Introduce tu número de cédula de identidad" />
+      <button id="er-ssn-search-btn" class="form-button et_pb_button" type="submit">
+        Buscar
+      </button>
   </div>
-  <form id="er-ssn-search-frm">
-    <input
-      id="er-ssn-search"
-      name="ssn"
-      type="text"
-      placeholder="Introduce tu número de cédula de identidad"
-    />
-    <button
-      id="er-ssn-search-btn"
-      class="form-button et_pb_button"
-      type="submit"
-    >
-      Buscar
+
+  <div id="er-semester-controls" style="display: none; text-align: center; margin-bottom: 20px;">
+    <button id="er-projection-mode-btn" class="form-button et_pb_button er-small-btn" type="button">
+      Volver a proyecciones
     </button>
-  </form>
-  <img
-    id="er-loader"
+  </div>
+  <img id="er-loader"
     src="https://ingenieria.ucab.edu.ve/informatica/wp-content/uploads/sites/4/2019/07/popup_loading.gif"
-    style="display: none"
-  />
+    style="display: none" />
   <div id="er-details-container" style="display: none">
     <div id="er-details">
       <p id="er-student-summary">
         <strong>Nombre:</strong> <span class="name"></span><br />
         <strong>Programa:</strong> <span class="program"></span><br />
         <strong>Promedio:</strong> <span class="agp"></span> / 20 puntos<br />
-        <strong>Ubicación:</strong> <span class="sem-loc"></span> (<span
-          class="accum-uc"
-        ></span>
+        <strong>Ubicación:</strong> <span class="sem-loc"></span> (<span class="accum-uc"></span>
         UC acumuladas)
       </p>
       <p id="er-projection-intro" style="margin: 7px 0">
         A continuación, se listan las asignaturas que podrás cursar en este
         período, de acuerdo a tu récord académico.
-        <strong
-          >Toma en especial consideración las asignaturas que se marcan en el
-          cuadro de verificación, y el orden en que aparecen las mismas</strong
-        >, pues constituyen la recomendación de inscripción que desde la Escuela
+        <strong>Toma en especial consideración las asignaturas que se marcan en el
+          cuadro de verificación, y el orden en que aparecen las mismas</strong>, pues constituyen la recomendación de
+        inscripción que desde la Escuela
         te hacemos, basados en la naturaleza de las asignaturas disponibles y tu
         historial académico:
       </p>
@@ -485,25 +474,22 @@
         <div class="selected-credits">
           Has seleccionado un total
           <span id="total-projected-uc">0</span> UC.<br />
-          <div
-            id="er-view-schedules-container"
-            style="display: none; margin-top: 15px"
-          >
+          <div id="er-view-schedules-container" style="display: none; margin-top: 15px">
             <button id="er-view-schedules-btn" class="form-button et_pb_button">
               Ver horarios
             </button>
           </div>
         </div>
-        [box type="download"]
-        <div id="recommendations">
-          Por tu ubicación en la malla curricular te recomendamos cursar hasta
-          un máximo de
-          <strong style="color: #0d793d"
-            ><span id="max-recommended-uc">0</span> UC</strong
-          >
-          en este semestre.
+        <div id="er-recommendations-wrapper">
+          [box type="download"]
+          <div id="recommendations">
+            Por tu ubicación en la malla curricular te recomendamos cursar hasta
+            un máximo de
+            <strong style="color: #0d793d"><span id="max-recommended-uc">0</span> UC</strong>
+            en este semestre.
+          </div>
+          [/box]
         </div>
-        [/box]
       </div>
       <div id="optional-subject-warn">
         [box type="warning"]Toma en cuenta que no todas las asignaturas
@@ -511,25 +497,19 @@
         unidades crédito (UC). En la lista de asignaturas proyectadas se
         muestran las asignaturas electivas con cuatro (4) UC como referencia.
         Para obtener el título de Ingeniero/a en Informática
-        <strong
-          >debes aprobar un total de doce (12) UC en asignaturas
-          electivas</strong
-        >. [/box]
+        <strong>debes aprobar un total de doce (12) UC en asignaturas
+          electivas</strong>. [/box]
         <p style="border: none">&nbsp;</p>
         [box type="alert"] Si cursaste alguna asignatura electiva que es
         obligatoria en otras unidades académicas
         <strong>
-          <a
-            href="https://www.ucab.edu.ve/informacion-institucional/secretaria/servicios/solicitud-de-registro-de-materias-electivas/"
-            target="_blank"
-            style="
+          <a href="https://www.ucab.edu.ve/informacion-institucional/secretaria/servicios/solicitud-de-registro-de-materias-electivas/"
+            target="_blank" style="
               color: rgba(196, 21, 28);
               text-decoration: underline;
               cursor: pointer;
-            "
-            >debes registrarlas ante Secretaría General</a
-          ></strong
-        >. Si no lo has hecho, no aparecerán en tu récord académico, y por
+            ">debes registrarlas ante Secretaría General</a></strong>. Si no lo has hecho, no aparecerán en tu récord
+        académico, y por
         tanto, aparecerán como "pendientes por cursar" en la presente lista de
         asignaturas.<br /><br />
         Ahora bien, si hiciste el registro con antelación a este proceso de
@@ -541,24 +521,15 @@
       <div class="report-error">
         [box type="info"]Si consideras que hay un error en la proyección aquí
         desplegada, por favor
-        <a
-          id="report-error-link"
-          href="#"
-          target="_blank"
-          style="font-weight: bold"
-          >reporta el error haciendo clic aquí</a
-        >.[/box]
+        <a id="report-error-link" href="#" target="_blank" style="font-weight: bold">reporta el error haciendo clic
+          aquí</a>.[/box]
       </div>
 
       <div id="er-schedule-modal" class="er-modal-overlay">
         <div class="er-modal-content">
           <div class="er-modal-header">
             <h3>Horarios de Clase</h3>
-            <button
-              type="button"
-              class="er-modal-close"
-              id="er-close-modal-btn"
-            >
+            <button type="button" class="er-modal-close" id="er-close-modal-btn">
               &times;
             </button>
           </div>
@@ -568,6 +539,14 @@
         </div>
       </div>
     </div>
+  </div>
+  <div id="er-semester-mode-prompt"
+    style="margin: 20px 0; text-align: left; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+    <p style="margin: 0; font-size: 1rem; color: #555;">De igual manera puedes consultar los horarios por semestre
+      aqui:</p>
+    <button id="er-semester-mode-btn" class="form-button et_pb_button er-small-btn" type="button">
+      Ver horarios por semestre
+    </button>
   </div>
   <div id="er-error-message" style="display: none"></div>
 </div>
@@ -626,7 +605,6 @@
     const $projectedSubjects = $detailsContainer.find(".projected-subjects");
     const $totalUc = jQuery("#total-projected-uc");
     const $maxRecommendedUc = jQuery("#max-recommended-uc");
-    const $modeSwitch = jQuery("#er-schedule-mode-container");
     const $studentSummary = jQuery("#er-student-summary");
     const $projectionIntro = jQuery("#er-projection-intro");
     const $reportError = $detailsContainer.find(".report-error");
@@ -669,9 +647,9 @@
       handleModalSemesterTabClick,
     );
     $frm.on("submit", handleSsnSearchSubmit);
-    $modeSwitch.on("change", "input[name=er-schedule-mode]", handleModeChange);
+    jQuery("#er-semester-mode-btn").on("click", () => setScheduleMode(SCHEDULE_MODE.SEMESTER));
+    jQuery("#er-projection-mode-btn").on("click", () => setScheduleMode(SCHEDULE_MODE.PROJECTION));
     applyModeLayout(SCHEDULE_MODE.PROJECTION);
-    refreshModeSwitchStyles();
 
     // Modal events
     $viewSchedulesBtn.on("click", function (e) {
@@ -704,9 +682,6 @@
       activeModalSemesterTab = FIXED_SEMESTERS[0];
       selectedSubjects.clear();
       $schedulesContainer.empty();
-      $modeSwitch
-        .find("input[name=er-schedule-mode][value=projection]")
-        .prop("checked", true);
       scheduleMode = SCHEDULE_MODE.PROJECTION;
       applyModeLayout(SCHEDULE_MODE.PROJECTION);
 
@@ -752,9 +727,9 @@
         .catch(handleError);
     }
 
-    function handleModeChange(evt) {
-      scheduleMode = evt.target.value;
-      refreshModeSwitchStyles();
+    function setScheduleMode(mode) {
+      if (scheduleMode === mode) return;
+      scheduleMode = mode;
       selectedSubjects.clear();
       $totalUc.text("0");
       $totalUc.parent().removeClass("alert");
@@ -789,34 +764,30 @@
       const isProjectionMode = mode === SCHEDULE_MODE.PROJECTION;
 
       if (isProjectionMode) {
-        $searchForm.show();
+        jQuery("#er-projection-controls").show();
+        jQuery("#er-semester-controls").hide();
         $studentSummary.show();
         $projectionIntro.show();
-        $recommendations.show();
+        jQuery("#er-recommendations-wrapper").show();
         $reportError.show();
         jQuery("#optional-subject-warn").show();
+        jQuery("#er-semester-mode-prompt").show();
 
         if (projectionSubjects.length === 0) {
           $detailsContainer.hide();
           $schedulesContainer.empty();
         }
       } else {
-        $searchForm.hide();
+        jQuery("#er-projection-controls").hide();
+        jQuery("#er-semester-controls").show();
         $studentSummary.hide();
         $projectionIntro.hide();
-        $recommendations.show();
+        jQuery("#er-recommendations-wrapper").hide();
         $reportError.show();
         jQuery("#optional-subject-warn").show();
         $detailsContainer.show();
+        jQuery("#er-semester-mode-prompt").hide();
       }
-    }
-
-    function refreshModeSwitchStyles() {
-      $modeSwitch.find("label").removeClass("is-active");
-      $modeSwitch
-        .find('input[name="er-schedule-mode"]:checked')
-        .closest("label")
-        .addClass("is-active");
     }
 
     function handleSemesterTabClick(evt) {
@@ -844,8 +815,22 @@
 
     function updateStudentInfo(data) {
       $name.text(data.info.name);
+
+      let carCodigo = data.info.program;
+      if (data.info.campus && carCodigo.endsWith(data.info.campus)) {
+        carCodigo = carCodigo.slice(0, -data.info.campus.length);
+      }
+
+      let planName = "Programa";
+      for (const key of Object.keys(studyPlans)) {
+        if (carCodigo.startsWith(key)) {
+          planName = studyPlans[key];
+          break;
+        }
+      }
+
       $program.text(
-        `${studyPlans[data.info.program.slice(0, -3)]} (${data.info.program} | ${campus[data.info.campus]})`,
+        `${planName} (${carCodigo} | ${campus[data.info.campus] || data.info.campus})`,
       );
       $agp.text(data.info.agp.toLocaleString("es-VE"));
       $semLoc.text(data.info.location);
@@ -1253,8 +1238,7 @@
 
     function renderSemesterTabs() {
       const tabsHtml = FIXED_SEMESTERS.map((semester) => {
-        const count = getSubjectsForSemester(semester).length;
-        return `<button type="button" class="er-semester-tab ${activeSemesterTab === semester ? "active" : ""}" data-semester="${semester}">Semestre ${extractSemesterNumber(semester)} (${count})</button>`;
+        return `<button type="button" class="er-semester-tab ${activeSemesterTab === semester ? "active" : ""}" data-semester="${semester}">Semestre ${extractSemesterNumber(semester)}</button>`;
       }).join("");
 
       $projectedSubjects.find("#er-semester-tabs").remove();
@@ -1477,9 +1461,8 @@
       const equivs = optionalEquivs.length;
 
       if (equivs > 0) {
-        let equivSubjects = `<p style="margin: 0;">Se está${equivs > 1 ? "n" : ""} <strong>reconociendo</strong> la${equivs > 1 ? "s" : ""} siguiente${
-          equivs > 1 ? "s" : ""
-        } asignatura${equivs > 1 ? "s" : ""} ya cursada${equivs > 1 ? "s" : ""} por ti como electiva${equivs > 1 ? "s" : ""}: </p><ul>`;
+        let equivSubjects = `<p style="margin: 0;">Se está${equivs > 1 ? "n" : ""} <strong>reconociendo</strong> la${equivs > 1 ? "s" : ""} siguiente${equivs > 1 ? "s" : ""
+          } asignatura${equivs > 1 ? "s" : ""} ya cursada${equivs > 1 ? "s" : ""} por ti como electiva${equivs > 1 ? "s" : ""}: </p><ul>`;
 
         optionalEquivs.forEach((equiv) => {
           equivSubjects += `<li> ${equiv.subject} (equivale a ${equiv.equiv})</li>`;

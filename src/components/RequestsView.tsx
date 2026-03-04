@@ -6,6 +6,7 @@ import { RESPONSES_BY_CATEGORY } from '../data/predefinedResponses';
 import { DEPARTMENT_COLORS, DEPARTMENT_NAMES } from '../constants/departments';
 import { useRealtimeLock } from '../hooks/useRealtimeLock';
 import { LockedBanner } from './LockedBanner';
+import { SuccessModal } from './SuccessModal';
 
 export const RequestsView: React.FC = () => {
 
@@ -537,7 +538,6 @@ export const RequestsView: React.FC = () => {
               onClose={() => setSelectedRequest(null)}
               onUpdate={(updatedReq) => {
                 setRequests(prev => prev.map(r => r.id === updatedReq.id ? updatedReq : r));
-                setSelectedRequest(null);
               }}
             />
           )
@@ -579,6 +579,7 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
   const [internalResponse, setInternalResponse] = useState(request.internalResponse);
   const [studentResponse, setStudentResponse] = useState(request.studentResponse);
   const [saving, setSaving] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Track if request was auto-claimed when opening
   const wasAutoClaimedRef = React.useRef(false);
@@ -769,10 +770,19 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
     onClose();
   };
 
-  const canSave = status !== 'SOLUCIONADO' || (internalResponse.trim() !== '' && studentResponse.trim() !== '');
+  const canSave = status !== 'SOLUCIONADO' || studentResponse.trim() !== '';
 
   const handleSave = async () => {
     if (isReader || !profile || !canSave) return;
+
+    // Estados que NO requieren respuesta externa
+    const statesWithoutExternalResponse = ['POR REVISAR', 'EN REVISIÓN', 'IGNORADO', 'REPETIDO'];
+
+    // Validar que si el estado requiere respuesta externa, debe tener respuesta externa
+    if (!statesWithoutExternalResponse.includes(status) && (!studentResponse || studentResponse.trim() === '')) {
+      alert('No se puede guardar. Las solicitudes con estado "Solucionado", "No Procede" o "Revisado" deben tener una respuesta al estudiante.');
+      return;
+    }
 
     // IMPORTANT: Set closing flag BEFORE any async operations to prevent
     // the autoclaim useEffect from re-claiming after we save
@@ -835,7 +845,7 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
         studentResponse,
         responsible: updates.obs_responsable !== undefined ? updates.obs_responsable : request.responsible
       });
-      onClose();
+      setShowSuccessModal(true);
     } catch (err) {
       console.error('Error updating request:', err);
       alert('Error al guardar los cambios');
@@ -1021,13 +1031,13 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
 
           <div>
             <label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">
-              Respuesta Interna {status === 'SOLUCIONADO' && <span className="text-rose-500">*</span>}
+              Respuesta Interna
             </label>
             <textarea
               value={internalResponse}
               disabled={isEffectivelyReadOnly}
               onChange={(e) => setInternalResponse(e.target.value)}
-              className={`w-full bg-white dark:bg-slate-900 border ${status === 'SOLUCIONADO' && internalResponse.trim() === '' ? 'border-rose-300 dark:border-rose-900' : 'border-slate-200 dark:border-slate-800'} rounded-lg p-3 text-sm min-h-[80px] disabled:opacity-50 disabled:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20`}
+              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3 text-sm min-h-[80px] disabled:opacity-50 disabled:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
               placeholder="Notas para el equipo administrativo..."
             />
           </div>
@@ -1068,10 +1078,10 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
               placeholder="Este mensaje será enviado al estudiante..."
             />
           </div>
-          {status === 'SOLUCIONADO' && (!internalResponse.trim() || !studentResponse.trim()) && (
+          {status === 'SOLUCIONADO' && !studentResponse.trim() && (
             <p className="text-[11px] text-rose-500 font-bold flex items-center gap-1 animate-pulse">
               <span className="material-symbols-outlined text-[14px]">warning</span>
-              Debes completar ambas respuestas para marcar como SOLUCIONADO
+              Debes agregar una respuesta al estudiante para marcar como SOLUCIONADO
             </p>
           )}
         </div>
@@ -1094,6 +1104,16 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
           )}
         </div>
       </div>
+
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => {
+          setShowSuccessModal(false);
+          onClose();
+        }}
+        title="¡Cambios Guardados!"
+        message="La solicitud ha sido actualizada correctamente."
+      />
     </div>
   );
 };

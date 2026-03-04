@@ -1,9 +1,10 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import * as XLSX from 'xlsx';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { OutcomeModal } from './OutcomeModal';
+import { SemesterInput } from './SemesterInput';
 import { DeleteConfirmationModal } from './DeleteConfirmationModal';
 import { exportObservationsToExcel } from '../utils/exportUtils';
 
@@ -50,14 +51,7 @@ interface GeneralStudentRow {
   est_promedio: number;
 }
 
-interface SemesterData {
-  sem_id: number;
-  sem_nombre: string;
-  sem_is_active: boolean;
-  TERM: string;
-}
-
-type UploadType = 'proyecciones' | 'horarios' | 'estudiantes' | 'semestres';
+type UploadType = 'proyecciones' | 'horarios' | 'estudiantes';
 
 export function UploadProjections() {
   const { profile } = useAuth();
@@ -65,81 +59,6 @@ export function UploadProjections() {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState('');
   const [uploadType, setUploadType] = useState<UploadType>('proyecciones');
-
-  const [semestersList, setSemestersList] = useState<SemesterData[]>([]);
-  const [newSemesterTerm, setNewSemesterTerm] = useState('');
-
-  useEffect(() => {
-    fetchSemesters();
-  }, []);
-
-  const fetchSemesters = async () => {
-    const { data, error } = await supabase
-      .from('semestre')
-      .select('*')
-      .order('sem_id', { ascending: false });
-
-    if (error) {
-      console.error("Error fetching semesters:", error);
-    }
-
-    if (data && !error) {
-      setSemestersList(data);
-      // Let's auto-select the active one by default if 'semester' is empty
-      const active = data.find((s) => s.sem_is_active);
-      if (active && !semester) setSemester(active.TERM);
-    }
-  };
-
-  const handleCreateSemester = async () => {
-    if (!newSemesterTerm || newSemesterTerm.length !== 6) {
-      setModal({ isOpen: true, type: 'error', title: 'Error', message: 'El término (TERM) debe tener 6 dígitos. Ej: 202625' });
-      return;
-    }
-    const yearStr = newSemesterTerm.slice(0, 4);
-    const period = newSemesterTerm.slice(4, 6);
-    const year = parseInt(yearStr);
-
-    if (!['15', '20', '25', '30'].includes(period)) {
-      setModal({ isOpen: true, type: 'error', title: 'Error', message: 'El término debe terminar en 15, 20, 25 o 30.' });
-      return;
-    }
-
-    let codeStr = '';
-    if (period === '15') codeStr = `Sem Sep/Ene ${year - 1}-${year.toString().slice(-2)} PR`;
-    if (period === '20') codeStr = `Intensivo Feb ${year} PR`;
-    if (period === '25') codeStr = `Sem Mar/Jul ${year - 1}-${year.toString().slice(-2)} PR`;
-    if (period === '30') codeStr = `Intensivo Ago ${year} PR`;
-
-    const semName = `${newSemesterTerm} ${codeStr}`;
-
-    const { error } = await supabase.from('semestre').insert({
-      sem_nombre: semName,
-      "TERM": newSemesterTerm,
-      sem_is_active: false
-    });
-
-    if (error) {
-      setModal({ isOpen: true, type: 'error', title: 'Error al crear', message: error.message });
-    } else {
-      setModal({ isOpen: true, type: 'success', title: 'Éxito', message: 'Semestre creado correctamente.' });
-      setNewSemesterTerm('');
-      fetchSemesters();
-    }
-  };
-
-  const handleSetActiveSemester = async (semId: number) => {
-    // Primero, desactivar todos
-    await supabase.from('semestre').update({ sem_is_active: false }).not('sem_id', 'is', null);
-    // Activar el seleccionado
-    const { error } = await supabase.from('semestre').update({ sem_is_active: true }).eq('sem_id', semId);
-
-    if (error) {
-      setModal({ isOpen: true, type: 'error', title: 'Error', message: error.message });
-    } else {
-      fetchSemesters();
-    }
-  };
 
   // Deletion logic hooks
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -524,7 +443,6 @@ export function UploadProjections() {
 
       try {
         const { error: rpcError } = await supabase.rpc('upload_horarios_programa', {
-          p_semestre: semester,
           p_data: schedulePreview
         });
 
@@ -661,7 +579,7 @@ export function UploadProjections() {
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
               Tipo de carga
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <button
                 type="button"
                 onClick={() => {
@@ -688,7 +606,7 @@ export function UploadProjections() {
                   : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'
                   }`}
               >
-                Horarios
+                Horarios por programa
               </button>
               <button
                 type="button"
@@ -702,229 +620,132 @@ export function UploadProjections() {
                   : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'
                   }`}
               >
-                Estudiantes
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setUploadType('semestres');
-                  resetPreview();
-                }}
-                disabled={loading}
-                className={`px-4 py-3 rounded-lg border text-sm font-semibold transition-colors ${uploadType === 'semestres'
-                  ? 'border-primary/40 bg-primary/10 text-primary'
-                  : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'
-                  }`}
-              >
-                Semestres
+                General Estudiantes
               </button>
             </div>
           </div>
 
-          {uploadType === 'semestres' ? (
+          {uploadType === 'proyecciones' && (
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-4 text-center">
+                Código de Semestre
+              </label>
+              <SemesterInput
+                value={semester}
+                onChange={setSemester}
+                disabled={loading || previewData.length > 0}
+              />
+              <p className="text-xs text-slate-500 mt-4 text-center">El código debe coincidir con el nombre de la hoja en el Excel.</p>
+            </div>
+          )}
+
+          {showUploadDropzone ? (
             <div className="mb-8">
-              <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Gestión de Semestres</h3>
-
-              <div className="flex gap-2 mb-6">
-                <input
-                  type="text"
-                  placeholder="Ej: 202625"
-                  className="flex-1 rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                  value={newSemesterTerm}
-                  onChange={(e) => setNewSemesterTerm(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                />
-                <button
-                  onClick={handleCreateSemester}
-                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium"
-                >
-                  Crear Semestre
-                </button>
-              </div>
-
-              <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
-                <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
-                  <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
-                    <tr>
-                      <th className="px-4 py-3 font-semibold">Término</th>
-                      <th className="px-4 py-3 font-semibold">Nombre Completo</th>
-                      <th className="px-4 py-3 font-semibold">Estado</th>
-                      <th className="px-4 py-3 font-semibold text-right">Acción</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {semestersList.map(sem => (
-                      <tr key={sem.sem_id} className="border-b border-slate-100 dark:border-slate-700/50 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-700/20">
-                        <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">{sem.TERM}</td>
-                        <td className="px-4 py-3">{sem.sem_nombre}</td>
-                        <td className="px-4 py-3">
-                          {sem.sem_is_active ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                              Activo
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300">
-                              Inactivo
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          {!sem.sem_is_active && (
-                            <button
-                              onClick={() => handleSetActiveSemester(sem.sem_id)}
-                              className="text-primary hover:text-primary/80 font-medium text-xs"
-                            >
-                              Hacer Activo
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                    {semestersList.length === 0 && (
-                      <tr>
-                        <td colSpan={4} className="px-4 py-4 text-center text-slate-500">
-                          No hay semestres registrados.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                {uploadType === 'proyecciones' ? 'Archivo Excel (.xlsx)' : 'Archivo CSV (.csv)'}
+              </label>
+              <div className="flex items-center justify-center w-full">
+                <label className={`flex flex-col items-center justify-center w-full h-64 border-2 border-slate-300 dark:border-slate-600 border-dashed rounded-lg cursor-pointer bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <span className="material-symbols-outlined text-4xl text-slate-400 mb-2">cloud_upload</span>
+                    <p className="mb-2 text-sm text-slate-500 dark:text-slate-400"><span className="font-semibold">Click para subir</span> o arrastrar y soltar</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {uploadType === 'proyecciones'
+                        ? `XLSX (Hoja: Poblaciones (${semester || 'CODIGO'}))`
+                        : uploadType === 'horarios'
+                          ? 'CSV (Reporte de horarios por programa)'
+                          : 'CSV (Reporte General Estudiantes)'
+                      }
+                    </p>
+                  </div>
+                  {uploadType === 'proyecciones' ? (
+                    <input
+                      id="dropzone-file"
+                      type="file"
+                      className="hidden"
+                      accept=".xlsx"
+                      onChange={handleProjectionsFileSelect}
+                      disabled={loading || !semester}
+                    />
+                  ) : uploadType === 'horarios' ? (
+                    <input
+                      id="dropzone-file"
+                      type="file"
+                      className="hidden"
+                      accept=".csv"
+                      onChange={handleScheduleFileSelect}
+                      disabled={loading}
+                    />
+                  ) : (
+                    <input
+                      id="dropzone-file"
+                      type="file"
+                      className="hidden"
+                      accept=".csv"
+                      onChange={handleStudentsFileSelect}
+                      disabled={loading}
+                    />
+                  )}
+                </label>
               </div>
             </div>
           ) : (
-            <>
-              {(uploadType === 'proyecciones' || uploadType === 'horarios') && (
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Seleccionar Semestre
-                  </label>
-                  <select
-                    value={semester}
-                    onChange={(e) => setSemester(e.target.value)}
-                    disabled={loading || previewData.length > 0 || schedulePreview.length > 0}
-                    className="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+            <div className="mb-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
+              <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-6 border border-slate-200 dark:border-slate-600 text-center">
+                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="material-symbols-outlined text-3xl text-green-600 dark:text-green-400">description</span>
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">Archivo listo para procesar</h3>
+                <p className="text-slate-500 dark:text-slate-400 mb-6">
+                  {uploadType === 'estudiantes'
+                    ? (
+                      <>
+                        Se han encontrado <strong className="text-slate-900 dark:text-white">{studentPreview.length}</strong> estudiantes de los programas permitidos
+                        {studentPreviewTotal > 0 && (
+                          <> de un total de <strong className="text-slate-900 dark:text-white">{studentPreviewTotal}</strong> en el reporte</>
+                        )}.
+                      </>
+                    )
+                    : (
+                      <>
+                        Se han encontrado <strong className="text-slate-900 dark:text-white">{uploadType === 'proyecciones' ? previewData.length : schedulePreview.length}</strong> registros {uploadType === 'proyecciones' ? `para el semestre ${semester}` : 'en el reporte de horarios'}.
+                      </>
+                    )}
+                </p>
+
+                <div className="flex gap-3 justify-center">
+                  <button
+                    onClick={resetPreview}
+                    className="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium"
+                    disabled={loading}
                   >
-                    <option value="" disabled>-- Seleccione un semestre --</option>
-                    {semestersList.map(sem => (
-                      <option key={sem.sem_id} value={sem.TERM}>
-                        {sem.sem_nombre} {sem.sem_is_active ? '(Activo)' : ''}
-                      </option>
-                    ))}
-                  </select>
-                  {uploadType === 'proyecciones' && (
-                    <p className="text-xs text-slate-500 mt-2">El código TERM debe coincidir con el nombre de la hoja en el Excel.</p>
-                  )}
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleProcessUpload}
+                    disabled={loading}
+                    className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-bold shadow-lg shadow-primary/30 flex items-center gap-2"
+                  >
+                    {loading ? (
+                      <>
+                        <span className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></span>
+                        Procesando...
+                      </>
+                    ) : (
+                      <>
+                        <span className="material-symbols-outlined">send</span>
+                        {uploadType === 'proyecciones'
+                          ? 'Procesar Datos'
+                          : uploadType === 'horarios'
+                            ? 'Procesar Horarios'
+                            : 'Procesar Estudiantes'
+                        }
+                      </>
+                    )}
+                  </button>
                 </div>
-              )}
-
-              {showUploadDropzone ? (
-                <div className="mb-8">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    {uploadType === 'proyecciones' ? 'Archivo Excel (.xlsx)' : 'Archivo CSV (.csv)'}
-                  </label>
-                  <div className="flex items-center justify-center w-full">
-                    <label className={`flex flex-col items-center justify-center w-full h-64 border-2 border-slate-300 dark:border-slate-600 border-dashed rounded-lg cursor-pointer bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        <span className="material-symbols-outlined text-4xl text-slate-400 mb-2">cloud_upload</span>
-                        <p className="mb-2 text-sm text-slate-500 dark:text-slate-400"><span className="font-semibold">Click para subir</span> o arrastrar y soltar</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {uploadType === 'proyecciones'
-                            ? `XLSX (Hoja: Poblaciones (${semester || 'CODIGO'}))`
-                            : uploadType === 'horarios'
-                              ? 'CSV (Reporte de horarios por programa)'
-                              : 'CSV (Reporte General Estudiantes)'
-                          }
-                        </p>
-                      </div>
-                      {uploadType === 'proyecciones' ? (
-                        <input
-                          id="dropzone-file"
-                          type="file"
-                          className="hidden"
-                          accept=".xlsx"
-                          onChange={handleProjectionsFileSelect}
-                          disabled={loading || !semester}
-                        />
-                      ) : uploadType === 'horarios' ? (
-                        <input
-                          id="dropzone-file"
-                          type="file"
-                          className="hidden"
-                          accept=".csv"
-                          onChange={handleScheduleFileSelect}
-                          disabled={loading || !semester}
-                        />
-                      ) : (
-                        <input
-                          id="dropzone-file"
-                          type="file"
-                          className="hidden"
-                          accept=".csv"
-                          onChange={handleStudentsFileSelect}
-                          disabled={loading}
-                        />
-                      )}
-                    </label>
-                  </div>
-                </div>
-              ) : (
-                <div className="mb-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
-                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-6 border border-slate-200 dark:border-slate-600 text-center">
-                    <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <span className="material-symbols-outlined text-3xl text-green-600 dark:text-green-400">description</span>
-                    </div>
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">Archivo listo para procesar</h3>
-                    <p className="text-slate-500 dark:text-slate-400 mb-6">
-                      {uploadType === 'estudiantes'
-                        ? (
-                          <>
-                            Se han encontrado <strong className="text-slate-900 dark:text-white">{studentPreview.length}</strong> estudiantes de los programas permitidos
-                            {studentPreviewTotal > 0 && (
-                              <> de un total de <strong className="text-slate-900 dark:text-white">{studentPreviewTotal}</strong> en el reporte</>
-                            )}.
-                          </>
-                        )
-                        : (
-                          <>
-                            Se han encontrado <strong className="text-slate-900 dark:text-white">{uploadType === 'proyecciones' ? previewData.length : schedulePreview.length}</strong> registros {uploadType === 'proyecciones' ? `para el semestre ${semester}` : 'en el reporte de horarios'}.
-                          </>
-                        )}
-                    </p>
-
-                    <div className="flex gap-3 justify-center">
-                      <button
-                        onClick={resetPreview}
-                        className="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium"
-                        disabled={loading}
-                      >
-                        Cancelar
-                      </button>
-                      <button
-                        onClick={handleProcessUpload}
-                        disabled={loading}
-                        className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-bold shadow-lg shadow-primary/30 flex items-center gap-2"
-                      >
-                        {loading ? (
-                          <>
-                            <span className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></span>
-                            Procesando...
-                          </>
-                        ) : (
-                          <>
-                            <span className="material-symbols-outlined">send</span>
-                            {uploadType === 'proyecciones'
-                              ? 'Procesar Datos'
-                              : uploadType === 'horarios'
-                                ? 'Procesar Horarios'
-                                : 'Procesar Estudiantes'
-                            }
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </>
+              </div>
+            </div>
           )}
 
           {loading && !previewData.length && !schedulePreview.length && !studentPreview.length && (

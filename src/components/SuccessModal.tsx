@@ -27,21 +27,53 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({ isOpen, onClose, tit
         <div className="relative mb-6">
           <div className="absolute inset-0 bg-emerald-500/20 dark:bg-emerald-500/10 rounded-full blur-xl scale-150 animate-pulse"></div>
           <div className="relative w-24 h-24 bg-emerald-50 dark:bg-emerald-500/20 rounded-full flex items-center justify-center">
+            {/* Animated Circle */}
             <svg
-              className="w-12 h-12 text-emerald-600 dark:text-emerald-400"
+              className="absolute inset-0 w-full h-full -rotate-90"
+              viewBox="0 0 100 100"
+            >
+              <circle
+                cx="50"
+                cy="50"
+                r="46"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                className="text-emerald-200 dark:text-emerald-700"
+              />
+              <circle
+                cx="50"
+                cy="50"
+                r="46"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                className="text-emerald-500"
+                strokeLinecap="round"
+                style={{
+                  strokeDasharray: 289,
+                  strokeDashoffset: 289,
+                  animation: 'drawCircle 0.4s ease-out forwards'
+                }}
+              />
+            </svg>
+            
+            {/* Checkmark */}
+            <svg
+              className="w-10 h-10 text-emerald-600 dark:text-emerald-400 relative z-10"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="3.5"
+              strokeWidth="3"
               strokeLinecap="round"
               strokeLinejoin="round"
             >
               <polyline
                 points="20 6 9 17 4 12"
                 style={{
-                  strokeDasharray: 50,
-                  strokeDashoffset: 50,
-                  animation: 'drawLine-custom 0.6s ease-out forwards 0.2s'
+                  strokeDasharray: 30,
+                  strokeDashoffset: 30,
+                  animation: 'drawCheck 0.4s ease-out forwards 0.5s'
                 }}
               />
             </svg>
@@ -65,11 +97,14 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({ isOpen, onClose, tit
         </div>
       </div>
 
-      {/* Inline style for the specific stroke animation since 1000 might be too much for a small checkmark */}
       <style dangerouslySetInnerHTML={{
         __html: `
-        @keyframes drawLine-custom {
-          from { stroke-dashoffset: 50; }
+        @keyframes drawCircle {
+          from { stroke-dashoffset: 289; }
+          to { stroke-dashoffset: 0; }
+        }
+        @keyframes drawCheck {
+          from { stroke-dashoffset: 30; }
           to { stroke-dashoffset: 0; }
         }
       `}} />
