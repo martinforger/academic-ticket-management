@@ -1,14 +1,14 @@
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <style>
-  #er-container table th {
+  #er-container-%%careerName%% table th {
     padding: 7px !important;
   }
 
-  #er-container table tr td {
+  #er-container-%%careerName%% table tr td {
     padding: 0.857em 0.587em !important;
   }
 
-  #er-error-message {
+  #er-error-message-%%careerName%% {
     color: #c4151c;
   }
 
@@ -16,7 +16,7 @@
     margin-top: 22px;
   }
 
-  #er-ssn-search {
+  #er-ssn-search-%%careerName%% {
     position: relative;
     top: -1px;
     margin-right: 12px;
@@ -37,26 +37,26 @@
     line-height: 1.64em !important;
   }
 
-  #optional-subject-warn,
-  #optional-subject-record {
+  #optional-subject-warn-%%careerName%%,
+  #optional-subject-record-%%careerName%% {
     margin-top: 22px;
   }
 
-  #er-details p:first-child {
+  #er-details-%%careerName%% p:first-child {
     margin: 8px 0;
     padding: 12px 0 8px 0;
     border-bottom: 2px solid #c5c4c4;
   }
 
-  #er-details .projected-info p {
+  #er-details-%%careerName%% .projected-info p {
     border-bottom: none !important;
   }
 
-  #er-details .alert {
+  #er-details-%%careerName%% .alert {
     color: #c4151c;
   }
 
-  #total-projected-uc {
+  #total-projected-uc-%%careerName%% {
     font-weight: 600;
   }
 
@@ -110,16 +110,16 @@
     transform: scale(1.05);
   }
 
-  #schedules-container {
+  #schedules-container-%%careerName%% {
     padding: 22px 0 0 0;
   }
 
-  #subject-schedules-content .schedule-header h4,
-  #subject-schedules-content .schedule-header .subject-info {
+  #subject-schedules-content-%%careerName%% .schedule-header h4,
+  #subject-schedules-content-%%careerName%% .schedule-header .subject-info {
     padding: 0;
   }
 
-  #subject-schedules-content .schedule-header .subject-professor {
+  #subject-schedules-content-%%careerName%% .schedule-header .subject-professor {
     padding: 0;
   }
 
@@ -480,33 +480,33 @@
     }
   }
 </style>
-<div id="er-container">
-  <div id="er-projection-controls">
-    <form id="er-ssn-search-frm">
-      <input id="er-ssn-search" name="ssn" type="text" placeholder="Introduce tu número de cédula de identidad" />
-      <button id="er-ssn-search-btn" class="form-button et_pb_button" type="submit">
+<div id="er-container-%%careerName%%">
+  <div id="er-projection-controls-%%careerName%%">
+    <form id="er-ssn-search-frm-%%careerName%%">
+      <input id="er-ssn-search-%%careerName%%" name="ssn" type="text" placeholder="Introduce tu número de cédula de identidad" />
+      <button id="er-ssn-search-btn-%%careerName%%" class="form-button et_pb_button" type="submit">
         Buscar
       </button>
   </div>
 
-  <div id="er-semester-controls" style="display: none; text-align: center; margin-bottom: 20px;">
-    <button id="er-projection-mode-btn" class="form-button et_pb_button er-small-btn" type="button">
+  <div id="er-semester-controls-%%careerName%%" style="display: none; text-align: center; margin-bottom: 20px;">
+    <button id="er-projection-mode-btn-%%careerName%%" class="form-button et_pb_button er-small-btn" type="button">
       Volver a proyecciones
     </button>
   </div>
-  <img id="er-loader"
+  <img id="er-loader-%%careerName%%"
     src="https://ingenieria.ucab.edu.ve/informatica/wp-content/uploads/sites/4/2019/07/popup_loading.gif"
     style="display: none" />
-  <div id="er-details-container" style="display: none">
-    <div id="er-details">
-      <p id="er-student-summary">
+  <div id="er-details-container-%%careerName%%" style="display: none">
+    <div id="er-details-%%careerName%%">
+      <p id="er-student-summary-%%careerName%%">
         <strong>Nombre:</strong> <span class="name"></span><br />
         <strong>Programa:</strong> <span class="program"></span><br />
         <strong>Promedio:</strong> <span class="agp"></span> / 20 puntos<br />
         <strong>Ubicación:</strong> <span class="sem-loc"></span> (<span class="accum-uc"></span>
         UC acumuladas)
       </p>
-      <p id="er-projection-intro" style="margin: 7px 0">
+      <p id="er-projection-intro-%%careerName%%" style="margin: 7px 0">
         A continuación, se listan las asignaturas que podrás cursar en este
         período, de acuerdo a tu récord académico.
         <strong>Toma en especial consideración las asignaturas que se marcan en el
@@ -519,25 +519,25 @@
       <div class="projected-info">
         <div class="selected-credits">
           Has seleccionado un total
-          <span id="total-projected-uc">0</span> UC.<br />
-          <div id="er-view-schedules-container" style="display: none; margin-top: 15px">
-            <button id="er-view-schedules-btn" class="form-button et_pb_button">
+          <span id="total-projected-uc-%%careerName%%">0</span> UC.<br />
+          <div id="er-view-schedules-container-%%careerName%%" style="display: none; margin-top: 15px">
+            <button id="er-view-schedules-btn-%%careerName%%" class="form-button et_pb_button">
               Ver horarios
             </button>
           </div>
         </div>
-        <div id="er-recommendations-wrapper">
+        <div id="er-recommendations-wrapper-%%careerName%%">
           [box type="download"]
-          <div id="recommendations">
+          <div id="recommendations-%%careerName%%">
             Por tu ubicación en la malla curricular te recomendamos cursar hasta
             un máximo de
-            <strong style="color: #0d793d"><span id="max-recommended-uc">0</span> UC</strong>
+            <strong style="color: #0d793d"><span id="max-recommended-uc-%%careerName%%">0</span> UC</strong>
             en este semestre.
           </div>
           [/box]
         </div>
       </div>
-      <div id="optional-subject-warn">
+      <div id="optional-subject-warn-%%careerName%%">
         [box type="warning"]Toma en cuenta que no todas las asignaturas
         electivas ofrecidas en la Universidad tienen la misma cantidad de
         unidades crédito (UC). En la lista de asignaturas proyectadas se
@@ -567,41 +567,41 @@
       <div class="report-error">
         [box type="info"]Si consideras que hay un error en la proyección aquí
         desplegada, por favor
-        <a id="report-error-link" href="#" target="_blank" style="font-weight: bold">reporta el error haciendo clic
+        <a id="report-error-link-%%careerName%%" href="#" target="_blank" style="font-weight: bold">reporta el error haciendo clic
           aquí</a>.[/box]
       </div>
 
-      <div id="er-schedule-modal" class="er-modal-overlay">
+      <div id="er-schedule-modal-%%careerName%%" class="er-modal-overlay">
         <div class="er-modal-content">
           <div class="er-modal-header">
             <h3>Horarios de Clase</h3>
-            <button type="button" class="er-modal-close" id="er-close-modal-btn">
+            <button type="button" class="er-modal-close" id="er-close-modal-btn-%%careerName%%">
               &times;
             </button>
           </div>
-          <div class="er-modal-body" id="subject-schedules-container">
+          <div class="er-modal-body" id="subject-schedules-container-%%careerName%%">
             <!-- Se inyectarán los horarios gráficos aquí -->
           </div>
         </div>
       </div>
     </div>
   </div>
-  <div id="er-semester-mode-prompt"
+  <div id="er-semester-mode-prompt-%%careerName%%"
     style="margin: 20px 0; text-align: left; display: flex; flex-direction: column; align-items: center; gap: 10px;">
     <p style="margin: 0; font-size: 1rem; color: #555;">De igual manera, puedes consultar los horarios por semestre
       aquí:</p>
-    <button id="er-semester-mode-btn" class="form-button et_pb_button er-small-btn" type="button">
+    <button id="er-semester-mode-btn-%%careerName%%" class="form-button et_pb_button er-small-btn" type="button">
       Ver horarios por semestre
     </button>
   </div>
 
   <!-- Banner exclusivo para carreras tipo MINOR -->
-  <div id="er-minor-banner"
+  <div id="er-minor-banner-%%careerName%%"
     style="display: none; margin: 0 0 20px 0; padding: 18px 22px; background: #edf5fc; border-left: 4px solid #0071bb; border-radius: 4px;">
-    <p id="er-minor-banner-text" style="margin: 0; font-size: 1.05rem; color: #1a1a1a; line-height: 1.6;"></p>
+    <p id="er-minor-banner-text-%%careerName%%" style="margin: 0; font-size: 1.05rem; color: #1a1a1a; line-height: 1.6;"></p>
   </div>
 
-  <div id="er-error-message" style="display: none"></div>
+  <div id="er-error-message-%%careerName%%" style="display: none"></div>
 </div>
 
 <script>
@@ -719,26 +719,26 @@
 
     function bootstrapMinorFlow() {
       // Hide projection-related elements
-      jQuery("#er-projection-controls").hide();
-      jQuery("#er-semester-mode-prompt").hide();
-      jQuery("#er-semester-controls").hide();
+      jQuery("#er-projection-controls-" + CAREER_SHORT_CODE).hide();
+      jQuery("#er-semester-mode-prompt-" + CAREER_SHORT_CODE).hide();
+      jQuery("#er-semester-controls-" + CAREER_SHORT_CODE).hide();
 
       // Show descriptive banner for minor
       const bannerText =
         `\u00bfEstudias el <strong>${CAREER_NAME}</strong>? ` +
         `Aqu\u00ed puedes consultar los horarios de las asignaturas del minor organizados por semestre, ` +
         `de acuerdo con el plan de estudios vigente.`;
-      jQuery("#er-minor-banner-text").html(bannerText);
-      jQuery("#er-minor-banner").show();
+      jQuery("#er-minor-banner-text-" + CAREER_SHORT_CODE).html(bannerText);
+      jQuery("#er-minor-banner-" + CAREER_SHORT_CODE).show();
 
       // Pre-load semester schedules immediately (no cedula needed)
-      jQuery("#er-details-container").show();
-      jQuery("#er-student-summary").hide();
-      jQuery("#er-projection-intro").hide();
-      jQuery("#er-recommendations-wrapper").hide();
+      jQuery("#er-details-container-" + CAREER_SHORT_CODE).show();
+      jQuery("#er-student-summary-" + CAREER_SHORT_CODE).hide();
+      jQuery("#er-projection-intro-" + CAREER_SHORT_CODE).hide();
+      jQuery("#er-recommendations-wrapper-" + CAREER_SHORT_CODE).hide();
       jQuery(".report-error").hide();
-      jQuery("#optional-subject-warn").hide();
-      jQuery("#er-view-schedules-container").hide();
+      jQuery("#optional-subject-warn-" + CAREER_SHORT_CODE).hide();
+      jQuery("#er-view-schedules-container-" + CAREER_SHORT_CODE).hide();
     }
 
     function bootstrapMajorFlow() {
@@ -747,31 +747,31 @@
     }
 
     jQuery(() => {
-      const $searchForm = jQuery("#er-ssn-search-frm");
-      const $frm = jQuery("#er-ssn-search-frm");
-      const $ssn = jQuery("#er-ssn-search");
-      const $detailsContainer = jQuery("#er-details-container");
-      const $errMsg = jQuery("#er-error-message");
-      const $loader = jQuery("#er-loader");
+      const $searchForm = jQuery("#er-ssn-search-frm-" + CAREER_SHORT_CODE);
+      const $frm = jQuery("#er-ssn-search-frm-" + CAREER_SHORT_CODE);
+      const $ssn = jQuery("#er-ssn-search-" + CAREER_SHORT_CODE);
+      const $detailsContainer = jQuery("#er-details-container-" + CAREER_SHORT_CODE);
+      const $errMsg = jQuery("#er-error-message-" + CAREER_SHORT_CODE);
+      const $loader = jQuery("#er-loader-" + CAREER_SHORT_CODE);
       const $name = $detailsContainer.find(".name");
       const $program = $detailsContainer.find(".program");
       const $agp = $detailsContainer.find(".agp");
       const $semLoc = $detailsContainer.find(".sem-loc");
       const $accumUc = $detailsContainer.find(".accum-uc");
       const $projectedSubjects = $detailsContainer.find(".projected-subjects");
-      const $totalUc = jQuery("#total-projected-uc");
-      const $maxRecommendedUc = jQuery("#max-recommended-uc");
-      const $studentSummary = jQuery("#er-student-summary");
-      const $projectionIntro = jQuery("#er-projection-intro");
+      const $totalUc = jQuery("#total-projected-uc-" + CAREER_SHORT_CODE);
+      const $maxRecommendedUc = jQuery("#max-recommended-uc-" + CAREER_SHORT_CODE);
+      const $studentSummary = jQuery("#er-student-summary-" + CAREER_SHORT_CODE);
+      const $projectionIntro = jQuery("#er-projection-intro-" + CAREER_SHORT_CODE);
       const $reportError = $detailsContainer.find(".report-error");
-      const $recommendations = jQuery("#recommendations");
+      const $recommendations = jQuery("#recommendations-" + CAREER_SHORT_CODE);
 
       // Modal references
-      const $schedulesModal = jQuery("#er-schedule-modal");
-      const $viewSchedulesContainer = jQuery("#er-view-schedules-container");
-      const $viewSchedulesBtn = jQuery("#er-view-schedules-btn");
-      const $closeModalBtn = jQuery("#er-close-modal-btn");
-      const $schedulesContainer = jQuery("#subject-schedules-container");
+      const $schedulesModal = jQuery("#er-schedule-modal-" + CAREER_SHORT_CODE);
+      const $viewSchedulesContainer = jQuery("#er-view-schedules-container-" + CAREER_SHORT_CODE);
+      const $viewSchedulesBtn = jQuery("#er-view-schedules-btn-" + CAREER_SHORT_CODE);
+      const $closeModalBtn = jQuery("#er-close-modal-btn-" + CAREER_SHORT_CODE);
+      const $schedulesContainer = jQuery("#subject-schedules-container-" + CAREER_SHORT_CODE);
 
       if ($schedulesModal.parent()[0] !== document.body) {
         $schedulesModal.appendTo(document.body);
@@ -794,7 +794,7 @@
       $detailsContainer.on("click", "input[type=checkbox]", handleCheckboxClick);
       $detailsContainer.on(
         "click",
-        "#er-semester-tabs .er-semester-tab",
+        "#er-semester-tabs-%%careerName%% .er-semester-tab",
         handleSemesterTabClick,
       );
       $schedulesContainer.on(
@@ -803,8 +803,8 @@
         handleModalSemesterTabClick,
       );
       $frm.on("submit", handleSsnSearchSubmit);
-      jQuery("#er-semester-mode-btn").on("click", () => {
-        const $erContainer = jQuery("#er-container");
+      jQuery("#er-semester-mode-btn-" + CAREER_SHORT_CODE).on("click", () => {
+        const $erContainer = jQuery("#er-container-" + CAREER_SHORT_CODE);
         if ($erContainer.length) {
           jQuery("html, body").animate(
             { scrollTop: $erContainer.offset().top - 20 },
@@ -814,7 +814,7 @@
         }
         setScheduleMode(SCHEDULE_MODE.SEMESTER);
       });
-      jQuery("#er-projection-mode-btn").on("click", () => setScheduleMode(SCHEDULE_MODE.PROJECTION));
+      jQuery("#er-projection-mode-btn-" + CAREER_SHORT_CODE).on("click", () => setScheduleMode(SCHEDULE_MODE.PROJECTION));
 
       // Bootstrap the career-aware UI (async: fetches career info + semesters from DB)
       initCareer().then(() => {
@@ -822,10 +822,10 @@
           // For minor: load semester view immediately without student search
           activeSemesterTab = VALID_SEMESTERS[0] || "01SE";
           activeModalSemesterTab = activeSemesterTab;
-          jQuery("#er-loader").show();
+          jQuery("#er-loader-" + CAREER_SHORT_CODE).show();
           ensureSemesterModeData()
             .then(() => {
-              jQuery("#er-loader").hide();
+              jQuery("#er-loader-" + CAREER_SHORT_CODE).hide();
               renderSubjects(getSubjectsForSemester(activeSemesterTab), null, {
                 mode: SCHEDULE_MODE.SEMESTER,
               });
@@ -833,7 +833,7 @@
               renderSchedules();
             })
             .catch((err) => {
-              jQuery("#er-loader").hide();
+              jQuery("#er-loader-" + CAREER_SHORT_CODE).hide();
               console.error(err);
             });
         } else {
@@ -957,29 +957,29 @@
         const isProjectionMode = mode === SCHEDULE_MODE.PROJECTION;
 
         if (isProjectionMode) {
-          jQuery("#er-projection-controls").show();
-          jQuery("#er-semester-controls").hide();
+          jQuery("#er-projection-controls-" + CAREER_SHORT_CODE).show();
+          jQuery("#er-semester-controls-" + CAREER_SHORT_CODE).hide();
           $studentSummary.show();
           $projectionIntro.show();
-          jQuery("#er-recommendations-wrapper").show();
+          jQuery("#er-recommendations-wrapper-" + CAREER_SHORT_CODE).show();
           $reportError.show();
-          jQuery("#optional-subject-warn").show();
-          jQuery("#er-semester-mode-prompt").show();
+          jQuery("#optional-subject-warn-" + CAREER_SHORT_CODE).show();
+          jQuery("#er-semester-mode-prompt-" + CAREER_SHORT_CODE).show();
 
           if (projectionSubjects.length === 0) {
             $detailsContainer.hide();
             $schedulesContainer.empty();
           }
         } else {
-          jQuery("#er-projection-controls").hide();
-          jQuery("#er-semester-controls").show();
+          jQuery("#er-projection-controls-" + CAREER_SHORT_CODE).hide();
+          jQuery("#er-semester-controls-" + CAREER_SHORT_CODE).show();
           $studentSummary.hide();
           $projectionIntro.hide();
-          jQuery("#er-recommendations-wrapper").hide();
+          jQuery("#er-recommendations-wrapper-" + CAREER_SHORT_CODE).hide();
           $reportError.hide();
-          jQuery("#optional-subject-warn").hide();
+          jQuery("#optional-subject-warn-" + CAREER_SHORT_CODE).hide();
           $detailsContainer.show();
-          jQuery("#er-semester-mode-prompt").hide();
+          jQuery("#er-semester-mode-prompt-" + CAREER_SHORT_CODE).hide();
         }
       }
 
@@ -1155,7 +1155,7 @@
       }
 
       function renderSchedules() {
-        const $container = jQuery("#subject-schedules-container");
+        const $container = jQuery("#subject-schedules-container-" + CAREER_SHORT_CODE);
         const selectedSchedules = getSelectedSchedules();
 
         if (selectedSchedules.length === 0) {
@@ -1421,9 +1421,9 @@
           return `<button type="button" class="er-semester-tab ${activeSemesterTab === semester ? "active" : ""}" data-semester="${semester}">${semester}</button>`;
         }).join("");
 
-        $projectedSubjects.find("#er-semester-tabs").remove();
+        $projectedSubjects.find("#er-semester-tabs-" + CAREER_SHORT_CODE).remove();
         $projectedSubjects.prepend(
-          `<div id="er-semester-tabs" class="er-semester-tabs">${tabsHtml}</div>`,
+          `<div id="er-semester-tabs-%%careerName%%" class="er-semester-tabs">${tabsHtml}</div>`,
         );
       }
 
@@ -1557,10 +1557,10 @@
     function renderSubjects(subjects, maxLoad, options = {}) {
       const mode = options.mode || SCHEDULE_MODE.PROJECTION;
       const $projectedSubjects = jQuery(
-        "#er-details-container .projected-subjects",
+        "#er-details-container-%%careerName%% .projected-subjects",
       );
       $projectedSubjects.empty();
-      jQuery("#er-view-schedules-container").hide();
+      jQuery("#er-view-schedules-container-" + CAREER_SHORT_CODE).hide();
 
       const $table = jQuery('<table class="tablepress"></table>');
       const $thead = jQuery("<thead></thead>");
@@ -1621,7 +1621,7 @@
       }
 
       const defaultLoad = maxLoad || 0;
-      jQuery("#max-recommended-uc").text(defaultLoad);
+      jQuery("#max-recommended-uc-" + CAREER_SHORT_CODE).text(defaultLoad);
 
       if (
         subjects.some(
@@ -1632,9 +1632,9 @@
         ) &&
         optionalEquivs.length < 1
       ) {
-        jQuery("#optional-subject-warn").fadeIn();
+        jQuery("#optional-subject-warn-" + CAREER_SHORT_CODE).fadeIn();
       } else {
-        jQuery("#optional-subject-warn").fadeOut();
+        jQuery("#optional-subject-warn-" + CAREER_SHORT_CODE).fadeOut();
       }
 
       if (optionalEquivs.length > 0) {
@@ -1650,7 +1650,7 @@
 
           equivSubjects += "</ul>";
 
-          jQuery("#recommendations").append(
+          jQuery("#recommendations-" + CAREER_SHORT_CODE).append(
             `<div class="temp">${equivSubjects}</div>`,
           );
         }
@@ -1658,7 +1658,7 @@
     }
 
     function renderErrorReportLink(data) {
-      const $reportLink = jQuery("#report-error-link");
+      const $reportLink = jQuery("#report-error-link-" + CAREER_SHORT_CODE);
       const subjects = data.subjects.map(
         (s, idx) => `${idx + 1}) ${s.semester}: ${s.name} (${s.credits} UC)`,
       );
