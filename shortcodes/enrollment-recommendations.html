@@ -268,6 +268,7 @@
   }
 
   .er-class-block {
+    position: relative;
     background-color: #0071bb;
     color: #fff;
     border-radius: 4px;
@@ -285,6 +286,20 @@
       box-shadow 0.2s;
     margin: 1px;
     z-index: 5;
+  }
+
+  .er-modality-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: rgba(255, 255, 255, 0.3);
+    color: #fff;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-weight: bold;
+    font-size: 0.55rem;
+    line-height: 1;
+    z-index: 2;
   }
 
   .er-class-block:hover {
@@ -439,6 +454,31 @@
     font-size: 0.9em !important;
     line-height: 1.4em !important;
   }
+
+  /* Responsive subject-selection table */
+  .projected-subjects {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  @media (max-width: 600px) {
+    .projected-subjects table.tablepress {
+      min-width: 480px;
+    }
+
+    .projected-subjects table.tablepress th,
+    .projected-subjects table.tablepress td {
+      white-space: nowrap;
+      font-size: 0.82rem !important;
+      padding: 6px 6px !important;
+    }
+
+    .projected-subjects table.tablepress td:nth-child(4) {
+      white-space: normal;
+      min-width: 120px;
+    }
+  }
 </style>
 <div id="er-container">
   <div id="er-projection-controls">
@@ -554,533 +594,651 @@
       Ver horarios por semestre
     </button>
   </div>
+
+  <!-- Banner exclusivo para carreras tipo MINOR -->
+  <div id="er-minor-banner"
+    style="display: none; margin: 0 0 20px 0; padding: 18px 22px; background: #edf5fc; border-left: 4px solid #0071bb; border-radius: 4px;">
+    <p id="er-minor-banner-text" style="margin: 0; font-size: 1.05rem; color: #1a1a1a; line-height: 1.6;"></p>
+  </div>
+
   <div id="er-error-message" style="display: none"></div>
 </div>
 
 <script>
-  const term = "202525"; // '%%term:202515%%';
-  const { createClient } = supabase;
-  const supabaseUrl = "https://zmvecicbbxbpuhbnexiz.supabase.co";
-  const supabaseAnonKey =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptdmVjaWNiYnhicHVoYm5leGl6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4ODQzMzAsImV4cCI6MjA4NTQ2MDMzMH0.m5lHEASg8lCo4qjajA4yLzjqYN12g3tlNkZh4h_vBmE";
-  const _supabase = createClient(supabaseUrl, supabaseAnonKey);
-  const invalidSsn =
-    "Debes introducir un número de cédula de identidad válido.";
-  const notFound =
-    "No se encontró ninguna información asociada a la cédula de identidad N° <strong>@SSN@</strong>.";
-  const generalError =
-    "Hubo un error inesperado al intentar obtener la información. Intenta más tarde&hellip;";
-  const SPEED = 250;
+  (function () {
+    const CAREER_SHORT_CODE = "%%careerName%%";
+    let term = null; // Active semester TERM, loaded from DB in initCareer()
+    const { createClient } = supabase;
+    const supabaseUrl = "https://zmvecicbbxbpuhbnexiz.supabase.co";
+    const supabaseAnonKey =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptdmVjaWNiYnhicHVoYm5leGl6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4ODQzMzAsImV4cCI6MjA4NTQ2MDMzMH0.m5lHEASg8lCo4qjajA4yLzjqYN12g3tlNkZh4h_vBmE";
+    const _supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const invalidSsn =
+      "Debes introducir un número de cédula de identidad válido.";
+    const notFound =
+      "No se encontró ninguna información asociada a la cédula de identidad N° <strong>@SSN@</strong>.";
+    const generalError =
+      "Hubo un error inesperado al intentar obtener la información. Intenta más tarde&hellip;";
+    const SPEED = 250;
 
-  const careerMap = {
-    'INFO': 2,
-    'IIDS': 1
-  };
+    // Career info loaded dynamically from DB via er_get_career_info
+    let CAREER_ID = null;
+    let CAREER_NAME = "";
+    let CAREER_CLASSIFICATION = "MAJOR"; // 'MAJOR' or 'MINOR'
 
-  const CAREER_ID = careerMap["%%careerName%%"] || 2;
+    // Valid semesters loaded dynamically from DB via er_get_career_semesters
+    // Only includes semesters with at least one non-requirement subject
+    let VALID_SEMESTERS = [];
 
-  const SCHEDULE_MODE = {
-    PROJECTION: "projection",
-    SEMESTER: "semester",
-  };
-  const maxSemesters = CAREER_ID === 1 ? 4 : 8;
-  const FIXED_SEMESTERS = Array.from(
-    { length: maxSemesters },
-    (_, i) => `${(i + 1).toString().padStart(2, "0")}SE`
-  );
-  const excludedSubjects = [
-    "INFO-00192",
-    "INFO-IILCT",
-    "INFO-IILTG",
-    "CUSC",
-    "IISC",
-  ];
-  const reportLink =
-    "https://docs.google.com/forms/d/e/1FAIpQLSfhMWpdDPe2EowqEAYkx6_lHwcGmaDc_pyOp244DOSuD14BXg/viewform?usp=pp_url&entry.66360717=@@SSN@@&entry.134787551=@@lastName@@&entry.1083683938=@@name@@&entry.875582967=@@report@@";
+    const SCHEDULE_MODE = {
+      PROJECTION: "projection",
+      SEMESTER: "semester",
+    };
+    const excludedSubjects = [
+      "INFO-00192",
+      "INFO-IILCT",
+      "INFO-IILTG",
+      "CUSC",
+      "IISC",
+    ];
+    const reportLink =
+      "https://docs.google.com/forms/d/e/1FAIpQLSfhMWpdDPe2EowqEAYkx6_lHwcGmaDc_pyOp244DOSuD14BXg/viewform?usp=pp_url&entry.66360717=@@SSN@@&entry.134787551=@@lastName@@&entry.1083683938=@@name@@&entry.875582967=@@report@@";
 
-  jQuery(() => {
-    const $searchForm = jQuery("#er-ssn-search-frm");
-    const $frm = jQuery("#er-ssn-search-frm");
-    const $ssn = jQuery("#er-ssn-search");
-    const $detailsContainer = jQuery("#er-details-container");
-    const $errMsg = jQuery("#er-error-message");
-    const $loader = jQuery("#er-loader");
-    const $name = $detailsContainer.find(".name");
-    const $program = $detailsContainer.find(".program");
-    const $agp = $detailsContainer.find(".agp");
-    const $semLoc = $detailsContainer.find(".sem-loc");
-    const $accumUc = $detailsContainer.find(".accum-uc");
-    const $projectedSubjects = $detailsContainer.find(".projected-subjects");
-    const $totalUc = jQuery("#total-projected-uc");
-    const $maxRecommendedUc = jQuery("#max-recommended-uc");
-    const $studentSummary = jQuery("#er-student-summary");
-    const $projectionIntro = jQuery("#er-projection-intro");
-    const $reportError = $detailsContainer.find(".report-error");
-    const $recommendations = jQuery("#recommendations");
+    let electiveSubjectIds = new Set();
+    let careerMetadataLoaded = false;
 
-    // Modal references
-    const $schedulesModal = jQuery("#er-schedule-modal");
-    const $viewSchedulesContainer = jQuery("#er-view-schedules-container");
-    const $viewSchedulesBtn = jQuery("#er-view-schedules-btn");
-    const $closeModalBtn = jQuery("#er-close-modal-btn");
-    const $schedulesContainer = jQuery("#subject-schedules-container");
+    async function ensureCareerMetadata() {
+      if (careerMetadataLoaded) return;
+      if (CAREER_ID === null) return; // not yet initialized
+      try {
+        // Only need to fetch elective subject IDs; modality now comes directly from the RPCs
+        const { data: elData } = await _supabase
+          .from("materia_carrera")
+          .select("materia:materia_id(mat_cod)")
+          .eq("carrera_id", CAREER_ID)
+          .eq("mat_sec_is_elective", true);
 
-    if ($schedulesModal.parent()[0] !== document.body) {
-      $schedulesModal.appendTo(document.body);
-    }
-
-    let ssn = null;
-    let totalCredits = 0;
-    let studentSchedules = [];
-    let projectionSchedules = [];
-    let projectionSubjects = [];
-    let semesterSubjectsBySemester = {};
-    let semesterSchedules = [];
-    let hasOptionalSubjects = false;
-    let selectedSubjects = new Set();
-    let scheduleMode = SCHEDULE_MODE.PROJECTION;
-    let activeSemesterTab = FIXED_SEMESTERS[0];
-    let activeModalSemesterTab = FIXED_SEMESTERS[0];
-    let hasLoadedSemesterModeData = false;
-
-    $detailsContainer.on("click", "input[type=checkbox]", handleCheckboxClick);
-    $detailsContainer.on(
-      "click",
-      "#er-semester-tabs .er-semester-tab",
-      handleSemesterTabClick,
-    );
-    $schedulesContainer.on(
-      "click",
-      "#er-modal-semester-tabs .er-semester-tab",
-      handleModalSemesterTabClick,
-    );
-    $frm.on("submit", handleSsnSearchSubmit);
-    jQuery("#er-semester-mode-btn").on("click", () => setScheduleMode(SCHEDULE_MODE.SEMESTER));
-    jQuery("#er-projection-mode-btn").on("click", () => setScheduleMode(SCHEDULE_MODE.PROJECTION));
-    applyModeLayout(SCHEDULE_MODE.PROJECTION);
-
-    // Modal events
-    $viewSchedulesBtn.on("click", function (e) {
-      e.preventDefault();
-      $schedulesModal.css("display", "flex");
-    });
-    $closeModalBtn.on("click", function () {
-      $schedulesModal.hide();
-    });
-    $schedulesModal.on("click", function (e) {
-      if (e.target === this) {
-        $schedulesModal.hide();
-      }
-    });
-
-    function validateSsn(ssn) {
-      const matched = ssn.match(/^(?:AS){0,1}(\d+)$/i);
-      return matched !== null;
-    }
-
-    async function handleFetchStudentResponse(data) {
-      $totalUc.text("0");
-      studentSchedules = [];
-      projectionSchedules = [];
-      semesterSchedules = [];
-      projectionSubjects = [];
-      semesterSubjectsBySemester = {};
-      hasLoadedSemesterModeData = false;
-      activeSemesterTab = FIXED_SEMESTERS[0];
-      activeModalSemesterTab = FIXED_SEMESTERS[0];
-      selectedSubjects.clear();
-      $schedulesContainer.empty();
-      scheduleMode = SCHEDULE_MODE.PROJECTION;
-      applyModeLayout(SCHEDULE_MODE.PROJECTION);
-
-      if (data === null) {
-        hideLoader(notFound.replace("@SSN@", ssn));
-      } else {
-        hideLoader();
-        updateStudentInfo(data);
-        projectionSubjects = Array.isArray(data.subjects) ? data.subjects : [];
-
-        await fetchSchedules(term, data.info.program, projectionSubjects)
-          .then(handleStudentSchedules)
-          .catch(handleError);
-        renderSubjects(projectionSubjects, semesterLoad[data.info.location]);
-        if (projectionSubjects.length > 0) {
-          checkSubjects(projectionSubjects, semesterLoad[data.info.location]);
-        }
-        renderErrorReportLink(data);
-
-        $maxRecommendedUc.text(semesterLoad[data.info.location] || 0);
-      }
-    }
-
-    function handleStudentSchedules(data) {
-      projectionSchedules = data;
-      studentSchedules = data;
-    }
-
-    function handleSemesterSchedules(data) {
-      semesterSchedules = data;
-      studentSchedules = data;
-      semesterSubjectsBySemester = buildSemesterSubjectsMap(data);
-      hasLoadedSemesterModeData = true;
-    }
-
-    async function ensureSemesterModeData() {
-      if (hasLoadedSemesterModeData) {
-        return;
-      }
-
-      await fetchSchedulesBySemester(CAREER_ID)
-        .then(handleSemesterSchedules)
-        .catch(handleError);
-    }
-
-    function setScheduleMode(mode) {
-      if (scheduleMode === mode) return;
-      scheduleMode = mode;
-      selectedSubjects.clear();
-      $totalUc.text("0");
-      $totalUc.parent().removeClass("alert");
-      applyModeLayout(scheduleMode);
-
-      if (scheduleMode === SCHEDULE_MODE.PROJECTION) {
-        studentSchedules = projectionSchedules;
-        if (projectionSubjects.length > 0) {
-          renderSubjects(projectionSubjects, semesterLoad[$semLoc.text()]);
-          checkSubjects(projectionSubjects, semesterLoad[$semLoc.text()]);
-        } else {
-          $detailsContainer.hide();
-        }
-      } else {
-        studentSchedules = semesterSchedules;
-        activeModalSemesterTab = activeSemesterTab;
-        showLoader();
-        ensureSemesterModeData()
-          .then(() => {
-            hideLoader();
-            renderSubjects(getSubjectsForSemester(activeSemesterTab), null, {
-              mode: SCHEDULE_MODE.SEMESTER,
-            });
-            renderSemesterTabs();
-            renderSchedules();
-          })
-          .catch(handleError);
-      }
-    }
-
-    function applyModeLayout(mode) {
-      const isProjectionMode = mode === SCHEDULE_MODE.PROJECTION;
-
-      if (isProjectionMode) {
-        jQuery("#er-projection-controls").show();
-        jQuery("#er-semester-controls").hide();
-        $studentSummary.show();
-        $projectionIntro.show();
-        jQuery("#er-recommendations-wrapper").show();
-        $reportError.show();
-        jQuery("#optional-subject-warn").show();
-        jQuery("#er-semester-mode-prompt").show();
-
-        if (projectionSubjects.length === 0) {
-          $detailsContainer.hide();
-          $schedulesContainer.empty();
-        }
-      } else {
-        jQuery("#er-projection-controls").hide();
-        jQuery("#er-semester-controls").show();
-        $studentSummary.hide();
-        $projectionIntro.hide();
-        jQuery("#er-recommendations-wrapper").hide();
-        $reportError.show();
-        jQuery("#optional-subject-warn").show();
-        $detailsContainer.show();
-        jQuery("#er-semester-mode-prompt").hide();
-      }
-    }
-
-    function handleSemesterTabClick(evt) {
-      const targetSemester = jQuery(evt.currentTarget).data("semester");
-      if (!targetSemester || activeSemesterTab === targetSemester) {
-        return;
-      }
-
-      activeSemesterTab = targetSemester;
-      activeModalSemesterTab = targetSemester;
-      selectedSubjects.clear();
-      $totalUc.text("0");
-      $totalUc.parent().removeClass("alert");
-      renderSubjects(getSubjectsForSemester(activeSemesterTab), null, {
-        mode: SCHEDULE_MODE.SEMESTER,
-      });
-      renderSemesterTabs();
-      renderSchedules();
-    }
-
-    function handleError(err) {
-      console.error(err);
-      hideLoader(generalError);
-    }
-
-    function updateStudentInfo(data) {
-      $name.text(data.info.name);
-
-      let carCodigo = data.info.program;
-      if (data.info.campus && carCodigo.endsWith(data.info.campus)) {
-        carCodigo = carCodigo.slice(0, -data.info.campus.length);
-      }
-
-      let planName = "Programa";
-      for (const key of Object.keys(studyPlans)) {
-        if (carCodigo.startsWith(key)) {
-          planName = studyPlans[key];
-          break;
-        }
-      }
-
-      $program.text(
-        `${planName} (${carCodigo} | ${campus[data.info.campus] || data.info.campus})`,
-      );
-      $agp.text(data.info.agp.toLocaleString("es-VE"));
-      $semLoc.text(data.info.location);
-      $accumUc.text(data.info.accumUc);
-    }
-
-    function updateTotalUc(credits, isAdding) {
-      let totalUcValue = parseFloat($totalUc.text()) || 0;
-
-      if (isAdding) {
-        totalUcValue += credits;
-      } else {
-        totalUcValue -= credits;
-      }
-
-      $totalUc.text(totalUcValue.toFixed(0));
-
-      if (
-        scheduleMode === SCHEDULE_MODE.PROJECTION &&
-        totalUcValue.toFixed(0) > (semesterLoad[$semLoc.text()] || 0)
-      ) {
-        $totalUc.parent().addClass("alert");
-      } else {
-        $totalUc.parent().removeClass("alert");
-      }
-    }
-
-    function updateSelectedSubjects(subjectId, isSelected) {
-      if (isSelected) {
-        selectedSubjects.add(subjectId);
-      } else {
-        selectedSubjects.delete(subjectId);
-      }
-
-      renderSchedules();
-    }
-
-    function checkOverlap(blockSchedules, newSection) {
-      const daysMap = [
-        "monday",
-        "tuesday",
-        "wednesday",
-        "thursday",
-        "friday",
-        "saturday",
-        "sunday",
-      ];
-
-      for (let existingSection of blockSchedules) {
-        for (let day of daysMap) {
-          const ex = existingSection.schedules[day];
-          const nw = newSection.schedules[day];
-
-          if (ex && nw) {
-            // Normalize parsing
-            const exStart =
-              parseInt(ex.start.split(":")[0]) * 60 +
-              parseInt(ex.start.split(":")[1]);
-            const exEnd =
-              parseInt(ex.end.split(":")[0]) * 60 +
-              parseInt(ex.end.split(":")[1] || "0");
-
-            const nwStart =
-              parseInt(nw.start.split(":")[0]) * 60 +
-              parseInt(nw.start.split(":")[1]);
-            const nwEnd =
-              parseInt(nw.end.split(":")[0]) * 60 +
-              parseInt(nw.end.split(":")[1] || "0");
-
-            // Overlap condition: start1 < end2 && end1 > start2
-            if (exStart < nwEnd && exEnd > nwStart) {
-              return true; // Overlap found
+        if (elData) {
+          elData.forEach((r) => {
+            if (r.materia && r.materia.mat_cod) {
+              electiveSubjectIds.add(r.materia.mat_cod);
             }
+          });
+        }
+        careerMetadataLoaded = true;
+      } catch (err) {
+        console.error("Failed to load career metadata", err);
+      }
+    }
+
+    // Load career info and valid semesters from DB, then bootstrap the UI
+    async function initCareer() {
+      try {
+        // 1. Fetch career info by short code
+        const { data: careerInfo, error: careerErr } = await _supabase.rpc(
+          "er_get_career_info",
+          { p_car_cod_corto: CAREER_SHORT_CODE }
+        );
+
+        if (careerErr || !careerInfo) {
+          console.error("Could not load career info", careerErr);
+          return;
+        }
+
+        CAREER_ID = careerInfo.id;
+        CAREER_NAME = careerInfo.nombre;
+        CAREER_CLASSIFICATION = careerInfo.clasificacion || "MAJOR";
+
+        // 1b. Fetch active term from DB
+        const { data: activeTerm } = await _supabase.rpc("er_get_active_term");
+        term = activeTerm || null;
+
+        // 2. Fetch valid semesters (non-requirement subjects only)
+        const { data: semestersData, error: semErr } = await _supabase.rpc(
+          "er_get_career_semesters",
+          { p_career_id: CAREER_ID }
+        );
+
+        if (!semErr && Array.isArray(semestersData)) {
+          VALID_SEMESTERS = semestersData.sort();
+        } else {
+          console.warn("Could not load career semesters", semErr);
+          VALID_SEMESTERS = [];
+        }
+
+        // 3. Bootstrap the correct UI flow
+        if (CAREER_CLASSIFICATION === "MINOR") {
+          bootstrapMinorFlow();
+        } else {
+          bootstrapMajorFlow();
+        }
+      } catch (err) {
+        console.error("initCareer failed", err);
+      }
+    }
+
+    function bootstrapMinorFlow() {
+      // Hide projection-related elements
+      jQuery("#er-projection-controls").hide();
+      jQuery("#er-semester-mode-prompt").hide();
+      jQuery("#er-semester-controls").hide();
+
+      // Show descriptive banner for minor
+      const bannerText =
+        `\u00bfEstudias el <strong>${CAREER_NAME}</strong>? ` +
+        `Aqu\u00ed puedes consultar los horarios de las asignaturas del minor organizados por semestre, ` +
+        `de acuerdo con el plan de estudios vigente.`;
+      jQuery("#er-minor-banner-text").html(bannerText);
+      jQuery("#er-minor-banner").show();
+
+      // Pre-load semester schedules immediately (no cedula needed)
+      jQuery("#er-details-container").show();
+      jQuery("#er-student-summary").hide();
+      jQuery("#er-projection-intro").hide();
+      jQuery("#er-recommendations-wrapper").hide();
+      jQuery(".report-error").hide();
+      jQuery("#optional-subject-warn").hide();
+      jQuery("#er-view-schedules-container").hide();
+    }
+
+    function bootstrapMajorFlow() {
+      // Major flow: nothing special to do here, jQuery ready will handle the UI
+      // (the projection controls are already visible by default)
+    }
+
+    jQuery(() => {
+      const $searchForm = jQuery("#er-ssn-search-frm");
+      const $frm = jQuery("#er-ssn-search-frm");
+      const $ssn = jQuery("#er-ssn-search");
+      const $detailsContainer = jQuery("#er-details-container");
+      const $errMsg = jQuery("#er-error-message");
+      const $loader = jQuery("#er-loader");
+      const $name = $detailsContainer.find(".name");
+      const $program = $detailsContainer.find(".program");
+      const $agp = $detailsContainer.find(".agp");
+      const $semLoc = $detailsContainer.find(".sem-loc");
+      const $accumUc = $detailsContainer.find(".accum-uc");
+      const $projectedSubjects = $detailsContainer.find(".projected-subjects");
+      const $totalUc = jQuery("#total-projected-uc");
+      const $maxRecommendedUc = jQuery("#max-recommended-uc");
+      const $studentSummary = jQuery("#er-student-summary");
+      const $projectionIntro = jQuery("#er-projection-intro");
+      const $reportError = $detailsContainer.find(".report-error");
+      const $recommendations = jQuery("#recommendations");
+
+      // Modal references
+      const $schedulesModal = jQuery("#er-schedule-modal");
+      const $viewSchedulesContainer = jQuery("#er-view-schedules-container");
+      const $viewSchedulesBtn = jQuery("#er-view-schedules-btn");
+      const $closeModalBtn = jQuery("#er-close-modal-btn");
+      const $schedulesContainer = jQuery("#subject-schedules-container");
+
+      if ($schedulesModal.parent()[0] !== document.body) {
+        $schedulesModal.appendTo(document.body);
+      }
+
+      let ssn = null;
+      let totalCredits = 0;
+      let studentSchedules = [];
+      let projectionSchedules = [];
+      let projectionSubjects = [];
+      let semesterSubjectsBySemester = {};
+      let semesterSchedules = [];
+      let hasOptionalSubjects = false;
+      let selectedSubjects = new Set();
+      let scheduleMode = SCHEDULE_MODE.PROJECTION;
+      let activeSemesterTab = VALID_SEMESTERS[0] || "01SE";
+      let activeModalSemesterTab = VALID_SEMESTERS[0] || "01SE";
+      let hasLoadedSemesterModeData = false;
+
+      $detailsContainer.on("click", "input[type=checkbox]", handleCheckboxClick);
+      $detailsContainer.on(
+        "click",
+        "#er-semester-tabs .er-semester-tab",
+        handleSemesterTabClick,
+      );
+      $schedulesContainer.on(
+        "click",
+        "#er-modal-semester-tabs .er-semester-tab",
+        handleModalSemesterTabClick,
+      );
+      $frm.on("submit", handleSsnSearchSubmit);
+      jQuery("#er-semester-mode-btn").on("click", () => {
+        const $erContainer = jQuery("#er-container");
+        if ($erContainer.length) {
+          jQuery("html, body").animate(
+            { scrollTop: $erContainer.offset().top - 20 },
+            400,
+            "swing",
+          );
+        }
+        setScheduleMode(SCHEDULE_MODE.SEMESTER);
+      });
+      jQuery("#er-projection-mode-btn").on("click", () => setScheduleMode(SCHEDULE_MODE.PROJECTION));
+
+      // Bootstrap the career-aware UI (async: fetches career info + semesters from DB)
+      initCareer().then(() => {
+        if (CAREER_CLASSIFICATION === "MINOR") {
+          // For minor: load semester view immediately without student search
+          activeSemesterTab = VALID_SEMESTERS[0] || "01SE";
+          activeModalSemesterTab = activeSemesterTab;
+          jQuery("#er-loader").show();
+          ensureSemesterModeData()
+            .then(() => {
+              jQuery("#er-loader").hide();
+              renderSubjects(getSubjectsForSemester(activeSemesterTab), null, {
+                mode: SCHEDULE_MODE.SEMESTER,
+              });
+              renderSemesterTabs();
+              renderSchedules();
+            })
+            .catch((err) => {
+              jQuery("#er-loader").hide();
+              console.error(err);
+            });
+        } else {
+          applyModeLayout(SCHEDULE_MODE.PROJECTION);
+        }
+      });
+
+      // Modal events
+      $viewSchedulesBtn.on("click", function (e) {
+        e.preventDefault();
+        $schedulesModal.css("display", "flex");
+      });
+      $closeModalBtn.on("click", function () {
+        $schedulesModal.hide();
+      });
+      $schedulesModal.on("click", function (e) {
+        if (e.target === this) {
+          $schedulesModal.hide();
+        }
+      });
+
+      function validateSsn(ssn) {
+        const matched = ssn.match(/^(?:AS){0,1}(\d+)$/i);
+        return matched !== null;
+      }
+
+      async function handleFetchStudentResponse(data) {
+        $totalUc.text("0");
+        studentSchedules = [];
+        projectionSchedules = [];
+        semesterSchedules = [];
+        projectionSubjects = [];
+        semesterSubjectsBySemester = {};
+        hasLoadedSemesterModeData = false;
+        activeSemesterTab = VALID_SEMESTERS[0] || "01SE";
+        activeModalSemesterTab = VALID_SEMESTERS[0] || "01SE";
+        selectedSubjects.clear();
+        $schedulesContainer.empty();
+        scheduleMode = SCHEDULE_MODE.PROJECTION;
+        applyModeLayout(SCHEDULE_MODE.PROJECTION);
+
+        if (data === null) {
+          hideLoader(notFound.replace("@SSN@", ssn));
+        } else {
+          hideLoader();
+          updateStudentInfo(data);
+          projectionSubjects = Array.isArray(data.subjects) ? data.subjects : [];
+
+          await fetchSchedules(term, data.info.program, projectionSubjects)
+            .then(handleStudentSchedules)
+            .catch(handleError);
+          renderSubjects(projectionSubjects, semesterLoad[data.info.location]);
+          if (projectionSubjects.length > 0) {
+            checkSubjects(projectionSubjects, semesterLoad[data.info.location]);
           }
+          renderErrorReportLink(data);
+
+          $maxRecommendedUc.text(semesterLoad[data.info.location] || 0);
         }
       }
-      return false;
-    }
 
-    function getSelectedSchedules() {
-      return studentSchedules.filter((s) => {
-        if (selectedSubjects.has(s.subjectId)) return true;
+      function handleStudentSchedules(data) {
+        projectionSchedules = data;
+        studentSchedules = data;
+      }
 
-        if (s.subjectId.includes("-P")) {
-          const theoryFormat0 = s.subjectId.replace("-P", "-0");
-          const theoryFormat1 = s.subjectId.replace("-P", "-1");
-          if (
-            selectedSubjects.has(theoryFormat0) ||
-            selectedSubjects.has(theoryFormat1)
-          ) {
-            return true;
+      function handleSemesterSchedules(data) {
+        semesterSchedules = data;
+        studentSchedules = data;
+        semesterSubjectsBySemester = buildSemesterSubjectsMap(data);
+        hasLoadedSemesterModeData = true;
+      }
+
+      async function ensureSemesterModeData() {
+        if (hasLoadedSemesterModeData) {
+          return;
+        }
+
+        await fetchSchedulesBySemester(CAREER_ID)
+          .then(handleSemesterSchedules)
+          .catch(handleError);
+      }
+
+      function setScheduleMode(mode) {
+        if (scheduleMode === mode) return;
+        scheduleMode = mode;
+        selectedSubjects.clear();
+        $totalUc.text("0");
+        $totalUc.parent().removeClass("alert");
+        applyModeLayout(scheduleMode);
+
+        if (scheduleMode === SCHEDULE_MODE.PROJECTION) {
+          studentSchedules = projectionSchedules;
+          if (projectionSubjects.length > 0) {
+            renderSubjects(projectionSubjects, semesterLoad[$semLoc.text()]);
+            checkSubjects(projectionSubjects, semesterLoad[$semLoc.text()]);
+          } else {
+            $detailsContainer.hide();
           }
+        } else {
+          studentSchedules = semesterSchedules;
+          activeModalSemesterTab = activeSemesterTab;
+          showLoader();
+          ensureSemesterModeData()
+            .then(() => {
+              hideLoader();
+              renderSubjects(getSubjectsForSemester(activeSemesterTab), null, {
+                mode: SCHEDULE_MODE.SEMESTER,
+              });
+              renderSemesterTabs();
+              setTimeout(() => {
+                $detailsContainer.find(".select-all").trigger("click");
+              }, 50);
+              renderSchedules();
+            })
+            .catch(handleError);
+        }
+      }
+
+      function applyModeLayout(mode) {
+        const isProjectionMode = mode === SCHEDULE_MODE.PROJECTION;
+
+        if (isProjectionMode) {
+          jQuery("#er-projection-controls").show();
+          jQuery("#er-semester-controls").hide();
+          $studentSummary.show();
+          $projectionIntro.show();
+          jQuery("#er-recommendations-wrapper").show();
+          $reportError.show();
+          jQuery("#optional-subject-warn").show();
+          jQuery("#er-semester-mode-prompt").show();
+
+          if (projectionSubjects.length === 0) {
+            $detailsContainer.hide();
+            $schedulesContainer.empty();
+          }
+        } else {
+          jQuery("#er-projection-controls").hide();
+          jQuery("#er-semester-controls").show();
+          $studentSummary.hide();
+          $projectionIntro.hide();
+          jQuery("#er-recommendations-wrapper").hide();
+          $reportError.hide();
+          jQuery("#optional-subject-warn").hide();
+          $detailsContainer.show();
+          jQuery("#er-semester-mode-prompt").hide();
+        }
+      }
+
+      function handleSemesterTabClick(evt) {
+        const targetSemester = jQuery(evt.currentTarget).data("semester");
+        if (!targetSemester || activeSemesterTab === targetSemester) {
+          return;
         }
 
-        if (
-          s.type === "ELEC-INFO" &&
-          (selectedSubjects.has("FING-ELEC1") ||
-            selectedSubjects.has("FING-ELEC2"))
-        ) {
-          return true;
+        activeSemesterTab = targetSemester;
+        activeModalSemesterTab = targetSemester;
+        selectedSubjects.clear();
+        $totalUc.text("0");
+        $totalUc.parent().removeClass("alert");
+        renderSubjects(getSubjectsForSemester(activeSemesterTab), null, {
+          mode: SCHEDULE_MODE.SEMESTER,
+        });
+        renderSemesterTabs();
+        setTimeout(() => {
+          $detailsContainer.find(".select-all").trigger("click");
+        }, 50);
+        renderSchedules();
+      }
+
+      function handleError(err) {
+        console.error(err);
+        hideLoader(generalError);
+      }
+
+      function updateStudentInfo(data) {
+        $name.text(data.info.name);
+
+        let carCodigo = data.info.program;
+        if (data.info.campus && carCodigo.endsWith(data.info.campus)) {
+          carCodigo = carCodigo.slice(0, -data.info.campus.length);
         }
 
-        if (s.type === "ELEC-COMP" && selectedSubjects.has("FING-ELEC3")) {
-          return true;
-        }
-
-        return false;
-      });
-    }
-
-    function groupSchedulesWithoutOverlap(schedules) {
-      const groupedBlocks = [];
-
-      for (const section of schedules) {
-        let placed = false;
-        for (const block of groupedBlocks) {
-          if (!checkOverlap(block, section)) {
-            block.push(section);
-            placed = true;
+        let planName = "Programa";
+        for (const key of Object.keys(studyPlans)) {
+          if (carCodigo.startsWith(key)) {
+            planName = studyPlans[key];
             break;
           }
         }
-        if (!placed) {
-          groupedBlocks.push([section]);
+
+        $program.text(
+          `${planName} (${carCodigo} | ${campus[data.info.campus] || data.info.campus})`,
+        );
+        $agp.text(data.info.agp.toLocaleString("es-VE"));
+        $semLoc.text(data.info.location);
+        $accumUc.text(data.info.accumUc);
+      }
+
+      function updateTotalUc(credits, isAdding) {
+        let totalUcValue = parseFloat($totalUc.text()) || 0;
+
+        if (isAdding) {
+          totalUcValue += credits;
+        } else {
+          totalUcValue -= credits;
+        }
+
+        $totalUc.text(totalUcValue.toFixed(0));
+
+        if (
+          scheduleMode === SCHEDULE_MODE.PROJECTION &&
+          totalUcValue.toFixed(0) > (semesterLoad[$semLoc.text()] || 0)
+        ) {
+          $totalUc.parent().addClass("alert");
+        } else {
+          $totalUc.parent().removeClass("alert");
         }
       }
 
-      return groupedBlocks;
-    }
+      function updateSelectedSubjects(subjectId, isSelected) {
+        if (isSelected) {
+          selectedSubjects.add(subjectId);
+        } else {
+          selectedSubjects.delete(subjectId);
+        }
 
-    function renderSchedules() {
-      const $container = jQuery("#subject-schedules-container");
-      const selectedSchedules = getSelectedSchedules();
-
-      if (selectedSchedules.length === 0) {
-        $container.empty();
-        $viewSchedulesContainer.hide();
-        $container.html(
-          '<div class="er-empty-state">No se seleccionaron asignaturas con horarios.</div>',
-        );
-        return;
+        renderSchedules();
       }
 
-      $viewSchedulesContainer.show();
-      $container.empty();
+      function checkOverlap(blockSchedules, newSection) {
+        const daysMap = [
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday",
+          "sunday",
+        ];
 
-      if (scheduleMode === SCHEDULE_MODE.SEMESTER) {
-        renderSemesterSchedulesInModal(selectedSchedules, $container);
-      } else {
+        for (let existingSection of blockSchedules) {
+          for (let day of daysMap) {
+            const ex = existingSection.schedules[day];
+            const nw = newSection.schedules[day];
+
+            if (ex && nw) {
+              // Normalize parsing
+              const exStart =
+                parseInt(ex.start.split(":")[0]) * 60 +
+                parseInt(ex.start.split(":")[1]);
+              const exEnd =
+                parseInt(ex.end.split(":")[0]) * 60 +
+                parseInt(ex.end.split(":")[1] || "0");
+
+              const nwStart =
+                parseInt(nw.start.split(":")[0]) * 60 +
+                parseInt(nw.start.split(":")[1]);
+              const nwEnd =
+                parseInt(nw.end.split(":")[0]) * 60 +
+                parseInt(nw.end.split(":")[1] || "0");
+
+              // Overlap condition: start1 < end2 && end1 > start2
+              if (exStart < nwEnd && exEnd > nwStart) {
+                return true; // Overlap found
+              }
+            }
+          }
+        }
+        return false;
+      }
+
+      function getSelectedSchedules() {
+        return studentSchedules.filter((s) => {
+          if (selectedSubjects.has(s.subjectId)) return true;
+
+          if (s.subjectId.includes("-P")) {
+            const theoryFormat0 = s.subjectId.replace("-P", "-0");
+            const theoryFormat1 = s.subjectId.replace("-P", "-1");
+            if (
+              selectedSubjects.has(theoryFormat0) ||
+              selectedSubjects.has(theoryFormat1)
+            ) {
+              return true;
+            }
+          }
+
+          if (
+            electiveSubjectIds.has(s.subjectId) &&
+            (selectedSubjects.has("FING-ELEC1") ||
+              selectedSubjects.has("FING-ELEC2") ||
+              selectedSubjects.has("FING-ELEC3"))
+          ) {
+            return true;
+          }
+
+          return false;
+        });
+      }
+
+      function groupSchedulesWithoutOverlap(schedules) {
+        const groupedBlocks = [];
+
+        for (const section of schedules) {
+          let placed = false;
+          for (const block of groupedBlocks) {
+            if (!checkOverlap(block, section)) {
+              block.push(section);
+              placed = true;
+              break;
+            }
+          }
+          if (!placed) {
+            groupedBlocks.push([section]);
+          }
+        }
+
+        return groupedBlocks;
+      }
+
+      function renderSchedules() {
+        const $container = jQuery("#subject-schedules-container");
+        const selectedSchedules = getSelectedSchedules();
+
+        if (selectedSchedules.length === 0) {
+          $container.empty();
+          $viewSchedulesContainer.hide();
+          $container.html(
+            '<div class="er-empty-state">No se seleccionaron asignaturas con horarios.</div>',
+          );
+          return;
+        }
+
+        $viewSchedulesContainer.show();
+        $container.empty();
+
+        if (scheduleMode === SCHEDULE_MODE.SEMESTER) {
+          renderSemesterSchedulesInModal(selectedSchedules, $container);
+        } else {
+          renderScheduleBlocks(
+            groupSchedulesWithoutOverlap(selectedSchedules),
+            $container,
+          );
+        }
+      }
+
+      function renderSemesterSchedulesInModal(selectedSchedules, $container) {
+        if (selectedSchedules.length === 0) {
+          $container.append(
+            `<div class="er-empty-state">No hay horarios para las asignaturas seleccionadas.</div>`,
+          );
+          return;
+        }
+
         renderScheduleBlocks(
           groupSchedulesWithoutOverlap(selectedSchedules),
           $container,
         );
       }
-    }
 
-    function renderSemesterSchedulesInModal(selectedSchedules, $container) {
-      const groupedBySemester = FIXED_SEMESTERS.reduce((acc, semester) => {
-        acc[semester] = [];
-        return acc;
-      }, {});
-
-      selectedSchedules.forEach((schedule) => {
-        const semester = schedule.subjectSemester || "01SE";
-        if (!groupedBySemester[semester]) {
-          groupedBySemester[semester] = [];
+      function handleModalSemesterTabClick(evt) {
+        const targetSemester = jQuery(evt.currentTarget).data("semester");
+        if (!targetSemester || activeModalSemesterTab === targetSemester) {
+          return;
         }
-        groupedBySemester[semester].push(schedule);
-      });
 
-      if (!groupedBySemester[activeModalSemesterTab]) {
-        activeModalSemesterTab = FIXED_SEMESTERS[0];
+        activeModalSemesterTab = targetSemester;
+        renderSchedules();
       }
 
-      const tabsHtml = FIXED_SEMESTERS.map(
-        (semester) =>
-          `<button type="button" class="er-semester-tab ${activeModalSemesterTab === semester ? "active" : ""}" data-semester="${semester}">${semester}</button>`,
-      ).join("");
+      function renderScheduleBlocks(groupedBlocks, $container) {
+        const activeColors = [
+          "#0071bb",
+          "#1c7c54",
+          "#f1b417",
+          "#c4151c",
+          "#6f42c1",
+          "#fd7e14",
+          "#e83e8c",
+          "#20c997",
+          "#005288",
+          "#d35400",
+        ];
 
-      $container.append(
-        `<div id="er-modal-semester-tabs" class="er-semester-tabs">${tabsHtml}</div>`,
-      );
+        const daysMap = {
+          monday: 1,
+          tuesday: 2,
+          wednesday: 3,
+          thursday: 4,
+          friday: 5,
+          saturday: 6,
+          sunday: 7,
+        };
+        const dayNames = {
+          1: "Lunes",
+          2: "Martes",
+          3: "Miércoles",
+          4: "Jueves",
+          5: "Viernes",
+          6: "Sábado",
+          7: "Domingo",
+        };
 
-      const activeSchedules = groupedBySemester[activeModalSemesterTab] || [];
-      if (activeSchedules.length === 0) {
-        $container.append(
-          `<div class="er-empty-state">No hay horarios para las asignaturas seleccionadas en el semestre ${activeModalSemesterTab}.</div>`,
-        );
-        return;
-      }
-
-      renderScheduleBlocks(
-        groupSchedulesWithoutOverlap(activeSchedules),
-        $container,
-      );
-    }
-
-    function handleModalSemesterTabClick(evt) {
-      const targetSemester = jQuery(evt.currentTarget).data("semester");
-      if (!targetSemester || activeModalSemesterTab === targetSemester) {
-        return;
-      }
-
-      activeModalSemesterTab = targetSemester;
-      renderSchedules();
-    }
-
-    function renderScheduleBlocks(groupedBlocks, $container) {
-      const activeColors = [
-        "#0071bb",
-        "#1c7c54",
-        "#f1b417",
-        "#c4151c",
-        "#6f42c1",
-        "#fd7e14",
-        "#e83e8c",
-        "#20c997",
-        "#005288",
-        "#d35400",
-      ];
-
-      const daysMap = {
-        monday: 1,
-        tuesday: 2,
-        wednesday: 3,
-        thursday: 4,
-        friday: 5,
-        saturday: 6,
-        sunday: 7,
-      };
-      const dayNames = {
-        1: "Lunes",
-        2: "Martes",
-        3: "Miércoles",
-        4: "Jueves",
-        5: "Viernes",
-        6: "Sábado",
-        7: "Domingo",
-      };
-
-      groupedBlocks.forEach((blockSchedules, blockIndex) => {
-        const headerHtml = `
+        groupedBlocks.forEach((blockSchedules, blockIndex) => {
+          const headerHtml = `
                     <div class="er-schedule-wrapper">
                         <div class="er-schedule-wrapper-title">
                             Bloque ${blockIndex + 1} (${blockSchedules.length} secciones)
@@ -1096,61 +1254,68 @@
                             <div class="er-grid-header" style="grid-column: 8; grid-row: 1;">Domingo</div>
                 `;
 
-        let timeRowsHtml = "";
-        for (let hour = 7; hour <= 20; hour++) {
-          const h1 = hour.toString().padStart(2, "0") + ":00";
-          const rowH1 = 2 + (hour - 7) * 2;
-          timeRowsHtml += `<div class="er-time-label-col" style="grid-column: 1; grid-row: ${rowH1} / span 2; align-items: flex-start; padding-top: 6px;"><span>${h1}</span></div>`;
-        }
-
-        for (let r = 2; r <= 29; r += 2) {
-          for (let c = 2; c <= 8; c++) {
-            timeRowsHtml += `<div class="er-grid-cell" style="grid-column: ${c}; grid-row: ${r} / span 2;"></div>`;
+          let timeRowsHtml = "";
+          for (let hour = 7; hour <= 20; hour++) {
+            const h1 = hour.toString().padStart(2, "0") + ":00";
+            const rowH1 = 2 + (hour - 7) * 2;
+            timeRowsHtml += `<div class="er-time-label-col" style="grid-column: 1; grid-row: ${rowH1} / span 2; align-items: flex-start; padding-top: 6px;"><span>${h1}</span></div>`;
           }
-        }
 
-        let blocksHtml = "";
-        let mobileBlocksHtml = "";
-        const mobileDaysData = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] };
+          for (let r = 2; r <= 29; r += 2) {
+            for (let c = 2; c <= 8; c++) {
+              timeRowsHtml += `<div class="er-grid-cell" style="grid-column: ${c}; grid-row: ${r} / span 2;"></div>`;
+            }
+          }
 
-        const sortedSchedules = [...blockSchedules].sort((a, b) =>
-          a.subjectId.localeCompare(b.subjectId),
-        );
+          let blocksHtml = "";
+          let mobileBlocksHtml = "";
+          const mobileDaysData = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] };
 
-        sortedSchedules.forEach((schedule, index) => {
-          const color = activeColors[index % activeColors.length];
+          const sortedSchedules = [...blockSchedules].sort((a, b) =>
+            a.subjectId.localeCompare(b.subjectId),
+          );
 
-          Object.keys(daysMap).forEach((day) => {
-            const block = schedule.schedules[day];
-            if (block) {
-              const dayCol = daysMap[day];
-              const startParts = block.start.split(":");
-              const endParts = block.end.split(":");
+          sortedSchedules.forEach((schedule, index) => {
+            const color = activeColors[index % activeColors.length];
 
-              const startHour = parseInt(startParts[0], 10);
-              const startMin = parseInt(startParts[1], 10);
-              const startRow =
-                2 + (startHour - 7) * 2 + (startMin >= 30 ? 1 : 0);
+            Object.keys(daysMap).forEach((day) => {
+              const block = schedule.schedules[day];
+              if (block) {
+                const dayCol = daysMap[day];
+                const startParts = block.start.split(":");
+                const endParts = block.end.split(":");
 
-              let endHour = parseInt(endParts[0], 10);
-              let endMin = parseInt(endParts[1], 10);
+                const startHour = parseInt(startParts[0], 10);
+                const startMin = parseInt(startParts[1], 10);
+                const startRow =
+                  2 + (startHour - 7) * 2 + (startMin >= 30 ? 1 : 0);
 
-              if (isNaN(endMin)) {
-                const cleanEnd = block.end.replace(/[^\d:]/g, "");
-                if (cleanEnd.includes(":")) {
-                  const cleanEndParts = cleanEnd.split(":");
-                  endHour = parseInt(cleanEndParts[0], 10);
-                  endMin = parseInt(cleanEndParts[1], 10);
+                let endHour = parseInt(endParts[0], 10);
+                let endMin = parseInt(endParts[1], 10);
+
+                if (isNaN(endMin)) {
+                  const cleanEnd = block.end.replace(/[^\d:]/g, "");
+                  if (cleanEnd.includes(":")) {
+                    const cleanEndParts = cleanEnd.split(":");
+                    endHour = parseInt(cleanEndParts[0], 10);
+                    endMin = parseInt(cleanEndParts[1], 10);
+                  }
                 }
-              }
 
-              let endRow = 2 + (endHour - 7) * 2 + (endMin >= 30 ? 1 : 0);
-              if (endMin >= 50) {
-                endRow += 1;
-              }
+                let endRow = 2 + (endHour - 7) * 2 + (endMin >= 30 ? 1 : 0);
+                if (endMin >= 50) {
+                  endRow += 1;
+                }
 
-              blocksHtml += `
+                let modalityBadge = "";
+                if (schedule.modality) {
+                  const modInitial = schedule.modality.charAt(0).toUpperCase();
+                  modalityBadge = `<div class="er-modality-badge" title="${schedule.modality}">${modInitial}</div>`;
+                }
+
+                blocksHtml += `
                                 <div class="er-class-block" style="grid-column: ${dayCol + 1}; grid-row: ${startRow} / ${endRow}; background-color: ${color};">
+                                    ${modalityBadge}
                                     <span class="subject-title">${schedule.subjectName}</span>
                                     <span class="subject-acronym">${schedule.subjectId} <br/> (NRC <strong>${schedule.crn}</strong>)</span>
                                     <span class="subject-professor">${schedule.professor || 'Profesor no asignado'}</span>
@@ -1158,382 +1323,438 @@
                                 </div>
                             `;
 
-              mobileDaysData[dayCol].push({
-                subject: schedule.subjectName,
-                acronym: schedule.subjectId,
-                crn: schedule.crn,
-                professor: schedule.professor,
-                time: `${block.start} - ${block.end}`,
-                color: color,
-              });
-            }
+                mobileDaysData[dayCol].push({
+                  subject: schedule.subjectName,
+                  acronym: schedule.subjectId,
+                  crn: schedule.crn,
+                  professor: schedule.professor,
+                  modality: schedule.modality,
+                  time: `${block.start} - ${block.end}`,
+                  color: color,
+                });
+              }
+            });
           });
-        });
 
-        Object.keys(mobileDaysData).forEach((dayIndex) => {
-          const dayClasses = mobileDaysData[dayIndex];
-          if (dayClasses.length > 0) {
-            dayClasses.sort((a, b) => a.time.localeCompare(b.time));
-            mobileBlocksHtml += `<div class="er-mobile-day">`;
-            mobileBlocksHtml += `<h4>${dayNames[dayIndex]}</h4>`;
-            dayClasses.forEach((cls) => {
-              mobileBlocksHtml += `
-                                <div class="er-mobile-class" style="border-left-color: ${cls.color}">
+          Object.keys(mobileDaysData).forEach((dayIndex) => {
+            const dayClasses = mobileDaysData[dayIndex];
+            if (dayClasses.length > 0) {
+              dayClasses.sort((a, b) => a.time.localeCompare(b.time));
+              mobileBlocksHtml += `<div class="er-mobile-day">`;
+              mobileBlocksHtml += `<h4>${dayNames[dayIndex]}</h4>`;
+              dayClasses.forEach((cls) => {
+                let modText = cls.modality ? ` - <strong>${cls.modality}</strong>` : "";
+                mobileBlocksHtml += `
+                                <div class="er-mobile-class" style="border-left-color: ${cls.color}; position: relative;">
                                     <strong>${cls.subject}</strong><br>
-                                    <small>${cls.acronym} (NRC <strong>${cls.crn}</strong>)</small><br>
+                                    <small>${cls.acronym} (NRC <strong>${cls.crn}</strong>)${modText}</small><br>
                                     <small class="subject-professor">${cls.professor || 'Profesor no asignado'}</small><br>
                                     <small>${cls.time}</small>
                                 </div>
                             `;
-            });
-            mobileBlocksHtml += `</div>`;
+              });
+              mobileBlocksHtml += `</div>`;
+            }
+          });
+
+          if (blocksHtml === "") {
+            blocksHtml = `<div class="er-empty-state" style="grid-column: 1 / -1; grid-row: 2 / -1;">Las materias seleccionadas para este bloque no tienen horarios publicados o son virtuales.</div>`;
           }
-        });
 
-        if (blocksHtml === "") {
-          blocksHtml = `<div class="er-empty-state" style="grid-column: 1 / -1; grid-row: 2 / -1;">Las materias seleccionadas para este bloque no tienen horarios publicados o son virtuales.</div>`;
-        }
-
-        const footerHtml = `
+          const footerHtml = `
                             ${blocksHtml}
                         </div>
                         ${mobileBlocksHtml !== "" && blocksHtml.includes("er-empty-state") ? mobileBlocksHtml : `<div class="er-schedule-grid er-mobile-grid-inject" style="display:none;">${mobileBlocksHtml}</div>`}
                     </div>
                 `;
 
-        $container.append(headerHtml + timeRowsHtml + footerHtml);
-      });
-
-      if (window.innerWidth <= 768) {
-        $container.find(".er-schedule-grid:not(.er-mobile-grid-inject)").hide();
-        $container.find(".er-mobile-grid-inject").css("display", "flex");
-      }
-    }
-
-    function buildSemesterSubjectsMap(schedules) {
-      const semestersMap = FIXED_SEMESTERS.reduce((acc, semester) => {
-        acc[semester] = {};
-        return acc;
-      }, {});
-
-      schedules.forEach((schedule) => {
-        const semester = schedule.subjectSemester;
-        if (!semester || !semestersMap[semester]) {
-          return;
-        }
-
-        if (!semestersMap[semester][schedule.subjectId]) {
-          semestersMap[semester][schedule.subjectId] = {
-            id: schedule.subjectId,
-            semester,
-            name: schedule.subjectName,
-            credits: schedule.uc || 0,
-          };
-        }
-      });
-
-      const normalized = {};
-      FIXED_SEMESTERS.forEach((semester) => {
-        normalized[semester] = Object.values(semestersMap[semester]).sort(
-          (a, b) => a.id.localeCompare(b.id),
-        );
-      });
-
-      return normalized;
-    }
-
-    function getSubjectsForSemester(semester) {
-      return semesterSubjectsBySemester[semester] || [];
-    }
-
-    function renderSemesterTabs() {
-      const tabsHtml = FIXED_SEMESTERS.map((semester) => {
-        return `<button type="button" class="er-semester-tab ${activeSemesterTab === semester ? "active" : ""}" data-semester="${semester}">${semester}</button>`;
-      }).join("");
-
-      $projectedSubjects.find("#er-semester-tabs").remove();
-      $projectedSubjects.prepend(
-        `<div id="er-semester-tabs" class="er-semester-tabs">${tabsHtml}</div>`,
-      );
-    }
-
-    function handleSsnSearchSubmit(evt) {
-      evt.preventDefault();
-
-      if (ssn !== $ssn.val()) {
-        ssn = $ssn.val();
-
-        if (ssn) {
-          if (!validateSsn(ssn)) {
-            hideLoader(invalidSsn);
-          } else {
-            showLoader();
-            fetchStudent(ssn)
-              .then(handleFetchStudentResponse)
-              .catch(handleError);
-          }
-        } else {
-          hideLoader(invalidSsn);
-        }
-      }
-    }
-
-    function handleCheckboxClick(evt) {
-      const idColumnIndex = 3;
-      const creditsColumnIndex = 5;
-      const $chkbox = jQuery(evt.target);
-      const $row = $chkbox.closest("tr");
-      const credits = parseFloat(
-        $row.find(`td:nth-child(${creditsColumnIndex})`).text(),
-      );
-      const subjectId = $row.find(`td:nth-child(${idColumnIndex})`).text();
-
-      if ($chkbox.hasClass("select-all")) {
-        if ($chkbox.prop("checked") === true) {
-          $detailsContainer.find("input[type=checkbox]").prop("checked", true);
-
-          const totalCredits = $detailsContainer
-            .find("input[type=checkbox]:not(.select-all)")
-            .toArray()
-            .reduce((sum, checkbox) => {
-              const $row = jQuery(checkbox).closest("tr");
-              selectedSubjects.add(
-                $row.find(`td:nth-child(${idColumnIndex})`).text(),
-              );
-              return (
-                sum +
-                parseFloat(
-                  $row.find(`td:nth-child(${creditsColumnIndex})`).text(),
-                )
-              );
-            }, 0);
-          $totalUc.text(totalCredits.toFixed(0));
-
-          if (
-            scheduleMode === SCHEDULE_MODE.PROJECTION &&
-            totalCredits.toFixed(0) > (semesterLoad[$semLoc.text()] || 0)
-          ) {
-            $totalUc.parent().addClass("alert");
-          } else {
-            $totalUc.parent().removeClass("alert");
-          }
-        } else {
-          $detailsContainer.find("input[type=checkbox]").prop("checked", false);
-          $totalUc.text("0");
-          $totalUc.parent().removeClass("alert");
-          selectedSubjects.clear();
-        }
-
-        renderSchedules();
-      } else {
-        const $chkboxes = $detailsContainer.find(
-          "input[type=checkbox]:not(.select-all)",
-        );
-        const $chkboxesChecked = $chkboxes.filter(":checked");
-
-        $detailsContainer.find(".select-all").prop("indeterminate", false);
-
-        if ($chkboxes.length === $chkboxesChecked.length) {
-          $detailsContainer.find(".select-all").prop("checked", true);
-        } else if ($chkboxesChecked.length === 0) {
-          $detailsContainer.find(".select-all").prop("checked", false);
-        } else {
-          $detailsContainer.find(".select-all").prop("indeterminate", true);
-        }
-
-        updateTotalUc(credits, $chkbox.prop("checked"));
-        updateSelectedSubjects(subjectId, $chkbox.prop("checked"));
-      }
-    }
-
-    function checkSubjects(subjects, maxLoad) {
-      let totalCredits = 0;
-
-      subjects.forEach((subject) => {
-        totalCredits += subject.credits;
-
-        if (totalCredits <= maxLoad) {
-          jQuery(
-            `#sub-${subject.id.toLowerCase()} input[type=checkbox]`,
-          ).trigger("click");
-        }
-      });
-    }
-
-    function showLoader() {
-      $detailsContainer.stop(true, true).hide();
-      $errMsg.stop(true, true).hide();
-      $loader.stop(true, true).fadeIn(SPEED);
-    }
-
-    function hideLoader(msg) {
-      if (msg) {
-        $loader.stop(true, true).hide();
-        $detailsContainer.stop(true, true).hide();
-        $errMsg
-          .stop(true, true)
-          .html(
-            `<i class="fa fa-exclamation-circle" aria-hidden="true"></i> ${msg}`,
-          )
-          .fadeIn(SPEED);
-      } else {
-        $loader.stop(true, true).hide();
-        $errMsg.stop(true, true).hide();
-        $detailsContainer.stop(true, true).fadeIn(SPEED);
-      }
-    }
-  });
-
-  function renderSubjects(subjects, maxLoad, options = {}) {
-    const mode = options.mode || SCHEDULE_MODE.PROJECTION;
-    const $projectedSubjects = jQuery(
-      "#er-details-container .projected-subjects",
-    );
-    $projectedSubjects.empty();
-    jQuery("#er-view-schedules-container").hide();
-
-    const $table = jQuery('<table class="tablepress"></table>');
-    const $thead = jQuery("<thead></thead>");
-    const $tbody = jQuery('<tbody class="row-hover"></tbody>');
-
-    const $theadRow = jQuery("<tr></tr>");
-    $theadRow.append(
-      '<th style="width:36px;text-align:center;line-height:1rem;"><input class="select-all" type="checkbox" /></th>',
-    );
-    $theadRow.append('<th style="width:66px;text-align:center;">Sem.</th>');
-    $theadRow.append('<th style="width:100px;text-align:center;">Cód.</th>');
-    $theadRow.append('<th style="text-align:center;">Nombre</th>');
-    $theadRow.append('<th style="width:50px;text-align:center;">UC</th>');
-
-    $thead.append($theadRow);
-
-    const optionalEquivs = [];
-    jQuery("div.temp").remove();
-
-    subjects.forEach((subject) => {
-      if (mode === SCHEDULE_MODE.PROJECTION && subject.equiv) {
-        optionalEquivs.push({
-          subject: `${subject.id} - ${subject.name}`,
-          equiv: subject.equiv,
+          $container.append(headerHtml + timeRowsHtml + footerHtml);
         });
-      } else {
-        const $row = jQuery(`<tr id="sub-${subject.id.toLowerCase()}"></tr>`);
 
-        $row.append(
-          `<td style="text-align:center;"><input type="checkbox" /></td>`,
+        if (window.innerWidth <= 768) {
+          $container.find(".er-schedule-grid:not(.er-mobile-grid-inject)").hide();
+          $container.find(".er-mobile-grid-inject").css("display", "flex");
+        }
+      }
+
+      function buildSemesterSubjectsMap(schedules) {
+        const includeElectives = CAREER_CLASSIFICATION !== "MINOR";
+        const ALL_TABS = includeElectives ? [...VALID_SEMESTERS, "Electivas"] : [...VALID_SEMESTERS];
+        const semestersMap = ALL_TABS.reduce((acc, semester) => {
+          acc[semester] = {};
+          return acc;
+        }, {});
+
+        schedules.forEach((schedule) => {
+          const semester = schedule.subjectSemester;
+          if (!semester || !semestersMap[semester]) {
+            return;
+          }
+          if (!semestersMap[semester][schedule.subjectId]) {
+            semestersMap[semester][schedule.subjectId] = {
+              id: schedule.subjectId,
+              semester,
+              name: schedule.subjectName,
+              credits: schedule.uc || 0,
+            };
+          }
+        });
+
+        const normalized = {};
+        ALL_TABS.forEach((semester) => {
+          normalized[semester] = Object.values(semestersMap[semester]).sort(
+            (a, b) => a.id.localeCompare(b.id),
+          );
+        });
+
+        return normalized;
+      }
+
+      function getSubjectsForSemester(semester) {
+        return semesterSubjectsBySemester[semester] || [];
+      }
+
+      function renderSemesterTabs() {
+        const includeElectives = CAREER_CLASSIFICATION !== "MINOR";
+        const ALL_TABS = includeElectives ? [...VALID_SEMESTERS, "Electivas"] : [...VALID_SEMESTERS];
+        const tabsHtml = ALL_TABS.map((semester) => {
+          return `<button type="button" class="er-semester-tab ${activeSemesterTab === semester ? "active" : ""}" data-semester="${semester}">${semester}</button>`;
+        }).join("");
+
+        $projectedSubjects.find("#er-semester-tabs").remove();
+        $projectedSubjects.prepend(
+          `<div id="er-semester-tabs" class="er-semester-tabs">${tabsHtml}</div>`,
         );
-        $row.append(`<td style="text-align:center;">${subject.semester}</td>`);
-        $row.append(`<td style="text-align:center;">${subject.id}</td>`);
-        $row.append(`<td>${subject.name}</td>`);
-        $row.append(`<td style="text-align:center;">${subject.credits}</td>`);
+      }
 
-        $tbody.append($row);
+      function handleSsnSearchSubmit(evt) {
+        evt.preventDefault();
+
+        if (ssn !== $ssn.val()) {
+          ssn = $ssn.val();
+
+          if (ssn) {
+            if (!validateSsn(ssn)) {
+              hideLoader(invalidSsn);
+            } else {
+              showLoader();
+              fetchStudent(ssn)
+                .then(handleFetchStudentResponse)
+                .catch(handleError);
+            }
+          } else {
+            hideLoader(invalidSsn);
+          }
+        }
+      }
+
+      function handleCheckboxClick(evt) {
+        const idColumnIndex = 3;
+        const creditsColumnIndex = 5;
+        const $chkbox = jQuery(evt.target);
+        const $row = $chkbox.closest("tr");
+        const credits = parseFloat(
+          $row.find(`td:nth-child(${creditsColumnIndex})`).text(),
+        );
+        const subjectId = $row.find(`td:nth-child(${idColumnIndex})`).text();
+
+        if ($chkbox.hasClass("select-all")) {
+          if ($chkbox.prop("checked") === true) {
+            $detailsContainer.find("input[type=checkbox]").prop("checked", true);
+
+            const totalCredits = $detailsContainer
+              .find("input[type=checkbox]:not(.select-all)")
+              .toArray()
+              .reduce((sum, checkbox) => {
+                const $row = jQuery(checkbox).closest("tr");
+                selectedSubjects.add(
+                  $row.find(`td:nth-child(${idColumnIndex})`).text(),
+                );
+                return (
+                  sum +
+                  parseFloat(
+                    $row.find(`td:nth-child(${creditsColumnIndex})`).text(),
+                  )
+                );
+              }, 0);
+            $totalUc.text(totalCredits.toFixed(0));
+
+            if (
+              scheduleMode === SCHEDULE_MODE.PROJECTION &&
+              totalCredits.toFixed(0) > (semesterLoad[$semLoc.text()] || 0)
+            ) {
+              $totalUc.parent().addClass("alert");
+            } else {
+              $totalUc.parent().removeClass("alert");
+            }
+          } else {
+            $detailsContainer.find("input[type=checkbox]").prop("checked", false);
+            $totalUc.text("0");
+            $totalUc.parent().removeClass("alert");
+            selectedSubjects.clear();
+          }
+
+          renderSchedules();
+        } else {
+          const $chkboxes = $detailsContainer.find(
+            "input[type=checkbox]:not(.select-all)",
+          );
+          const $chkboxesChecked = $chkboxes.filter(":checked");
+
+          $detailsContainer.find(".select-all").prop("indeterminate", false);
+
+          if ($chkboxes.length === $chkboxesChecked.length) {
+            $detailsContainer.find(".select-all").prop("checked", true);
+          } else if ($chkboxesChecked.length === 0) {
+            $detailsContainer.find(".select-all").prop("checked", false);
+          } else {
+            $detailsContainer.find(".select-all").prop("indeterminate", true);
+          }
+
+          updateTotalUc(credits, $chkbox.prop("checked"));
+          updateSelectedSubjects(subjectId, $chkbox.prop("checked"));
+        }
+      }
+
+      function checkSubjects(subjects, maxLoad) {
+        let totalCredits = 0;
+
+        subjects.forEach((subject) => {
+          totalCredits += subject.credits;
+
+          if (totalCredits <= maxLoad) {
+            jQuery(
+              `#sub-${subject.id.toLowerCase()} input[type=checkbox]`,
+            ).trigger("click");
+          }
+        });
+      }
+
+      function showLoader() {
+        $detailsContainer.stop(true, true).hide();
+        $errMsg.stop(true, true).hide();
+        $loader.stop(true, true).fadeIn(SPEED);
+      }
+
+      function hideLoader(msg) {
+        if (msg) {
+          $loader.stop(true, true).hide();
+          $detailsContainer.stop(true, true).hide();
+          $errMsg
+            .stop(true, true)
+            .html(
+              `<i class="fa fa-exclamation-circle" aria-hidden="true"></i> ${msg}`,
+            )
+            .fadeIn(SPEED);
+        } else {
+          $loader.stop(true, true).hide();
+          $errMsg.stop(true, true).hide();
+          $detailsContainer.stop(true, true).fadeIn(SPEED);
+        }
       }
     });
 
-    $table.append($thead);
-    $table.append($tbody);
-
-    if (subjects.length > 0) {
-      $projectedSubjects.append($table);
-    } else if (mode === SCHEDULE_MODE.SEMESTER) {
-      $projectedSubjects.append(
-        '<div class="er-empty-state">No hay materias disponibles para este semestre.</div>',
+    function renderSubjects(subjects, maxLoad, options = {}) {
+      const mode = options.mode || SCHEDULE_MODE.PROJECTION;
+      const $projectedSubjects = jQuery(
+        "#er-details-container .projected-subjects",
       );
-    } else {
-      $projectedSubjects.append(
-        '<div class="er-empty-state">Este estudiante no tiene proyecciones para el período activo.</div>',
+      $projectedSubjects.empty();
+      jQuery("#er-view-schedules-container").hide();
+
+      const $table = jQuery('<table class="tablepress"></table>');
+      const $thead = jQuery("<thead></thead>");
+      const $tbody = jQuery('<tbody class="row-hover"></tbody>');
+
+      const $theadRow = jQuery("<tr></tr>");
+      $theadRow.append(
+        '<th style="width:36px;text-align:center;line-height:1rem;"><input class="select-all" type="checkbox" /></th>',
       );
+      $theadRow.append('<th style="width:66px;text-align:center;">Sem.</th>');
+      $theadRow.append('<th style="width:100px;text-align:center;">Cód.</th>');
+      $theadRow.append('<th style="text-align:center;">Nombre</th>');
+      $theadRow.append('<th style="width:50px;text-align:center;">UC</th>');
+
+      $thead.append($theadRow);
+
+      const optionalEquivs = [];
+      jQuery("div.temp").remove();
+
+      subjects.forEach((subject) => {
+        if (mode === SCHEDULE_MODE.PROJECTION && subject.equiv) {
+          optionalEquivs.push({
+            subject: `${subject.id} - ${subject.name}`,
+            equiv: subject.equiv,
+          });
+        } else {
+          const $row = jQuery(`<tr id="sub-${subject.id.toLowerCase()}"></tr>`);
+
+          $row.append(
+            `<td style="text-align:center;"><input type="checkbox" /></td>`,
+          );
+          $row.append(`<td style="text-align:center;">${subject.semester}</td>`);
+          $row.append(`<td style="text-align:center;">${subject.id}</td>`);
+          $row.append(`<td>${subject.name}</td>`);
+          $row.append(`<td style="text-align:center;">${subject.credits}</td>`);
+
+          $tbody.append($row);
+        }
+      });
+
+      $table.append($thead);
+      $table.append($tbody);
+
+      if (subjects.length > 0) {
+        $projectedSubjects.append($table);
+      } else if (mode === SCHEDULE_MODE.SEMESTER) {
+        $projectedSubjects.append(
+          '<div class="er-empty-state">No hay materias disponibles para este semestre.</div>',
+        );
+      } else {
+        $projectedSubjects.append(
+          '<div class="er-empty-state">Este estudiante no tiene proyecciones para el período activo.</div>',
+        );
+      }
+
+      if (mode === SCHEDULE_MODE.SEMESTER) {
+        return;
+      }
+
+      const defaultLoad = maxLoad || 0;
+      jQuery("#max-recommended-uc").text(defaultLoad);
+
+      if (
+        subjects.some(
+          (s) =>
+            s.id === "FING-ELEC1" ||
+            s.id === "FING-ELEC2" ||
+            s.id === "FING-ELEC3",
+        ) &&
+        optionalEquivs.length < 1
+      ) {
+        jQuery("#optional-subject-warn").fadeIn();
+      } else {
+        jQuery("#optional-subject-warn").fadeOut();
+      }
+
+      if (optionalEquivs.length > 0) {
+        const equivs = optionalEquivs.length;
+
+        if (equivs > 0) {
+          let equivSubjects = `<p style="margin: 0;">Se está${equivs > 1 ? "n" : ""} <strong>reconociendo</strong> la${equivs > 1 ? "s" : ""} siguiente${equivs > 1 ? "s" : ""
+            } asignatura${equivs > 1 ? "s" : ""} ya cursada${equivs > 1 ? "s" : ""} por ti como electiva${equivs > 1 ? "s" : ""}: </p><ul>`;
+
+          optionalEquivs.forEach((equiv) => {
+            equivSubjects += `<li> ${equiv.subject} (equivale a ${equiv.equiv})</li>`;
+          });
+
+          equivSubjects += "</ul>";
+
+          jQuery("#recommendations").append(
+            `<div class="temp">${equivSubjects}</div>`,
+          );
+        }
+      }
     }
 
-    if (mode === SCHEDULE_MODE.SEMESTER) {
-      return;
+    function renderErrorReportLink(data) {
+      const $reportLink = jQuery("#report-error-link");
+      const subjects = data.subjects.map(
+        (s, idx) => `${idx + 1}) ${s.semester}: ${s.name} (${s.credits} UC)`,
+      );
+      const reportBody = `Hola. Considero que hay un error en el cálculo de las proyecciones mostradas. Las proyecciones desplegadas originalmente son: ${subjects.join(
+        ",\n ",
+      )}.\n Y de acuerdo a mis cálculos, serían: \n\n[**** Inserta aquí el ajuste que consideres necesario ****].`;
+      const reportUrl = reportLink
+        .replace("@@SSN@@", data.info.ssn)
+        .replace("@@name@@", data.info.name.split(",")[1])
+        .replace("@@lastName@@", data.info.name.split(",")[0])
+        .replace("@@report@@", reportBody);
+
+      $reportLink.attr("href", reportUrl);
     }
 
-    const defaultLoad = maxLoad || 0;
-    jQuery("#max-recommended-uc").text(defaultLoad);
+    async function fetchSchedules(term, program, subjects) {
+      try {
+        await ensureCareerMetadata();
 
-    if (
-      subjects.some(
-        (s) =>
-          s.id === "FING-ELEC1" ||
-          s.id === "FING-ELEC2" ||
-          s.id === "FING-ELEC3",
-      ) &&
-      optionalEquivs.length < 1
-    ) {
-      jQuery("#optional-subject-warn").fadeIn();
-    } else {
-      jQuery("#optional-subject-warn").fadeOut();
-    }
+        const semesterBySubjectId = subjects.reduce((acc, subject) => {
+          acc[subject.id] = subject.semester;
+          return acc;
+        }, {});
 
-    if (optionalEquivs.length > 0) {
-      const equivs = optionalEquivs.length;
+        // The RPC er_get_subject_schedules automatically expands FING-ELEC1/2/3 placeholders
+        // to the real elective subject schedules internally
+        const matIds = subjects
+          .filter((s) => !excludedSubjects.includes(s.id))
+          .map((s) => s.id);
 
-      if (equivs > 0) {
-        let equivSubjects = `<p style="margin: 0;">Se está${equivs > 1 ? "n" : ""} <strong>reconociendo</strong> la${equivs > 1 ? "s" : ""} siguiente${equivs > 1 ? "s" : ""
-          } asignatura${equivs > 1 ? "s" : ""} ya cursada${equivs > 1 ? "s" : ""} por ti como electiva${equivs > 1 ? "s" : ""}: </p><ul>`;
-
-        optionalEquivs.forEach((equiv) => {
-          equivSubjects += `<li> ${equiv.subject} (equivale a ${equiv.equiv})</li>`;
+        const { data, error } = await _supabase.rpc("er_get_subject_schedules", {
+          p_mat_ids: matIds,
         });
 
-        equivSubjects += "</ul>";
+        if (error) {
+          return [];
+        }
 
-        jQuery("#recommendations").append(
-          `<div class="temp">${equivSubjects}</div>`,
+        if (!data || data === null) {
+          return [];
+        }
+
+        const schedules = data.map((d) => {
+          const schedule = {
+            type: d.type,
+            crn: d.crn,
+            subjectId: d.subject_id,
+            subjectName: d.subject_name,
+            subjectSemester: semesterBySubjectId[d.subject_id] || null,
+            taxonomy: d.taxonomy,
+            modality: d.modality,
+            uc: d.uc,
+            section: d.section,
+            professor: d.professor,
+            schedules: {
+              monday: parseSchedule(d.monday),
+              tuesday: parseSchedule(d.tuesday),
+              wednesday: parseSchedule(d.wednesday),
+              thursday: parseSchedule(d.thursday),
+              friday: parseSchedule(d.friday),
+              saturday: parseSchedule(d.saturday),
+              sunday: parseSchedule(d.sunday),
+            },
+          };
+
+          return schedule;
+        });
+
+        return schedules;
+      } catch (err) {
+        console.error(
+          `Error al consultar los horarios de clase para PROGRAM "${program}"`,
+          err,
         );
+        return [];
       }
     }
-  }
 
-  function renderErrorReportLink(data) {
-    const $reportLink = jQuery("#report-error-link");
-    const subjects = data.subjects.map(
-      (s, idx) => `${idx + 1}) ${s.semester}: ${s.name} (${s.credits} UC)`,
-    );
-    const reportBody = `Hola. Considero que hay un error en el cálculo de las proyecciones mostradas. Las proyecciones desplegadas originalmente son: ${subjects.join(
-      ",\n ",
-    )}.\n Y de acuerdo a mis cálculos, serían: \n\n[**** Inserta aquí el ajuste que consideres necesario ****].`;
-    const reportUrl = reportLink
-      .replace("@@SSN@@", data.info.ssn)
-      .replace("@@name@@", data.info.name.split(",")[1])
-      .replace("@@lastName@@", data.info.name.split(",")[0])
-      .replace("@@report@@", reportBody);
+    async function fetchSchedulesBySemester(careerId) {
+      try {
+        await ensureCareerMetadata();
 
-    $reportLink.attr("href", reportUrl);
-  }
+        // Fetch both regular semester schedules and elective catalog in parallel
+        const [semResult, elecResult] = await Promise.all([
+          _supabase.rpc("er_get_semester_subject_schedules", { p_career_id: careerId }),
+          _supabase.rpc("er_get_elective_catalog", { p_career_id: careerId }),
+        ]);
 
-  async function fetchSchedules(term, program, subjects) {
-    try {
-      const semesterBySubjectId = subjects.reduce((acc, subject) => {
-        acc[subject.id] = subject.semester;
-        return acc;
-      }, {});
+        if (semResult.error) throw semResult.error;
 
-      const matIds = subjects
-        .filter((s) => !excludedSubjects.includes(s.id))
-        .map((s) => s.id);
-
-      const { data, error } = await _supabase.rpc("er_get_subject_schedules", {
-        p_mat_ids: matIds,
-      });
-
-      if (error) {
-        return [];
-      }
-
-      if (!data || data === null) {
-        return [];
-      }
-
-      const schedules = data.map((d) => {
-        const schedule = {
+        const mapSchedule = (d) => ({
           type: d.type,
           crn: d.crn,
           subjectId: d.subject_id,
           subjectName: d.subject_name,
-          subjectSemester: semesterBySubjectId[d.subject_id] || null,
+          subjectSemester: d.subject_semester || null,
           taxonomy: d.taxonomy,
           modality: d.modality,
           uc: d.uc,
@@ -1548,205 +1769,162 @@
             saturday: parseSchedule(d.saturday),
             sunday: parseSchedule(d.sunday),
           },
+        });
+
+        const semSchedules = (semResult.data || [])
+          .filter((d) => d.subject_id && !excludedSubjects.includes(d.subject_id) && VALID_SEMESTERS.includes(d.subject_semester))
+          .map(mapSchedule);
+
+        // Elective catalog: override subjectSemester to 'Electivas' so buildSemesterSubjectsMap places them correctly
+        const elecSchedules = (elecResult.data || [])
+          .filter((d) => d.subject_id && !excludedSubjects.includes(d.subject_id))
+          .map((d) => ({ ...mapSchedule(d), subjectSemester: 'Electivas' }));
+
+        // Update electiveSubjectIds from actual elective catalog results
+        elecSchedules.forEach((s) => electiveSubjectIds.add(s.subjectId));
+
+        return [...semSchedules, ...elecSchedules];
+      } catch (err) {
+        console.error(
+          `Error al consultar horarios por semestre para carrera ${careerId}`,
+          err,
+        );
+        return [];
+      }
+    }
+
+    async function fetchStudent(ssn) {
+      try {
+        const parsedSsn = parseInt(ssn.replace(/\D/g, ""), 10);
+
+        if (!Number.isInteger(parsedSsn) || parsedSsn <= 0) {
+          return null;
+        }
+
+        const { data, error } = await _supabase.rpc(
+          "er_get_student_projections",
+          { p_cedula: parsedSsn },
+        );
+
+        if (error) {
+          throw error;
+        }
+
+        if (!data || data === null || !data.info) {
+          return null;
+        }
+
+        const studentInfo = data.info;
+
+        const baseSubjects = Array.isArray(data.subjects) ? data.subjects : [];
+        const subjectInfo = baseSubjects.map((d) => {
+          const subject = { ...d };
+          subject.priority = calculatePriority(
+            subject,
+            extractSemesterNumber(studentInfo.location),
+          );
+          return subject;
+        });
+
+        return {
+          info: studentInfo,
+          subjects: subjectInfo,
         };
-
-        return schedule;
-      });
-
-      return schedules;
-    } catch (err) {
-      console.error(
-        `Error al consultar los horarios de clase para el TERM ${term} y PROGRAM "${program}"`,
-        err,
-      );
-      return [];
-    }
-  }
-
-  async function fetchSchedulesBySemester(careerId) {
-    try {
-      const { data, error } = await _supabase.rpc(
-        "er_get_semester_subject_schedules",
-        { p_career_id: careerId },
-      );
-
-      if (error) {
-        throw error;
-      }
-
-      if (!data || data === null) {
-        return [];
-      }
-
-      const schedules = data
-        .filter(
-          (d) =>
-            d.subject_id &&
-            !excludedSubjects.includes(d.subject_id) &&
-            FIXED_SEMESTERS.includes(d.subject_semester),
-        )
-        .map((d) => ({
-          type: d.type,
-          crn: d.crn,
-          subjectId: d.subject_id,
-          subjectName: d.subject_name,
-          subjectSemester: d.subject_semester,
-          taxonomy: d.taxonomy,
-          modality: d.modality,
-          uc: d.uc,
-          section: d.section,
-          professor: d.professor,
-          schedules: {
-            monday: parseSchedule(d.monday),
-            tuesday: parseSchedule(d.tuesday),
-            wednesday: parseSchedule(d.wednesday),
-            thursday: parseSchedule(d.thursday),
-            friday: parseSchedule(d.friday),
-            saturday: parseSchedule(d.saturday),
-            sunday: parseSchedule(d.sunday),
-          },
-        }));
-
-      return schedules;
-    } catch (err) {
-      console.error(
-        `Error al consultar horarios por semestre para carrera ${careerId}`,
-        err,
-      );
-      return [];
-    }
-  }
-
-  async function fetchStudent(ssn) {
-    try {
-      const parsedSsn = parseInt(ssn.replace(/\D/g, ""), 10);
-
-      if (!Number.isInteger(parsedSsn) || parsedSsn <= 0) {
-        return null;
-      }
-
-      const { data, error } = await _supabase.rpc(
-        "er_get_student_projections",
-        { p_cedula: parsedSsn },
-      );
-
-      if (error) {
-        throw error;
-      }
-
-      if (!data || data === null || !data.info) {
-        return null;
-      }
-
-      const studentInfo = data.info;
-
-      const baseSubjects = Array.isArray(data.subjects) ? data.subjects : [];
-      const subjectInfo = baseSubjects.map((d) => {
-        const subject = { ...d };
-        subject.priority = calculatePriority(
-          subject,
-          extractSemesterNumber(studentInfo.location),
+      } catch (err) {
+        console.error(
+          `Error al consultar la información del alumno "${ssn}"`,
+          err,
         );
-        return subject;
-      });
+        return null;
+      }
+    }
+
+    function calculatePriority(subject, currentSemester) {
+      // Pesos de cada dimensión
+      const weights = {
+        semester: 0.3,
+        contributesTo: 0.1,
+        credits: 0.1,
+        attempts: 0.15,
+      };
+
+      // Calcular el valor de cada dimensión
+      const semesterValue =
+        (currentSemester - extractSemesterNumber(subject.semester)) /
+        currentSemester;
+      const contributesToValue = subject.contributesTo / 3; // Asumiendo que el valor máximo de contributesTo es 3
+      const creditsValue = subject.credits / 265; // Asumiendo que el valor máximo de credits es 265
+      const attemptsValue = subject.attempts / 4; // Asumiendo que el valor máximo de attempts es 4
+
+      // Calcular el porcentaje de recomendación
+      const priority =
+        semesterValue * weights.semester +
+        contributesToValue * weights.contributesTo +
+        creditsValue * weights.credits +
+        attemptsValue * weights.attempts;
+
+      // Convertir a porcentaje
+      return priority * 100;
+    }
+
+    function extractSemesterNumber(str) {
+      const match = str.match(/^(\d{2})SE$/);
+
+      if (match) {
+        return parseInt(match[1], 10);
+      }
+
+      return 0;
+    }
+
+    function parseSchedule(schedule) {
+      if (!schedule || schedule === null || schedule === "") {
+        return null;
+      }
+
+      const [timePart, room] = schedule.trim().split(" ");
+      const [start, end] = timePart.trim().split("_");
 
       return {
-        info: studentInfo,
-        subjects: subjectInfo,
+        start,
+        end,
+        room,
       };
-    } catch (err) {
-      console.error(
-        `Error al consultar la información del alumno "${ssn}"`,
-        err,
-      );
-      return null;
     }
-  }
 
-  function calculatePriority(subject, currentSemester) {
-    // Pesos de cada dimensión
-    const weights = {
-      semester: 0.3,
-      contributesTo: 0.1,
-      credits: 0.1,
-      attempts: 0.15,
+    const studyPlans = {
+      LICINFORM: "Pensum Nuevo",
+      LICINGINF: "Pensum Viejo / Derogado",
     };
 
-    // Calcular el valor de cada dimensión
-    const semesterValue =
-      (currentSemester - extractSemesterNumber(subject.semester)) /
-      currentSemester;
-    const contributesToValue = subject.contributesTo / 3; // Asumiendo que el valor máximo de contributesTo es 3
-    const creditsValue = subject.credits / 265; // Asumiendo que el valor máximo de credits es 265
-    const attemptsValue = subject.attempts / 4; // Asumiendo que el valor máximo de attempts es 4
-
-    // Calcular el porcentaje de recomendación
-    const priority =
-      semesterValue * weights.semester +
-      contributesToValue * weights.contributesTo +
-      creditsValue * weights.credits +
-      attemptsValue * weights.attempts;
-
-    // Convertir a porcentaje
-    return priority * 100;
-  }
-
-  function extractSemesterNumber(str) {
-    const match = str.match(/^(\d{2})SE$/);
-
-    if (match) {
-      return parseInt(match[1], 10);
-    }
-
-    return 0;
-  }
-
-  function parseSchedule(schedule) {
-    if (!schedule || schedule === null || schedule === "") {
-      return null;
-    }
-
-    const [timePart, room] = schedule.trim().split(" ");
-    const [start, end] = timePart.trim().split("_");
-
-    return {
-      start,
-      end,
-      room,
+    const campus = {
+      "001": "Caracas",
+      "004": "Guayana",
     };
-  }
 
-  const studyPlans = {
-    LICINFORM: "Pensum Nuevo",
-    LICINGINF: "Pensum Viejo / Derogado",
-  };
+    const semesterLoad = {
+      "00SE": 25,
+      "01SE": 25,
+      "02SE": 31,
+      "03SE": 33,
+      "04SE": 31,
+      "05SE": 31,
+      "06SE": 31,
+      "07SE": 30,
+      "08SE": 28,
+      "09SE": 26,
+      "10SE": 17,
+    };
 
-  const campus = {
-    "001": "Caracas",
-    "004": "Guayana",
-  };
+    const weekDays = {
+      monday: "Lunes",
+      tuesday: "Martes",
+      wednesday: "Miércoles",
+      thursday: "Jueves",
+      friday: "Viernes",
+      saturday: "Sábado",
+      sunday: "Domingo",
+    };
 
-  const semesterLoad = {
-    "00SE": 25,
-    "01SE": 25,
-    "02SE": 31,
-    "03SE": 33,
-    "04SE": 31,
-    "05SE": 31,
-    "06SE": 31,
-    "07SE": 30,
-    "08SE": 28,
-    "09SE": 26,
-    "10SE": 17,
-  };
-
-  const weekDays = {
-    monday: "Lunes",
-    tuesday: "Martes",
-    wednesday: "Miércoles",
-    thursday: "Jueves",
-    friday: "Viernes",
-    saturday: "Sábado",
-    sunday: "Domingo",
-  };
+  })();
 </script>
