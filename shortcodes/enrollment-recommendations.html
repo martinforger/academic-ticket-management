@@ -369,6 +369,7 @@
     justify-content: space-between;
     align-items: center;
     background: #edf2f7;
+    flex-shrink: 0;
   }
 
   .er-modal-header h3 {
@@ -389,6 +390,63 @@
 
   .er-modal-close:hover {
     color: #c4151c;
+  }
+
+  .er-modal-tabs {
+    display: flex;
+    background: #edf2f7;
+    padding: 0 20px;
+    border-bottom: 1px solid #e1e4e8;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    flex-shrink: 0;
+  }
+
+  .er-modal-tab {
+    padding: 10px 15px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #555;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+    margin-right: 10px;
+    margin-bottom: -1px;
+    /* Overlap the border */
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .er-modal-tab:hover {
+    color: #0071bb;
+  }
+
+  .er-modal-tab.active {
+    color: #0071bb;
+    border-bottom-color: #0071bb;
+  }
+
+  .er-table-search-container {
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .er-table-search-container label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #555;
+  }
+
+  .er-table-search-input {
+    padding: 6px 10px;
+    border: 1px solid #c5c4c4;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    width: 200px;
   }
 
   .er-modal-body {
@@ -483,7 +541,8 @@
 <div id="er-container-%%careerName%%">
   <div id="er-projection-controls-%%careerName%%">
     <form id="er-ssn-search-frm-%%careerName%%">
-      <input id="er-ssn-search-%%careerName%%" name="ssn" type="text" placeholder="Introduce tu número de cédula de identidad" />
+      <input id="er-ssn-search-%%careerName%%" name="ssn" type="text"
+        placeholder="Introduce tu número de cédula de identidad" />
       <button id="er-ssn-search-btn-%%careerName%%" class="form-button et_pb_button" type="submit">
         Buscar
       </button>
@@ -567,7 +626,8 @@
       <div class="report-error">
         [box type="info"]Si consideras que hay un error en la proyección aquí
         desplegada, por favor
-        <a id="report-error-link-%%careerName%%" href="#" target="_blank" style="font-weight: bold">reporta el error haciendo clic
+        <a id="report-error-link-%%careerName%%" href="#" target="_blank" style="font-weight: bold">reporta el error
+          haciendo clic
           aquí</a>.[/box]
       </div>
 
@@ -578,6 +638,11 @@
             <button type="button" class="er-modal-close" id="er-close-modal-btn-%%careerName%%">
               &times;
             </button>
+          </div>
+          <div class="er-modal-tabs" id="er-modal-tabs-%%careerName%%">
+            <div class="er-modal-tab active" data-tab="all">Ver todo</div>
+            <div class="er-modal-tab" data-tab="individual">Ver por materia individual</div>
+            <div class="er-modal-tab" data-tab="table">Ver en formato de tabla</div>
           </div>
           <div class="er-modal-body" id="subject-schedules-container-%%careerName%%">
             <!-- Se inyectarán los horarios gráficos aquí -->
@@ -598,7 +663,8 @@
   <!-- Banner exclusivo para carreras tipo MINOR -->
   <div id="er-minor-banner-%%careerName%%"
     style="display: none; margin: 0 0 20px 0; padding: 18px 22px; background: #edf5fc; border-left: 4px solid #0071bb; border-radius: 4px;">
-    <p id="er-minor-banner-text-%%careerName%%" style="margin: 0; font-size: 1.05rem; color: #1a1a1a; line-height: 1.6;"></p>
+    <p id="er-minor-banner-text-%%careerName%%"
+      style="margin: 0; font-size: 1.05rem; color: #1a1a1a; line-height: 1.6;"></p>
   </div>
 
   <div id="er-error-message-%%careerName%%" style="display: none"></div>
@@ -789,6 +855,7 @@
       let scheduleMode = SCHEDULE_MODE.PROJECTION;
       let activeSemesterTab = VALID_SEMESTERS[0] || "01SE";
       let activeModalSemesterTab = VALID_SEMESTERS[0] || "01SE";
+      let activeModalTab = "all";
       let hasLoadedSemesterModeData = false;
 
       $detailsContainer.on("click", "input[type=checkbox]", handleCheckboxClick);
@@ -853,6 +920,20 @@
         if (e.target === this) {
           $schedulesModal.hide();
         }
+      });
+      $schedulesModal.on("click", ".er-modal-tab", function () {
+        if (jQuery(this).hasClass("active")) return;
+        jQuery(this).siblings().removeClass("active");
+        jQuery(this).addClass("active");
+        activeModalTab = jQuery(this).data("tab");
+        renderSchedules();
+      });
+
+      $schedulesModal.on("keyup", ".er-table-search-input", function () {
+        const value = jQuery(this).val().toLowerCase();
+        $schedulesContainer.find(".er-schedules-table tbody tr").filter(function () {
+          jQuery(this).toggle(jQuery(this).text().toLowerCase().indexOf(value) > -1);
+        });
       });
 
       function validateSsn(ssn) {
@@ -944,9 +1025,8 @@
                 mode: SCHEDULE_MODE.SEMESTER,
               });
               renderSemesterTabs();
-              setTimeout(() => {
-                $detailsContainer.find(".select-all").trigger("click");
-              }, 50);
+              renderSemesterTabs();
+              restoreCheckboxes();
               renderSchedules();
             })
             .catch(handleError);
@@ -991,16 +1071,11 @@
 
         activeSemesterTab = targetSemester;
         activeModalSemesterTab = targetSemester;
-        selectedSubjects.clear();
-        $totalUc.text("0");
-        $totalUc.parent().removeClass("alert");
         renderSubjects(getSubjectsForSemester(activeSemesterTab), null, {
           mode: SCHEDULE_MODE.SEMESTER,
         });
         renderSemesterTabs();
-        setTimeout(() => {
-          $detailsContainer.find(".select-all").trigger("click");
-        }, 50);
+        restoreCheckboxes();
         renderSchedules();
       }
 
@@ -1081,23 +1156,8 @@
             const nw = newSection.schedules[day];
 
             if (ex && nw) {
-              // Normalize parsing
-              const exStart =
-                parseInt(ex.start.split(":")[0]) * 60 +
-                parseInt(ex.start.split(":")[1]);
-              const exEnd =
-                parseInt(ex.end.split(":")[0]) * 60 +
-                parseInt(ex.end.split(":")[1] || "0");
-
-              const nwStart =
-                parseInt(nw.start.split(":")[0]) * 60 +
-                parseInt(nw.start.split(":")[1]);
-              const nwEnd =
-                parseInt(nw.end.split(":")[0]) * 60 +
-                parseInt(nw.end.split(":")[1] || "0");
-
-              // Overlap condition: start1 < end2 && end1 > start2
-              if (exStart < nwEnd && exEnd > nwStart) {
+              // Validar superposición usando los minutos precalculados
+              if (ex.startMins < nw.endMins && ex.endMins > nw.startMins) {
                 return true; // Overlap found
               }
             }
@@ -1154,9 +1214,72 @@
         return groupedBlocks;
       }
 
+      function renderTableFormat(schedules, $container) {
+        if (schedules.length === 0) return;
+
+        const searchId = "er-table-search-" + CAREER_SHORT_CODE;
+        let tableHtml = `
+          <div class="er-table-search-container">
+            <label for="${searchId}">Buscar:</label>
+            <input type="text" id="${searchId}" class="er-table-search-input" placeholder="Filtrar materias...">
+          </div>
+          <div style="overflow-x: auto;">
+          <table class="tablepress er-schedules-table" style="width: 100%; border-collapse: collapse; margin-top: 5px;">
+              <thead>
+                  <tr>
+                      <th style="padding: 10px; background: #edf2f7; border-bottom: 2px solid #c5c4c4; text-align: left;">Materia</th>
+                      <th style="padding: 10px; background: #edf2f7; border-bottom: 2px solid #c5c4c4; text-align: center;">NRC</th>
+                      <th style="padding: 10px; background: #edf2f7; border-bottom: 2px solid #c5c4c4; text-align: center;">Sección</th>
+                      <th style="padding: 10px; background: #edf2f7; border-bottom: 2px solid #c5c4c4; text-align: left;">Profesor</th>
+                      <th style="padding: 10px; background: #edf2f7; border-bottom: 2px solid #c5c4c4; text-align: center;">Modalidad</th>
+                      <th style="padding: 10px; background: #edf2f7; border-bottom: 2px solid #c5c4c4; text-align: left;">Horario</th>
+                  </tr>
+              </thead>
+              <tbody>
+          `;
+
+        const sorted = [...schedules].sort((a, b) => {
+          const nameA = a.subjectName || a.subjectId;
+          const nameB = b.subjectName || b.subjectId;
+          if (nameA !== nameB) return nameA.localeCompare(nameB);
+          return String(a.section || '').localeCompare(String(b.section || ''));
+        });
+
+        const daysMap = { monday: "Lunes", tuesday: "Martes", wednesday: "Miércoles", thursday: "Jueves", friday: "Viernes", saturday: "Sábado", sunday: "Domingo" };
+
+        sorted.forEach(s => {
+          let scheduleTexts = [];
+          Object.keys(daysMap).forEach(dayKey => {
+            if (s.schedules[dayKey]) {
+              scheduleTexts.push(`<strong>${daysMap[dayKey]}</strong> ${s.schedules[dayKey].start}-${s.schedules[dayKey].end}`);
+            }
+          });
+
+          const schedStr = scheduleTexts.length > 0 ? scheduleTexts.join("<br>") : "Por definir";
+
+          tableHtml += `
+                  <tr style="border-bottom: 1px solid #e1e4e8;">
+                      <td style="padding: 10px; vertical-align: middle;"><strong>${s.subjectName || s.subjectId}</strong><br><small style="color: #666;">${s.subjectId}</small></td>
+                      <td style="padding: 10px; text-align: center; vertical-align: middle;">${s.crn || '-'}</td>
+                      <td style="padding: 10px; text-align: center; vertical-align: middle;">${s.section || '-'}</td>
+                      <td style="padding: 10px; vertical-align: middle;">${s.professor || 'Por definir'}</td>
+                      <td style="padding: 10px; text-align: center; vertical-align: middle;">${s.modality || '-'}</td>
+                      <td style="padding: 10px; vertical-align: middle; font-size: 0.9em; line-height: 1.4;">${schedStr}</td>
+                  </tr>
+              `;
+        });
+
+        tableHtml += `</tbody></table></div>`;
+        $container.append(tableHtml);
+
+      }
+
       function renderSchedules() {
         const $container = jQuery("#subject-schedules-container-" + CAREER_SHORT_CODE);
         const selectedSchedules = getSelectedSchedules();
+
+        // Scroll to top of modal body
+        $container.closest(".er-modal-body").scrollTop(0);
 
         if (selectedSchedules.length === 0) {
           $container.empty();
@@ -1170,28 +1293,25 @@
         $viewSchedulesContainer.show();
         $container.empty();
 
-        if (scheduleMode === SCHEDULE_MODE.SEMESTER) {
-          renderSemesterSchedulesInModal(selectedSchedules, $container);
-        } else {
-          renderScheduleBlocks(
-            groupSchedulesWithoutOverlap(selectedSchedules),
-            $container,
-          );
+        if (activeModalTab === "all") {
+          renderScheduleBlocks(groupSchedulesWithoutOverlap(selectedSchedules), $container);
+        } else if (activeModalTab === "individual") {
+          const subjectMap = {};
+          selectedSchedules.forEach(s => {
+            const effectiveId = s.subjectId;
+            if (!subjectMap[effectiveId]) subjectMap[effectiveId] = { id: effectiveId, name: s.subjectName || s.subjectId, schedules: [] };
+            subjectMap[effectiveId].schedules.push(s);
+          });
+          Object.keys(subjectMap).forEach(subjId => {
+            const subj = subjectMap[subjId];
+            const $subjContainer = jQuery('<div></div>');
+            $subjContainer.append(`<h4 style="margin: 20px 0 10px 0; color: #0071bb; border-bottom: 2px solid #eee; padding-bottom: 5px;">${subj.name} (${subjId})</h4>`);
+            renderScheduleBlocks(groupSchedulesWithoutOverlap(subj.schedules), $subjContainer, true, true);
+            $container.append($subjContainer);
+          });
+        } else if (activeModalTab === "table") {
+          renderTableFormat(selectedSchedules, $container);
         }
-      }
-
-      function renderSemesterSchedulesInModal(selectedSchedules, $container) {
-        if (selectedSchedules.length === 0) {
-          $container.append(
-            `<div class="er-empty-state">No hay horarios para las asignaturas seleccionadas.</div>`,
-          );
-          return;
-        }
-
-        renderScheduleBlocks(
-          groupSchedulesWithoutOverlap(selectedSchedules),
-          $container,
-        );
       }
 
       function handleModalSemesterTabClick(evt) {
@@ -1204,7 +1324,7 @@
         renderSchedules();
       }
 
-      function renderScheduleBlocks(groupedBlocks, $container) {
+      function renderScheduleBlocks(groupedBlocks, $container, hideBlockTitle = false, dynamicTimeRange = false) {
         const activeColors = [
           "#0071bb",
           "#1c7c54",
@@ -1238,12 +1358,41 @@
         };
 
         groupedBlocks.forEach((blockSchedules, blockIndex) => {
+          let minHour = 7;
+          let maxHour = 20;
+
+          if (dynamicTimeRange) {
+            let earliest = 20;
+            let latest = 7;
+            blockSchedules.forEach(s => {
+              Object.keys(daysMap).forEach(day => {
+                if (s.schedules[day]) {
+                  const startParts = s.schedules[day].start.split(":");
+                  const endParts = s.schedules[day].end.split(":");
+                  const startH = parseInt(startParts[0], 10);
+                  let endH = parseInt(endParts[0], 10);
+                  if (isNaN(endH)) {
+                    const cleanEnd = s.schedules[day].end.replace(/[^\d:]/g, "");
+                    if (cleanEnd.includes(":")) {
+                      endH = parseInt(cleanEnd.split(":")[0], 10);
+                    }
+                  }
+                  if (!isNaN(startH) && startH < earliest) earliest = startH;
+                  if (!isNaN(endH) && endH > latest) latest = endH;
+                }
+              });
+            });
+            if (earliest <= latest) {
+              minHour = Math.max(7, earliest - 1);
+              maxHour = Math.min(20, latest + 1);
+            }
+          }
+
+          const titleHtml = (hideBlockTitle && groupedBlocks.length === 1) ? '' : `<div class="er-schedule-wrapper-title">Bloque ${blockIndex + 1} (${blockSchedules.length} secciones)</div>`;
           const headerHtml = `
                     <div class="er-schedule-wrapper">
-                        <div class="er-schedule-wrapper-title">
-                            Bloque ${blockIndex + 1} (${blockSchedules.length} secciones)
-                        </div>
-                        <div class="er-schedule-grid">
+                        ${titleHtml}
+                        <div class="er-schedule-grid" style="grid-template-rows: auto repeat(${(maxHour - minHour) * 2}, minmax(14px, 1fr));">
                             <div class="er-grid-header" style="grid-column: 1; grid-row: 1;">Hora</div>
                             <div class="er-grid-header" style="grid-column: 2; grid-row: 1;">Lunes</div>
                             <div class="er-grid-header" style="grid-column: 3; grid-row: 1;">Martes</div>
@@ -1255,13 +1404,13 @@
                 `;
 
           let timeRowsHtml = "";
-          for (let hour = 7; hour <= 20; hour++) {
+          for (let hour = minHour; hour <= maxHour; hour++) {
             const h1 = hour.toString().padStart(2, "0") + ":00";
-            const rowH1 = 2 + (hour - 7) * 2;
+            const rowH1 = 2 + (hour - minHour) * 2;
             timeRowsHtml += `<div class="er-time-label-col" style="grid-column: 1; grid-row: ${rowH1} / span 2; align-items: flex-start; padding-top: 6px;"><span>${h1}</span></div>`;
           }
 
-          for (let r = 2; r <= 29; r += 2) {
+          for (let r = 2; r <= 2 + (maxHour - minHour) * 2; r += 2) {
             for (let c = 2; c <= 8; c++) {
               timeRowsHtml += `<div class="er-grid-cell" style="grid-column: ${c}; grid-row: ${r} / span 2;"></div>`;
             }
@@ -1288,7 +1437,7 @@
                 const startHour = parseInt(startParts[0], 10);
                 const startMin = parseInt(startParts[1], 10);
                 const startRow =
-                  2 + (startHour - 7) * 2 + (startMin >= 30 ? 1 : 0);
+                  2 + (startHour - minHour) * 2 + (startMin >= 30 ? 1 : 0);
 
                 let endHour = parseInt(endParts[0], 10);
                 let endMin = parseInt(endParts[1], 10);
@@ -1302,7 +1451,7 @@
                   }
                 }
 
-                let endRow = 2 + (endHour - 7) * 2 + (endMin >= 30 ? 1 : 0);
+                let endRow = 2 + (endHour - minHour) * 2 + (endMin >= 30 ? 1 : 0);
                 if (endMin >= 50) {
                   endRow += 1;
                 }
@@ -1422,8 +1571,14 @@
         }).join("");
 
         $projectedSubjects.find("#er-semester-tabs-" + CAREER_SHORT_CODE).remove();
+        $projectedSubjects.find(".er-semester-notice").remove();
+
+        const noticeHtml = scheduleMode === SCHEDULE_MODE.SEMESTER ? `<div class="er-semester-notice" style="margin-bottom: 15px; padding: 10px; background: #e8f4f8; border-left: 4px solid #0071bb; color: #333; font-size: 0.95rem;">
+          <strong style="color: #0071bb;"><i class="fa fa-info-circle"></i> Nota:</strong> Puedes seleccionar materias de distintos semestres.
+        </div>` : "";
+
         $projectedSubjects.prepend(
-          `<div id="er-semester-tabs-%%careerName%%" class="er-semester-tabs">${tabsHtml}</div>`,
+          `${noticeHtml}<div id="er-semester-tabs-%%careerName%%" class="er-semester-tabs">${tabsHtml}</div>`
         );
       }
 
@@ -1448,62 +1603,76 @@
         }
       }
 
+      function restoreCheckboxes() {
+        const idColumnIndex = 3;
+        let allChecked = true;
+        let anyChecked = false;
+        let totalBoxes = 0;
+
+        $detailsContainer.find("input[type=checkbox]:not(.select-all)").each(function () {
+          totalBoxes++;
+          const $row = jQuery(this).closest("tr");
+          const subjectId = $row.find(`td:nth-child(${idColumnIndex})`).text();
+          if (selectedSubjects.has(subjectId)) {
+            jQuery(this).prop("checked", true);
+            anyChecked = true;
+          } else {
+            jQuery(this).prop("checked", false);
+            allChecked = false;
+          }
+        });
+
+        const $selectAll = $detailsContainer.find(".select-all");
+        if (totalBoxes === 0) {
+          $selectAll.prop("checked", false).prop("indeterminate", false);
+        } else if (allChecked) {
+          $selectAll.prop("checked", true).prop("indeterminate", false);
+        } else if (anyChecked) {
+          $selectAll.prop("checked", false).prop("indeterminate", true);
+        } else {
+          $selectAll.prop("checked", false).prop("indeterminate", false);
+        }
+      }
+
       function handleCheckboxClick(evt) {
         const idColumnIndex = 3;
         const creditsColumnIndex = 5;
         const $chkbox = jQuery(evt.target);
-        const $row = $chkbox.closest("tr");
-        const credits = parseFloat(
-          $row.find(`td:nth-child(${creditsColumnIndex})`).text(),
-        );
-        const subjectId = $row.find(`td:nth-child(${idColumnIndex})`).text();
 
         if ($chkbox.hasClass("select-all")) {
-          if ($chkbox.prop("checked") === true) {
-            $detailsContainer.find("input[type=checkbox]").prop("checked", true);
+          const isChecked = $chkbox.prop("checked");
+          $detailsContainer.find("input[type=checkbox]:not(.select-all)").each(function () {
+            if (jQuery(this).prop("checked") !== isChecked) {
+              jQuery(this).prop("checked", isChecked);
+              const $row = jQuery(this).closest("tr");
+              const subjectId = $row.find(`td:nth-child(${idColumnIndex})`).text();
+              const credits = parseFloat($row.find(`td:nth-child(${creditsColumnIndex})`).text());
+              updateTotalUc(credits, isChecked);
 
-            const totalCredits = $detailsContainer
-              .find("input[type=checkbox]:not(.select-all)")
-              .toArray()
-              .reduce((sum, checkbox) => {
-                const $row = jQuery(checkbox).closest("tr");
-                selectedSubjects.add(
-                  $row.find(`td:nth-child(${idColumnIndex})`).text(),
-                );
-                return (
-                  sum +
-                  parseFloat(
-                    $row.find(`td:nth-child(${creditsColumnIndex})`).text(),
-                  )
-                );
-              }, 0);
-            $totalUc.text(totalCredits.toFixed(0));
-
-            if (
-              scheduleMode === SCHEDULE_MODE.PROJECTION &&
-              totalCredits.toFixed(0) > (semesterLoad[$semLoc.text()] || 0)
-            ) {
-              $totalUc.parent().addClass("alert");
-            } else {
-              $totalUc.parent().removeClass("alert");
+              if (isChecked) {
+                selectedSubjects.add(subjectId);
+              } else {
+                selectedSubjects.delete(subjectId);
+              }
             }
-          } else {
-            $detailsContainer.find("input[type=checkbox]").prop("checked", false);
-            $totalUc.text("0");
-            $totalUc.parent().removeClass("alert");
-            selectedSubjects.clear();
+          });
+
+          if (isChecked) {
+            $chkbox.prop("indeterminate", false);
           }
 
           renderSchedules();
         } else {
-          const $chkboxes = $detailsContainer.find(
-            "input[type=checkbox]:not(.select-all)",
-          );
+          const $row = $chkbox.closest("tr");
+          const subjectId = $row.find(`td:nth-child(${idColumnIndex})`).text();
+          const credits = parseFloat($row.find(`td:nth-child(${creditsColumnIndex})`).text());
+
+          const $chkboxes = $detailsContainer.find("input[type=checkbox]:not(.select-all)");
           const $chkboxesChecked = $chkboxes.filter(":checked");
 
           $detailsContainer.find(".select-all").prop("indeterminate", false);
 
-          if ($chkboxes.length === $chkboxesChecked.length) {
+          if ($chkboxes.length > 0 && $chkboxes.length === $chkboxesChecked.length) {
             $detailsContainer.find(".select-all").prop("checked", true);
           } else if ($chkboxesChecked.length === 0) {
             $detailsContainer.find(".select-all").prop("checked", false);
@@ -1518,16 +1687,37 @@
 
       function checkSubjects(subjects, maxLoad) {
         let totalCredits = 0;
+        let requiresRender = false;
 
         subjects.forEach((subject) => {
           totalCredits += subject.credits;
 
           if (totalCredits <= maxLoad) {
-            jQuery(
-              `#sub-${subject.id.toLowerCase()} input[type=checkbox]`,
-            ).trigger("click");
+            const $chk = jQuery(`#sub-${subject.id.toLowerCase()} input[type=checkbox]`);
+            if (!$chk.prop("checked")) {
+              $chk.prop("checked", true);
+              selectedSubjects.add(subject.id);
+              updateTotalUc(subject.credits, true);
+              requiresRender = true;
+            }
           }
         });
+
+        if (requiresRender) {
+          const $chkboxes = $detailsContainer.find("input[type=checkbox]:not(.select-all)");
+          const $chkboxesChecked = $chkboxes.filter(":checked");
+          const $selectAll = $detailsContainer.find(".select-all");
+
+          if ($chkboxes.length > 0 && $chkboxes.length === $chkboxesChecked.length) {
+            $selectAll.prop("checked", true).prop("indeterminate", false);
+          } else if ($chkboxesChecked.length === 0) {
+            $selectAll.prop("checked", false).prop("indeterminate", false);
+          } else {
+            $selectAll.prop("checked", false).prop("indeterminate", true);
+          }
+
+          renderSchedules();
+        }
       }
 
       function showLoader() {
@@ -1641,8 +1831,7 @@
         const equivs = optionalEquivs.length;
 
         if (equivs > 0) {
-          let equivSubjects = `<p style="margin: 0;">Se está${equivs > 1 ? "n" : ""} <strong>reconociendo</strong> la${equivs > 1 ? "s" : ""} siguiente${equivs > 1 ? "s" : ""
-            } asignatura${equivs > 1 ? "s" : ""} ya cursada${equivs > 1 ? "s" : ""} por ti como electiva${equivs > 1 ? "s" : ""}: </p><ul>`;
+          let equivSubjects = `<p style="margin: 0;">Se está${equivs > 1 ? "n" : ""} <strong>reconociendo</strong> la${equivs > 1 ? "s" : ""} siguiente${equivs > 1 ? "s" : ""} asignatura${equivs > 1 ? "s" : ""} ya cursada${equivs > 1 ? "s" : ""} por ti como electiva${equivs > 1 ? "s" : ""}: </p><ul>`;
 
           optionalEquivs.forEach((equiv) => {
             equivSubjects += `<li> ${equiv.subject} (equivale a ${equiv.equiv})</li>`;
@@ -1688,6 +1877,8 @@
         const matIds = subjects
           .filter((s) => !excludedSubjects.includes(s.id))
           .map((s) => s.id);
+
+        if (matIds.length === 0) return [];
 
         const { data, error } = await _supabase.rpc("er_get_subject_schedules", {
           p_mat_ids: matIds,
@@ -1826,6 +2017,9 @@
           return subject;
         });
 
+        // Ordenar por prioridad descendente para que refleje la recomendación real
+        subjectInfo.sort((a, b) => b.priority - a.priority);
+
         return {
           info: studentInfo,
           subjects: subjectInfo,
@@ -1883,12 +2077,30 @@
       }
 
       const [timePart, room] = schedule.trim().split(" ");
-      const [start, end] = timePart.trim().split("_");
+      const [start, end] = (timePart || "").trim().split("_");
+
+      let startMins = 0;
+      let endMins = 0;
+
+      if (start && start.includes(":")) {
+        const parts = start.split(":");
+        startMins = parseInt(parts[0], 10) * 60 + parseInt(parts[1] || 0, 10);
+      }
+
+      if (end) {
+        const cleanEnd = end.replace(/[^\d:]/g, "");
+        if (cleanEnd.includes(":")) {
+          const parts = cleanEnd.split(":");
+          endMins = parseInt(parts[0], 10) * 60 + parseInt(parts[1] || 0, 10);
+        }
+      }
 
       return {
         start,
         end,
         room,
+        startMins,
+        endMins
       };
     }
 
