@@ -1,4 +1,6 @@
-<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet" />
+<link
+  href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&family=Poppins:wght@400;600;700&display=swap"
+  rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
@@ -22,7 +24,7 @@
     font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
     width: 100%;
     max-width: 850px;
-    margin: 20px auto;
+    margin: 0 auto;
     background: var(--ucab-bg);
     border-radius: 8px;
     box-shadow: none !important;
@@ -68,13 +70,14 @@
   .obs-form-container .form-section {
     width: 14.2857%;
     /* 100% / 7 */
-    padding: 30px 40px;
+    padding: 0px 4px 4px 0px;
     display: block;
     background: transparent !important;
   }
 
   /* Typography scoped only to direct children of form sections to avoid affecting boxes or other nested components */
   .obs-form-container .form-section>h3 {
+    font-family: 'Poppins', sans-serif;
     color: var(--ucab-dark-gray);
     font-weight: 700;
     margin: 0 0 15px 0;
@@ -227,9 +230,9 @@
   .obs-form-container .student-data-container {
     display: none;
     /* Hide by default, JS will show appropriate one */
-    border: 1px solid #e1e4e8 !important;
-    border-radius: 6px !important;
-    background: var(--ucab-light-bg) !important;
+    border: 2px solid var(--ucab-blue) !important;
+    border-radius: 4px !important;
+    background: #fff !important;
     margin-top: 20px !important;
     padding: 0 !important;
     overflow: hidden !important;
@@ -237,9 +240,10 @@
   }
 
   .obs-form-container .student-data-header {
-    background: #edf2f7 !important;
+    background: #f0f7ff !important;
+    color: var(--ucab-blue) !important;
     padding: 10px 20px !important;
-    border-bottom: 1px solid #e1e4e8 !important;
+    border-bottom: 2px solid var(--ucab-blue) !important;
     font-weight: 600 !important;
     color: var(--ucab-dark-gray) !important;
     font-size: 0.9rem !important;
@@ -480,6 +484,7 @@
   }
 
   .obs-form-container .obs-success-title {
+    font-family: 'Poppins', sans-serif;
     color: var(--ucab-dark-gray) !important;
     font-size: 1.8rem !important;
     margin-bottom: 10px !important;
@@ -498,7 +503,7 @@
   /* Responsive Design */
   @media (max-width: 768px) {
     .obs-form-container {
-      margin: 10px auto !important;
+      margin: 0 auto !important;
       border-radius: 4px !important;
     }
 
@@ -601,21 +606,28 @@
         </div>
 
         <!-- Registro de Estudiante (Si no existe o no tiene proyección) -->
-        <div id="student-registration" class="student-data-container" style="display: none; border: 2px solid var(--ucab-blue) !important; border-radius: 4px !important; background-color: #fff !important;">
-          <div class="student-data-header" style="background: #f0f7ff !important; color: var(--ucab-blue) !important; border-bottom: 2px solid var(--ucab-blue) !important;">
+        <div id="student-registration" class="student-data-container" style="display: none">
+          <div class="student-data-header">
             Registra tus Datos
           </div>
           <div style="padding: 15px 20px;">
             <p style="font-size: 0.9rem; margin-bottom: 15px; color: var(--ucab-gray-text);">
-              No hemos encontrado tus datos o no tienes una proyección cargada. Por favor, confírmanos tu información para continuar.
+              No hemos encontrado tus datos o no tienes una proyección cargada. Por favor, confírmanos tu información
+              para continuar.
             </p>
             <div style="margin-bottom: 12px;">
-              <label style="display: block; font-size: 0.8rem; font-weight: 600; color: #666; margin-bottom: 4px;">Nombre Completo</label>
-              <input type="text" id="reg-nombre" class="search-input" placeholder="Ej: Juan Pérez" style="background-color: #fff !important; height: 40px !important;" />
+              <label
+                style="display: block; font-size: 0.8rem; font-weight: 600; color: #666; margin-bottom: 4px;">Nombre
+                Completo</label>
+              <input type="text" id="reg-nombre" class="search-input" placeholder="Ej: Juan Pérez"
+                style="background-color: #fff !important; height: 40px !important;" />
             </div>
             <div style="margin-bottom: 5px;">
-              <label style="display: block; font-size: 0.8rem; font-weight: 600; color: #666; margin-bottom: 4px;">Correo Electrónico</label>
-              <input type="email" id="reg-correo" class="search-input" placeholder="Ej: juan.perez@est.ucab.edu.ve" style="background-color: #fff !important; height: 40px !important;" />
+              <label
+                style="display: block; font-size: 0.8rem; font-weight: 600; color: #666; margin-bottom: 4px;">Correo
+                Electrónico</label>
+              <input type="email" id="reg-correo" class="search-input" placeholder="Ej: juan.perez@est.ucab.edu.ve"
+                style="background-color: #fff !important; height: 40px !important;" />
             </div>
           </div>
         </div>
