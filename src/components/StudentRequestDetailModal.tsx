@@ -29,6 +29,7 @@ const RequestItem = ({ request, allRequests, onChange, isReader, isLockedByOther
   const isEffectivelyReadOnly = isReader || isLockedByOther;
 
   const isAdd = request.action === 'Agregar';
+  const isObs = request.action === 'observacion' || (!request.subject && !request.nrc);
 
   // Detect potential section change (Add + Drop same subject)
   const isPotentialSectionChange = useMemo(() => {
@@ -44,17 +45,34 @@ const RequestItem = ({ request, allRequests, onChange, isReader, isLockedByOther
     );
   }, [request.action, request.subject, allRequests, request.id]);
 
-  // Indigo-themed accents for Student Detail
-  const iconBgClasses = isAdd
-    ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
-    : "bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400";
-
-  const badgeClasses = isAdd
-    ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200 border-emerald-200 dark:border-emerald-800"
-    : "bg-rose-100 text-rose-800 dark:bg-rose-900/50 dark:text-rose-200 border-rose-200 dark:border-rose-800";
-
-  const icon = isAdd ? 'add_circle' : 'remove_circle';
-  const label = isAdd ? 'AGREGAR CURSO' : 'ELIMINAR CURSO';
+  // Determine visual style based on action type
+  const { iconBgClasses, badgeClasses, icon, label, displaySubject } = useMemo(() => {
+    if (isAdd) {
+      return {
+        iconBgClasses: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400",
+        badgeClasses: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200 border-emerald-200 dark:border-emerald-800",
+        icon: 'add_circle',
+        label: 'AGREGAR CURSO',
+        displaySubject: request.subject
+      };
+    }
+    if (isObs) {
+      return {
+        iconBgClasses: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400",
+        badgeClasses: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200 border-blue-200 dark:border-blue-800",
+        icon: 'chat',
+        label: 'OBSERVACIÓN',
+        displaySubject: request.subject || 'Observación General'
+      };
+    }
+    return {
+      iconBgClasses: "bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400",
+      badgeClasses: "bg-rose-100 text-rose-800 dark:bg-rose-900/50 dark:text-rose-200 border-rose-200 dark:border-rose-800",
+      icon: 'remove_circle',
+      label: 'ELIMINAR CURSO',
+      displaySubject: request.subject
+    };
+  }, [isAdd, isObs, request.action, request.subject]);
 
   // State for form fields - initialized with props
   const [status, setStatus] = useState(request.status);
@@ -107,7 +125,7 @@ const RequestItem = ({ request, allRequests, onChange, isReader, isLockedByOther
             <span className="material-symbols-outlined">{icon}</span>
           </div>
           <div>
-            <p className="font-bold text-[#0d141b] dark:text-white text-base">{request.subject}</p>
+            <p className="font-bold text-[#0d141b] dark:text-white text-base">{displaySubject}</p>
             <p className="text-xs text-slate-500 font-mono">
               #{request.caseId} • NRC: {request.nrc === 0 ? 'sin nrc sugerido' : request.nrc} •
               <span className="text-primary font-black uppercase"> {request.action || 'S/A'}</span> •

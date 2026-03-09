@@ -325,11 +325,64 @@
     font-style: italic;
   }
 
+  /* Builder Specific Colors */
+  .er-color-0 {
+    background-color: #0071bb !important;
+  }
+
+  .er-color-1 {
+    background-color: #1c7c54 !important;
+  }
+
+  .er-color-2 {
+    background-color: #f1b417 !important;
+  }
+
+  .er-color-3 {
+    background-color: #c4151c !important;
+  }
+
+  .er-color-4 {
+    background-color: #6f42c1 !important;
+  }
+
+  .er-color-5 {
+    background-color: #fd7e14 !important;
+  }
+
+  .er-color-6 {
+    background-color: #e83e8c !important;
+  }
+
+  .er-color-7 {
+    background-color: #20c997 !important;
+  }
+
+  .er-color-8 {
+    background-color: #005288 !important;
+  }
+
+  .er-color-9 {
+    background-color: #d35400 !important;
+  }
+
   .er-empty-state {
     padding: 30px;
     text-align: center;
     color: #666;
     font-style: italic;
+  }
+
+  .er-conflict-block {
+    cursor: pointer;
+    border: 2px solid #ff4d4f !important;
+    background: #fff1f0 !important;
+    color: #cf1322 !important;
+    background-image: repeating-linear-gradient(45deg,
+        transparent,
+        transparent 10px,
+        rgba(255, 77, 79, 0.05) 10px,
+        rgba(255, 77, 79, 0.05) 20px) !important;
   }
 
   /* Modal Styles */
@@ -537,6 +590,329 @@
       min-width: 120px;
     }
   }
+
+  /* =========================================
+     Interactive Builder CSS
+  ========================================= */
+  .er-builder-active .er-schedules-table,
+  .er-builder-active .er-schedule-wrapper,
+  .er-builder-active .er-table-search-container {
+    display: none !important;
+  }
+
+  .er-builder-layout {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    min-height: 500px;
+    gap: 15px;
+    position: relative;
+  }
+
+  .er-builder-sidebar {
+    width: 320px;
+    background: #fdfdfd;
+    border-right: 1px solid #e1e4e8;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+
+  .er-builder-main {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow-y: auto;
+  }
+
+  .er-builder-top-bar {
+    display: none;
+    padding: 10px;
+    background: #edf2f7;
+    border-bottom: 1px solid #e1e4e8;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+
+  .er-builder-semester-group {
+    border-bottom: 1px solid #e1e4e8;
+  }
+
+  .er-builder-semester-header {
+    padding: 12px 15px;
+    background: #edf2f7;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #0071bb;
+  }
+
+  .er-builder-semester-content {
+    display: none;
+    padding: 0;
+    background: #fff;
+  }
+
+  .er-builder-subject-item {
+    border-bottom: 1px solid #edf2f7;
+    transition: background 0.2s;
+  }
+
+  .er-builder-subject-item:hover {
+    background: #f8fafc;
+  }
+
+  .er-builder-subject-header {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+  }
+
+  .er-builder-subject-chk {
+    margin: 0 12px 0 0 !important;
+    flex-shrink: 0;
+  }
+
+  .er-builder-subj-toggle {
+    flex-grow: 1;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #2d3748;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .er-builder-section-list {
+    display: none;
+    padding: 8px 15px 12px 42px;
+    background: #fdfdfd;
+    border-top: 1px solid #edf2f7;
+  }
+
+  .er-builder-section-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 10px;
+    padding: 8px;
+    background: #fff;
+    border: 1px solid #e1e4e8;
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+
+  .er-builder-section-item:hover {
+    border-color: #0071bb;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+
+  .er-builder-section-chk {
+    width: 16px !important;
+    height: 16px !important;
+    margin: 2px 10px 0 0 !important;
+    flex-shrink: 0;
+  }
+
+  .er-builder-section-info {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .er-builder-section-info strong {
+    font-size: 0.85rem;
+    color: #0071bb;
+  }
+
+  .er-builder-section-info .sec-prof {
+    font-size: 0.75rem;
+    color: #4a5568;
+    font-style: italic;
+  }
+
+  .er-builder-section-info .sec-sched {
+    font-size: 0.72rem;
+    color: #718096;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .er-builder-grid-container {
+    position: relative;
+    flex-grow: 1;
+  }
+
+  .er-builder-empty-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.85);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .er-builder-empty-overlay h4 {
+    color: #555;
+    margin-bottom: 15px;
+  }
+
+  .er-builder-grouped-block {
+    cursor: pointer;
+    border: 2px dashed rgba(0, 0, 0, 0.3) !important;
+    position: relative;
+    background: #fffbef !important;
+    color: #856404 !important;
+    transition: transform 0.1s;
+    box-shadow:
+      3px 3px 0 rgba(0, 0, 0, 0.05),
+      6px 6px 0 rgba(0, 0, 0, 0.02);
+  }
+
+  .er-builder-grouped-block:hover {
+    transform: translate(-1px, -1px);
+  }
+
+  .er-conflict-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #ff4d4f;
+    color: #fff;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .er-overlap-count {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    background: rgba(0, 0, 0, 0.1);
+    color: #856404;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+
+  .er-builder-fixed-block {
+    cursor: pointer;
+    border: 2px solid transparent;
+  }
+
+  .er-builder-fixed-block:hover {
+    border-color: #ff6b6b;
+  }
+
+  .er-builder-popover {
+    position: absolute;
+    background: #fff;
+    border: 1px solid #ccc;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+    padding: 10px;
+    z-index: 1000;
+    width: 250px;
+    display: none;
+  }
+
+  .er-builder-popover-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+    margin-bottom: 5px;
+    font-weight: bold;
+    font-size: 0.9rem;
+  }
+
+  .er-builder-popover-header .popover-close {
+    cursor: pointer;
+    color: #999;
+  }
+
+  .er-builder-popover .popover-item {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: background 0.2s;
+  }
+
+  .er-builder-popover .popover-item:hover {
+    background: #f0f7ff;
+  }
+
+  .er-builder-popover .popover-item strong {
+    display: block;
+    color: #0071bb;
+  }
+
+  /* Mobile Builder */
+  @media (max-width: 768px) {
+    .er-builder-layout {
+      flex-direction: column;
+    }
+
+    .er-builder-sidebar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 200;
+      /* Higher than grid */
+      display: none;
+      background: #ffffff;
+      border-right: none;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .er-builder-top-bar {
+      display: block;
+    }
+
+    #er-builder-sidebar-close-%%careerName%% {
+      display: block !important;
+      text-align: center;
+      padding: 16px;
+      margin: 10px;
+      background: #0071bb;
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: background 0.2s;
+    }
+
+    #er-builder-sidebar-close-%%careerName%%:hover {
+      background: #005288;
+    }
+  }
 </style>
 <div id="er-container-%%careerName%%">
   <div id="er-projection-controls-%%careerName%%">
@@ -643,9 +1019,58 @@
             <div class="er-modal-tab active" data-tab="all">Ver todo</div>
             <div class="er-modal-tab" data-tab="individual">Ver por materia individual</div>
             <div class="er-modal-tab" data-tab="table">Ver en formato de tabla</div>
+            <div class="er-modal-tab" data-tab="builder">Constructor Interactivo <span
+                style="background:#0071bb; color:white; font-size: 0.65rem; padding: 2px 6px; border-radius: 10px; margin-left: 5px; vertical-align: top;">Nuevo</span>
+            </div>
           </div>
-          <div class="er-modal-body" id="subject-schedules-container-%%careerName%%">
-            <!-- Se inyectarán los horarios gráficos aquí -->
+          <div class="er-modal-body" id="er-modal-body-%%careerName%%">
+            <div id="subject-schedules-container-%%careerName%%">
+              <!-- Se inyectarán los horarios gráficos aquí (vista clásica) -->
+            </div>
+
+            <!-- CONTENEDOR DEL CONSTRUCTOR INTERACTIVO -->
+            <div class="er-builder-layout" style="display: none;" id="er-builder-layout-%%careerName%%">
+
+              <div class="er-builder-sidebar" id="er-builder-sidebar-%%careerName%%">
+                <div id="er-builder-sidebar-close-%%careerName%%" style="display: none;">Ver Horario</div>
+                <div style="padding: 15px; border-bottom: 1px solid #edf2f7; background: #fff;">
+                  <input type="text" id="er-builder-search-%%careerName%%" placeholder="Buscar materia o código..."
+                    style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.85rem;">
+                </div>
+                <!-- Accordion inyectado dinámicamente -->
+                <div id="er-builder-accordion-%%careerName%%" style="flex-grow: 1; overflow-y: auto;"></div>
+              </div>
+
+              <div class="er-builder-main">
+                <div class="er-builder-top-bar">
+                  <button id="er-builder-mobile-add-btn-%%careerName%%"
+                    class="form-button et_pb_button er-small-btn">Configurar Materias</button>
+                </div>
+
+                <div class="er-builder-grid-container" id="er-builder-grid-container-%%careerName%%">
+                  <div class="er-builder-empty-overlay" id="er-builder-empty-overlay-%%careerName%%">
+                    <h4>Tu horario está vacío</h4>
+                    <p style="font-size: 0.9em; color:#777; margin-bottom: 20px;">Utiliza el panel lateral para
+                      seleccionar las materias que deseas cursar y armar tu horario ideal. Podrás visualizar posibles
+                      conflictos y elegir las mejores secciones.</p>
+                    <button id="er-builder-add-initial-btn-%%careerName%%" class="form-button et_pb_button">Agregar
+                      Materias</button>
+                  </div>
+                  <!-- The builder grid injects here -->
+                  <div id="er-builder-grid-target-%%careerName%%"></div>
+
+                  <!-- Popover for grouped classes -->
+                  <div class="er-builder-popover" id="er-builder-popover-%%careerName%%">
+                    <div class="er-builder-popover-header">
+                      <span>Elige una sección</span>
+                      <span class="popover-close">&times;</span>
+                    </div>
+                    <div class="popover-content"></div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
           </div>
         </div>
       </div>
@@ -712,6 +1137,11 @@
 
     let electiveSubjectIds = new Set();
     let careerMetadataLoaded = false;
+
+    // --- Interactive Builder State ---
+    let builderSubjectSelection = new Set(); // Set of subjectIds
+    let builderSectionSelection = new Set(); // Set of 'subjectId|crn'
+    let builderFixedSections = {};           // Map of subjectId -> crn
 
     async function ensureCareerMetadata() {
       if (careerMetadataLoaded) return;
@@ -921,12 +1351,33 @@
           $schedulesModal.hide();
         }
       });
-      $schedulesModal.on("click", ".er-modal-tab", function () {
+      $schedulesModal.on("click", ".er-modal-tab", async function () {
         if (jQuery(this).hasClass("active")) return;
         jQuery(this).siblings().removeClass("active");
         jQuery(this).addClass("active");
         activeModalTab = jQuery(this).data("tab");
-        renderSchedules();
+
+        if (activeModalTab === "builder") {
+          jQuery("#subject-schedules-container-" + CAREER_SHORT_CODE).hide();
+          jQuery("#er-builder-layout-" + CAREER_SHORT_CODE).show();
+          // Reset global state so builder starts clean
+          selectedSubjects.clear();
+          $totalUc.text("0");
+          $totalUc.parent().removeClass("alert");
+          showLoader();
+          try {
+            await ensureSemesterModeData();
+            initializeBuilder();
+          } catch (e) {
+            console.error(e);
+          } finally {
+            hideLoader();
+          }
+        } else {
+          jQuery("#subject-schedules-container-" + CAREER_SHORT_CODE).show();
+          jQuery("#er-builder-layout-" + CAREER_SHORT_CODE).hide();
+          renderSchedules();
+        }
       });
 
       $schedulesModal.on("keyup", ".er-table-search-input", function () {
@@ -948,6 +1399,7 @@
         semesterSchedules = [];
         projectionSubjects = [];
         semesterSubjectsBySemester = {};
+        builderPanelBuilt = false;
         hasLoadedSemesterModeData = false;
         activeSemesterTab = VALID_SEMESTERS[0] || "01SE";
         activeModalSemesterTab = VALID_SEMESTERS[0] || "01SE";
@@ -1742,6 +2194,585 @@
           $detailsContainer.stop(true, true).fadeIn(SPEED);
         }
       }
+
+      // ==========================================
+      // INTERACTIVE BUILDER LOGIC
+      // ==========================================
+
+      let builderPanelBuilt = false;
+
+      function initializeBuilder() {
+        if (!builderPanelBuilt) {
+          bindBuilderEvents();
+          renderBuilderPanel();
+          builderPanelBuilt = true;
+        }
+
+        updateBuilderAfterSelection();
+      }
+
+      function bindBuilderEvents() {
+        const $accordion = jQuery("#er-builder-accordion-" + CAREER_SHORT_CODE);
+
+        // --- Bind accordion toggle events (semester headers) ---
+        $accordion.off("click", ".er-builder-semester-header").on("click", ".er-builder-semester-header", function (e) {
+          e.stopPropagation();
+          jQuery(this).next(".er-builder-semester-content").slideToggle(200);
+        });
+
+        // --- Bind subject-level toggle (expand/collapse section list) ---
+        $accordion.off("click", ".er-builder-subj-toggle").on("click", ".er-builder-subj-toggle", function (e) {
+          e.stopPropagation();
+          jQuery(this).closest(".er-builder-subject-item").find(".er-builder-section-list").slideToggle(200);
+        });
+
+        // --- Bind subject checkbox (select/deselect all sections) ---
+        $accordion.off("change", ".er-builder-subject-chk").on("change", ".er-builder-subject-chk", function (e) {
+          e.stopPropagation();
+          const subjId = jQuery(this).val();
+          const isChecked = jQuery(this).is(":checked");
+
+          const $secChks = $accordion.find(`.er-builder-section-chk[data-subj="${subjId}"]`);
+          $secChks.prop("checked", isChecked);
+
+          if (isChecked) {
+            builderSubjectSelection.add(subjId);
+            selectedSubjects.add(subjId);
+            $secChks.each(function () {
+              builderSectionSelection.add(jQuery(this).val());
+            });
+          } else {
+            builderSubjectSelection.delete(subjId);
+            selectedSubjects.delete(subjId);
+            $secChks.each(function () {
+              builderSectionSelection.delete(jQuery(this).val());
+            });
+            delete builderFixedSections[subjId];
+          }
+
+          updateBuilderAfterSelection();
+        });
+
+        // --- Bind section checkbox (individual section toggle) ---
+        $accordion.off("change", ".er-builder-section-chk").on("change", ".er-builder-section-chk", function (e) {
+          e.stopPropagation();
+          const subjId = jQuery(this).data("subj");
+          const val = jQuery(this).val();
+          const isChecked = jQuery(this).is(":checked");
+
+          if (isChecked) {
+            builderSectionSelection.add(val);
+            builderSubjectSelection.add(subjId);
+            selectedSubjects.add(subjId);
+          } else {
+            builderSectionSelection.delete(val);
+            if (builderFixedSections[subjId] === val.split("|")[1]) {
+              delete builderFixedSections[subjId];
+            }
+          }
+
+          // Update parent checkbox indeterminate state
+          const $parentChk = $accordion.find(`.er-builder-subject-chk[value="${subjId}"]`);
+          const totalSecs = $accordion.find(`.er-builder-section-chk[data-subj="${subjId}"]`).length;
+          const checkedSecs = $accordion.find(`.er-builder-section-chk[data-subj="${subjId}"]:checked`).length;
+
+          if (checkedSecs === 0) {
+            $parentChk.prop("checked", false).prop("indeterminate", false);
+            builderSubjectSelection.delete(subjId);
+            selectedSubjects.delete(subjId);
+          } else if (checkedSecs === totalSecs) {
+            $parentChk.prop("checked", true).prop("indeterminate", false);
+          } else {
+            $parentChk.prop("checked", false).prop("indeterminate", true);
+          }
+
+          updateBuilderAfterSelection();
+        });
+
+        // --- Bind search filter ---
+        jQuery("#er-builder-search-" + CAREER_SHORT_CODE).on("keyup", function () {
+          const val = jQuery(this).val().toLowerCase();
+          const $groups = $accordion.find(".er-builder-semester-group");
+
+          $groups.each(function () {
+            let hasVisibleSubj = false;
+            const $subjs = jQuery(this).find(".er-builder-subject-item");
+
+            $subjs.each(function () {
+              const text = jQuery(this).text().toLowerCase();
+              if (text.includes(val)) {
+                jQuery(this).show();
+                hasVisibleSubj = true;
+              } else {
+                jQuery(this).hide();
+              }
+            });
+
+            if (hasVisibleSubj) {
+              jQuery(this).show();
+            } else {
+              jQuery(this).hide();
+            }
+          });
+        });
+      }
+
+      // Only updates the grid and overlay — does NOT touch the accordion DOM
+      function updateBuilderAfterSelection() {
+        const $emptyOverlay = jQuery("#er-builder-empty-overlay-" + CAREER_SHORT_CODE);
+        const $gridTarget = jQuery("#er-builder-grid-target-" + CAREER_SHORT_CODE);
+
+        if (builderSubjectSelection.size === 0) {
+          $emptyOverlay.show();
+          $gridTarget.empty();
+        } else {
+          $emptyOverlay.hide();
+          renderBuilderGrid();
+        }
+
+        syncBuilderPanelState();
+        syncGlobalCheckboxes();
+      }
+
+      function renderBuilderPanel() {
+        const $accordion = jQuery("#er-builder-accordion-" + CAREER_SHORT_CODE);
+        $accordion.empty();
+
+        const includeElectives = CAREER_CLASSIFICATION !== "MINOR";
+        const ALL_TABS = includeElectives ? [...VALID_SEMESTERS, "Electivas"] : [...VALID_SEMESTERS];
+
+        ALL_TABS.forEach((semId) => {
+          const subjectsInSem = semesterSubjectsBySemester[semId] || [];
+          if (subjectsInSem.length === 0) return;
+
+          let semesterHtml = `
+          <div class="er-builder-semester-group">
+            <div class="er-builder-semester-header" data-sem="${semId}">
+               <span>${semId === 'Electivas' ? 'Electivas' : 'Semestre ' + semId.replace("SE", "")}</span>
+               <span>&#9662;</span>
+            </div>
+            <div class="er-builder-semester-content" id="er-builder-sem-content-${semId}">
+        `;
+
+          subjectsInSem.forEach(sub => {
+            const sections = semesterSchedules.filter(s => s.subjectId === sub.id && (s.subjectSemester === semId || (semId === 'Electivas' && s.subjectSemester === 'Electivas')));
+            if (sections.length === 0) return;
+
+            semesterHtml += `
+            <div class="er-builder-subject-item" data-subj="${sub.id}">
+              <div class="er-builder-subject-header">
+                <input type="checkbox" class="er-builder-subject-chk" value="${sub.id}" />
+                <div class="er-builder-subj-toggle">
+                  <span>${sub.name}</span>
+                  <span style="font-weight:normal; font-size:0.75rem; color:#718096;">${sub.id} • ${sections.length} secciones</span>
+                </div>
+              </div>
+              <div class="er-builder-section-list" id="er-builder-seclist-${sub.id}">
+          `;
+
+            sections.forEach(sec => {
+              // Build schedule display string
+              let schedItems = [];
+              const dayShorts = { monday: 'Lun', tuesday: 'Mar', wednesday: 'Mié', thursday: 'Jue', friday: 'Vie', saturday: 'Sáb', sunday: 'Dom' };
+              Object.keys(dayShorts).forEach(d => {
+                if (sec.schedules[d]) {
+                  schedItems.push(`${dayShorts[d]} ${sec.schedules[d].start}-${sec.schedules[d].end}`);
+                }
+              });
+              const schedStr = schedItems.join(", ") || "Horario por definir";
+
+              semesterHtml += `
+              <div class="er-builder-section-item">
+                <input type="checkbox" class="er-builder-section-chk" 
+                       data-subj="${sub.id}" 
+                       value="${sub.id}|${sec.crn}" />
+                <div class="er-builder-section-info">
+                  <strong>Sec ${sec.section} (${sec.crn})</strong>
+                  <span class="sec-prof"><span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle; margin-right: 4px;">person</span>${sec.professor || 'Profesor no asignado'}</span>
+                  <span class="sec-sched"><span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle; margin-right: 4px;">schedule</span>${schedStr}</span>
+                </div>
+              </div>
+            `;
+            });
+
+            semesterHtml += `</div></div>`;
+          });
+
+          semesterHtml += `</div></div>`;
+          $accordion.append(semesterHtml);
+        });
+      }
+
+      function syncGlobalCheckboxes() {
+        const $detailsContainer = jQuery("#er-details-container-" + CAREER_SHORT_CODE);
+        let totalSum = 0;
+
+        $detailsContainer.find("input[type=checkbox]:not(.select-all)").each(function () {
+          const rowSubj = jQuery(this).closest("tr").find("td:nth-child(3)").text();
+          const rowCredits = parseFloat(jQuery(this).closest("tr").find("td:nth-child(5)").text()) || 0;
+
+          if (selectedSubjects.has(rowSubj)) {
+            jQuery(this).prop("checked", true);
+            totalSum += rowCredits;
+          } else {
+            jQuery(this).prop("checked", false);
+          }
+        });
+
+        const $totalUcStr = jQuery("#total-projected-uc-" + CAREER_SHORT_CODE);
+        if ($totalUcStr.length) {
+          $totalUcStr.text(totalSum.toFixed(0));
+        }
+
+        const $chkboxes = $detailsContainer.find("input[type=checkbox]:not(.select-all)");
+        const $chkboxesChecked = $chkboxes.filter(":checked");
+        const $selectAll = $detailsContainer.find(".select-all");
+
+        if ($chkboxes.length > 0 && $chkboxes.length === $chkboxesChecked.length) {
+          $selectAll.prop("checked", true).prop("indeterminate", false);
+        } else if ($chkboxesChecked.length === 0) {
+          $selectAll.prop("checked", false).prop("indeterminate", false);
+        } else {
+          $selectAll.prop("checked", false).prop("indeterminate", true);
+        }
+      }
+
+      function syncBuilderPanelState() {
+        const $accordion = jQuery("#er-builder-accordion-" + CAREER_SHORT_CODE);
+
+        // Update section checkboxes
+        $accordion.find(".er-builder-section-chk").each(function () {
+          const val = jQuery(this).val();
+          if (builderSectionSelection.has(val)) {
+            jQuery(this).prop("checked", true);
+          } else {
+            jQuery(this).prop("checked", false);
+          }
+        });
+
+        // Update subject checkboxes based on sections
+        $accordion.find(".er-builder-subject-chk").each(function () {
+          const subjId = jQuery(this).val();
+          const totalSecs = $accordion.find(`.er-builder-section-chk[data-subj="${subjId}"]`).length;
+          const checkedSecs = $accordion.find(`.er-builder-section-chk[data-subj="${subjId}"]:checked`).length;
+
+          if (checkedSecs === 0) {
+            jQuery(this).prop("checked", false).prop("indeterminate", false);
+          } else if (checkedSecs === totalSecs) {
+            jQuery(this).prop("checked", true).prop("indeterminate", false);
+          } else {
+            jQuery(this).prop("checked", false).prop("indeterminate", true);
+          }
+        });
+      }
+
+      function clearAllBuilderSelections() {
+        builderSubjectSelection.clear();
+        builderSectionSelection.clear();
+        builderFixedSections = {};
+        selectedSubjects.clear();
+        $totalUc.text("0");
+        $totalUc.parent().removeClass("alert");
+        builderPanelBuilt = false;
+        initializeBuilder();
+      }
+
+      // Bind buttons
+      jQuery("#er-builder-add-initial-btn-" + CAREER_SHORT_CODE).on("click", function () {
+        clearAllBuilderSelections();
+        if (jQuery(window).width() <= 768) {
+          jQuery("#er-builder-sidebar-" + CAREER_SHORT_CODE).fadeIn(200);
+        }
+      });
+
+      jQuery("#er-builder-mobile-add-btn-" + CAREER_SHORT_CODE).on("click", function () {
+        jQuery("#er-builder-sidebar-" + CAREER_SHORT_CODE).fadeIn(200);
+      });
+
+      jQuery("#er-builder-sidebar-close-" + CAREER_SHORT_CODE).on("click", function () {
+        jQuery("#er-builder-sidebar-" + CAREER_SHORT_CODE).fadeOut(200);
+      });
+
+      // Builder Grid Rendering
+      function buildVirtualSchedules() {
+        // Get all selected sections natively
+        const selSections = [];
+        builderSectionSelection.forEach(val => {
+          const [subjId, crn] = val.split("|");
+          // If this subject is FIXED to a specific CRN, skip all other sections of this subject!
+          if (builderFixedSections[subjId] && String(builderFixedSections[subjId]) !== String(crn)) {
+            return;
+          }
+          const s = semesterSchedules.find(x => String(x.crn) === String(crn) && x.subjectId === subjId);
+          if (s) {
+            // Deep clone to add custom properties for builder UI
+            const clone = JSON.parse(JSON.stringify(s));
+            if (String(builderFixedSections[subjId]) === String(crn)) {
+              clone.isFixed = true;
+            }
+            selSections.push(clone);
+          }
+        });
+
+        // To group overlapping sections of the SAME subject
+        // First, categorize by Subject ID
+        const bySubject = {};
+        selSections.forEach(s => {
+          if (!bySubject[s.subjectId]) bySubject[s.subjectId] = [];
+          bySubject[s.subjectId].push(s);
+        });
+
+        // For each subject, we check overlaps between its own sections to form 'groups'
+        // Warning: Usually, sections of the same subject WILL overlap in time (e.g. M/W 8am-10am).
+        // We group them into a "Virtual Schedule" block representing "Matematica (3 sections)"
+        const virtualBlocks = [];
+
+        Object.keys(bySubject).forEach(subjId => {
+          const sections = bySubject[subjId];
+
+          // If fixed, there's only 1 section anyway.
+          if (builderFixedSections[subjId]) {
+            virtualBlocks.push([sections[0]]);
+            return;
+          }
+
+          // Grouping logic for overlapping sections of the same subject
+          const groupedSubj = [];
+          sections.forEach(sec => {
+            let placed = false;
+            for (const grp of groupedSubj) {
+              // check overlap with any section in the group
+              let overlaps = false;
+              for (const elem of grp) {
+                if (checkOverlap([elem], sec)) { overlaps = true; break; }
+              }
+              if (overlaps) {
+                grp.push(sec);
+                placed = true;
+                break;
+              }
+            }
+            if (!placed) {
+              groupedSubj.push([sec]);
+            }
+          });
+
+          groupedSubj.forEach(grp => {
+            virtualBlocks.push(grp); // This is an array of sections
+          });
+        });
+
+        return virtualBlocks;
+      }
+
+      function renderBuilderGrid() {
+        const groupedBlocks = buildVirtualSchedules();
+        const $target = jQuery("#er-builder-grid-target-" + CAREER_SHORT_CODE);
+        renderScheduleBlocksCustomized(groupedBlocks, $target);
+      }
+
+      function renderScheduleBlocksCustomized(blockGroups, $container) {
+        $container.empty();
+        if (blockGroups.length === 0) return;
+
+        // Calculate dynamic time range based on selected blocks
+        let minHour = 7;
+        let maxHour = 20;
+        let earliest = 20;
+        let latest = 7;
+
+        blockGroups.forEach((group) => {
+          group.forEach(s => {
+            Object.keys(weekDays).forEach(day => {
+              if (s.schedules[day]) {
+                const startH = parseInt(s.schedules[day].start.split(":")[0], 10);
+                let endH = parseInt(s.schedules[day].end.split(":")[0], 10);
+                if (isNaN(endH)) {
+                  const cleanEnd = s.schedules[day].end.replace(/[^\d:]/g, "");
+                  if (cleanEnd.includes(":")) {
+                    endH = parseInt(cleanEnd.split(":")[0], 10);
+                  }
+                }
+                if (!isNaN(startH) && startH < earliest) earliest = startH;
+                if (!isNaN(endH) && endH > latest) latest = endH;
+              }
+            });
+          });
+        });
+
+        if (earliest <= latest) {
+          minHour = Math.max(7, earliest - 1);
+          maxHour = Math.min(20, latest + 1);
+        }
+
+        const gridHtml = `
+          <div class="er-schedule-wrapper">
+            <div class="er-schedule-wrapper-title">Horario Configurado</div>
+            <div class="er-schedule-grid" style="grid-template-rows: auto repeat(${(maxHour - minHour) * 2}, minmax(14px, 1fr));">
+              <div class="er-grid-header" style="grid-column: 1; grid-row: 1;">Hora</div>
+              <div class="er-grid-header" style="grid-column: 2; grid-row: 1;">Lunes</div>
+              <div class="er-grid-header" style="grid-column: 3; grid-row: 1;">Martes</div>
+              <div class="er-grid-header" style="grid-column: 4; grid-row: 1;">Miércoles</div>
+              <div class="er-grid-header" style="grid-column: 5; grid-row: 1;">Jueves</div>
+              <div class="er-grid-header" style="grid-column: 6; grid-row: 1;">Viernes</div>
+              <div class="er-grid-header" style="grid-column: 7; grid-row: 1;">Sábado</div>
+              <div class="er-grid-header" style="grid-column: 8; grid-row: 1;">Domingo</div>
+        `;
+
+        let timeRowsHtml = "";
+        for (let hour = minHour; hour <= maxHour; hour++) {
+          const h1 = hour.toString().padStart(2, "0") + ":00";
+          const rowH1 = 2 + (hour - minHour) * 2;
+          timeRowsHtml += `<div class="er-time-label-col" style="grid-column: 1; grid-row: ${rowH1} / span 2; align-items: flex-start; padding-top: 6px;"><span>${h1}</span></div>`;
+        }
+
+        for (let r = 2; r <= 2 + (maxHour - minHour) * 2; r += 2) {
+          for (let c = 2; c <= 8; c++) {
+            timeRowsHtml += `<div class="er-grid-cell" style="grid-column: ${c}; grid-row: ${r} / span 2;"></div>`;
+          }
+        }
+
+        let blocksHtml = "";
+        const daysMap = { monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6, sunday: 7 };
+
+        blockGroups.forEach((group, groupIndex) => {
+          const baseSection = group[0];
+          const isGroup = group.length > 1;
+          const isFixed = baseSection.isFixed;
+          const colorCls = `er-color-${groupIndex % 10}`;
+          const groupData = encodeURIComponent(JSON.stringify(group));
+
+          Object.keys(daysMap).forEach(dayKey => {
+            const ds = baseSection.schedules[dayKey];
+            if (ds) {
+              const dayCol = daysMap[dayKey];
+              const startParts = ds.start.split(":");
+              const endParts = ds.end.split(":");
+              const startHour = parseInt(startParts[0], 10);
+              const startMin = parseInt(startParts[1], 10);
+              const startRow = 2 + (startHour - minHour) * 2 + (startMin >= 30 ? 1 : 0);
+
+              let endHour = parseInt(endParts[0], 10);
+              let endMin = parseInt(endParts[1], 10);
+              if (isNaN(endMin)) {
+                const cleanEnd = ds.end.replace(/[^\d:]/g, "");
+                if (cleanEnd.includes(":")) {
+                  const parts = cleanEnd.split(":");
+                  endHour = parseInt(parts[0], 10);
+                  endMin = parseInt(parts[1], 10);
+                }
+              }
+
+              let endRow = 2 + (endHour - minHour) * 2 + (endMin >= 30 ? 1 : 0);
+              if (endMin >= 50) endRow += 1;
+
+              // Detect if this block conflicts with ANOTHER subject
+              const subjectsInSlot = new Set(group.map(s => s.subjectId));
+              const isConflictWithOthers = subjectsInSlot.size > 1;
+              const isGroupedSameSubj = subjectsInSlot.size === 1 && group.length > 1;
+
+              let badgeHtml = "";
+              if (isConflictWithOthers) {
+                badgeHtml = `<div class="er-conflict-badge"><span class="material-symbols-outlined" style="font-size:12px;">warning</span> CONFLICTO</div>`;
+              } else if (isGroupedSameSubj) {
+                badgeHtml = `<div class="er-overlap-count">${group.length} secciones</div>`;
+              }
+
+              const blockClass = isConflictWithOthers ? 'er-conflict-block' : (isGroupedSameSubj ? 'er-builder-grouped-block' : 'er-builder-fixed-block');
+              const colorClass = `er-color-${groupIndex % 10}`; // Re-using colorCls
+
+              blocksHtml += `
+                <div class="er-class-block ${colorClass} ${blockClass}" 
+                     style="grid-column: ${dayCol + 1}; grid-row: ${startRow} / ${endRow};" 
+                     data-group-data="${groupData}">
+                  ${badgeHtml}
+                  <span class="subject-title" title="${baseSection.subjectName || baseSection.subjectId}">${isConflictWithOthers ? 'Conflicto de Horario' : baseSection.subjectName}</span>
+                  <span class="subject-acronym">${isConflictWithOthers ? 'Múltiples Materias' : baseSection.subjectId}</span>
+                  <span class="subject-professor">${ds.room ? ds.room + '<br>' : ''}${isConflictWithOthers ? '' : `NRC: ${baseSection.crn} - Sec: ${baseSection.section}`}</span>
+                  <span>${ds.start} - ${ds.end}</span>
+                </div>
+              `;
+            }
+          });
+        });
+
+        $container.html(gridHtml + timeRowsHtml + blocksHtml + '</div></div>');
+        bindPopoverEvents($container);
+      }
+
+      function bindPopoverEvents($container) {
+        const $popover = jQuery("#er-builder-popover-" + CAREER_SHORT_CODE);
+        const $content = $popover.find(".popover-content");
+
+        $container.find(".er-builder-grouped-block, .er-builder-fixed-block").on("click", function (e) {
+          e.stopPropagation();
+
+          const isCurrentlyFixed = jQuery(this).hasClass("er-builder-fixed-block");
+          const group = JSON.parse(decodeURIComponent(jQuery(this).attr("data-group-data")));
+          const subjId = group[0].subjectId;
+
+          if (isCurrentlyFixed) {
+            // Revert the fix
+            delete builderFixedSections[subjId];
+            // Recheck the other sections of this subject in the panel?
+            // The panel already has them checked technically. We just unfix it.
+            updateBuilderAfterSelection();
+            $popover.hide();
+            return;
+          }
+
+          // It's a grouped block, show popover
+          let html = "";
+          group.forEach(sec => {
+            // Get room info from first schedule or fallback
+            let roomInfo = "";
+            const firstDay = Object.keys(weekDays).find(d => sec.schedules[d]);
+            if (firstDay && sec.schedules[firstDay].room) {
+              roomInfo = `<br><small style="color:#777;">Aula: ${sec.schedules[firstDay].room}</small>`;
+            }
+
+            html += `
+            <div class="popover-item" data-subj="${sec.subjectId}" data-crn="${sec.crn}">
+              <div style="font-size: 0.7rem; color: #888; font-weight: normal;">${sec.subjectName || sec.subjectId}</div>
+              <strong>Sec ${sec.section} (NRC ${sec.crn})</strong>
+              <div style="font-size: 0.75rem;">${sec.professor}${roomInfo}</div>
+            </div>
+          `;
+          });
+          $content.html(html);
+
+          // Position popover relative to clicked block
+          const offset = jQuery(this).offset();
+          const gridOffset = jQuery("#er-builder-layout-" + CAREER_SHORT_CODE).offset();
+
+          $popover.css({
+            top: (offset.top - gridOffset.top + 20) + "px",
+            left: (offset.left - gridOffset.left + 20) + "px",
+            display: "block"
+          });
+        });
+
+        $popover.on("click", ".popover-item", function (e) {
+          e.stopPropagation();
+          const crn = jQuery(this).data("crn");
+          const subj = jQuery(this).data("subj");
+
+          builderFixedSections[subj] = String(crn);
+          $popover.hide();
+          updateBuilderAfterSelection();
+        });
+
+        jQuery("body").on("click", function () {
+          $popover.hide();
+        });
+        $popover.find(".popover-close").on("click", function (e) {
+          e.stopPropagation();
+          $popover.hide();
+        });
+        $popover.on("click", function (e) {
+          e.stopPropagation(); // prevent body click closing
+        });
+      }
     });
 
     function renderSubjects(subjects, maxLoad, options = {}) {
@@ -2137,6 +3168,7 @@
       saturday: "Sábado",
       sunday: "Domingo",
     };
+
 
   })();
 </script>

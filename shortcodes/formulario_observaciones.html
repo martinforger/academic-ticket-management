@@ -600,10 +600,30 @@
           </div>
         </div>
 
+        <!-- Registro de Estudiante (Si no existe o no tiene proyección) -->
+        <div id="student-registration" class="student-data-container" style="display: none; border: 2px solid var(--ucab-blue) !important; border-radius: 4px !important; background-color: #fff !important;">
+          <div class="student-data-header" style="background: #f0f7ff !important; color: var(--ucab-blue) !important; border-bottom: 2px solid var(--ucab-blue) !important;">
+            Registra tus Datos
+          </div>
+          <div style="padding: 15px 20px;">
+            <p style="font-size: 0.9rem; margin-bottom: 15px; color: var(--ucab-gray-text);">
+              No hemos encontrado tus datos o no tienes una proyección cargada. Por favor, confírmanos tu información para continuar.
+            </p>
+            <div style="margin-bottom: 12px;">
+              <label style="display: block; font-size: 0.8rem; font-weight: 600; color: #666; margin-bottom: 4px;">Nombre Completo</label>
+              <input type="text" id="reg-nombre" class="search-input" placeholder="Ej: Juan Pérez" style="background-color: #fff !important; height: 40px !important;" />
+            </div>
+            <div style="margin-bottom: 5px;">
+              <label style="display: block; font-size: 0.8rem; font-weight: 600; color: #666; margin-bottom: 4px;">Correo Electrónico</label>
+              <input type="email" id="reg-correo" class="search-input" placeholder="Ej: juan.perez@est.ucab.edu.ve" style="background-color: #fff !important; height: 40px !important;" />
+            </div>
+          </div>
+        </div>
+
         <div class="form-footer">
           <div></div>
           <!-- Spacer -->
-          <button type="button" id="btn-step1-next" onclick="slide(1)" disabled class="btn-disabled">
+          <button type="button" id="btn-step1-next" onclick="handleStep1Click()" disabled class="btn-disabled">
             Continuar &rarr;
           </button>
         </div>
@@ -882,23 +902,19 @@
 
   var sbClient;
 
+  // --- CONFIGURACIÓN DINÁMICA ---
+  const CAREER_SHORT_CODE = "%%programa%%";
+  let CARRERA_ID = null;
+  let CARRERA_NOMBRE = "";
+
   // Inicialización segura
   if (typeof sbClient === "undefined") {
     if (window.supabase && window.supabase.createClient) {
       sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     } else if (typeof createClient !== "undefined") {
       sbClient = createClient(SUPABASE_URL, SUPABASE_KEY);
-    } else {
-      document.addEventListener("DOMContentLoaded", () => {
-        if (window.supabase && window.supabase.createClient) {
-          sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-          loadAllSubjects();
-        }
-      });
     }
   }
-
-  const CARRERA = 2;
 
   // --- CONSTANTES ---
   const MSG = {
@@ -933,16 +949,49 @@
     document.getElementById("lbl-correo").textContent = LABELS.correo;
 
   // --- INIT ---
-  loadAllSubjects();
+
+  initForm();
   window.addEventListener("load", () => {
     requestAnimationFrame(updateViewportHeight);
   });
 
-  async function loadAllSubjects() {
+  async function initForm() {
     try {
       if (!sbClient) return;
+
+      // 1. Obtener información de la carrera por su código corto
+      const { data: careerInfo, error: careerErr } = await sbClient.rpc(
+        "er_get_career_info",
+        { p_car_cod_corto: CAREER_SHORT_CODE }
+      );
+
+      if (careerErr || !careerInfo) {
+        console.error("No se pudo cargar la información de la carrera", careerErr);
+        // Fallback para desarrollo si el shortcode no ha sido procesado
+        if (CAREER_SHORT_CODE.startsWith("%%")) {
+          console.warn("Usando carrera por defecto (ID: 2) para entorno de desarrollo");
+          CARRERA_ID = 2;
+        } else {
+          showError("Error: Carrera no encontrada (" + CAREER_SHORT_CODE + ")");
+          return;
+        }
+      } else {
+        CARRERA_ID = careerInfo.id;
+        CARRERA_NOMBRE = careerInfo.nombre;
+      }
+
+      // 2. Cargar materias una vez resuelta la carrera
+      await loadAllSubjects();
+    } catch (err) {
+      console.error("Error en initForm:", err);
+    }
+  }
+
+  async function loadAllSubjects() {
+    try {
+      if (!sbClient || !CARRERA_ID) return;
       const { data, error } = await sbClient.rpc("get_all_subjects", {
-        p_carrera_id: CARRERA
+        p_carrera_id: CARRERA_ID
       });
       if (error) throw error;
       allSubjects = data || [];
@@ -952,18 +1001,21 @@
     }
   }
 
+
   // --- LÓGICA PASO 1 (BÚSQUEDA) ---
   async function buscarEstudiante() {
     const input = document.getElementById("input-cedula");
     const cedula = input.value.trim();
     const errorContainer = document.getElementById("student-error");
     const resultContainer = document.getElementById("student-result");
+    const registrationContainer = document.getElementById("student-registration");
     const nextBtn = document.getElementById("btn-step1-next");
     const btnSearch = input.nextElementSibling; // Button next to input
 
     // Reset UI
     errorContainer.style.display = "none";
     resultContainer.style.display = "none";
+    registrationContainer.style.display = "none";
     nextBtn.disabled = true;
     nextBtn.classList.add("btn-disabled");
     studentData = null;
@@ -995,7 +1047,8 @@
         showStudentData(student);
         loadProjection(student.est_id);
       } else {
-        showError(MSG.studentNotFound);
+        // No encontrado -> Mostrar registro
+        showRegistrationFlow(cedula);
       }
     } catch (err) {
       console.error(err);
@@ -1014,16 +1067,16 @@
         p_est_id: estId,
       });
       if (error) throw error;
-      
+
       // Get base projected IDs
       const projectedIds = data.map((p) => p.mat_id);
-      
-      // Automatically add associated practices (e.g., INFO-0XXXX -> INFO-PXXXX)
+
+      // Automatically add associated practices (e.g., ABCD-0XXXX -> ABCD-PXXXX)
       const additionalIds = [];
       projectedIds.forEach(id => {
         const theorySub = allSubjects.find(s => s.mat_id === id);
-        if (theorySub && theorySub.mat_cod && theorySub.mat_cod.startsWith("INFO-0")) {
-          const practiceCod = theorySub.mat_cod.replace("INFO-0", "INFO-P");
+        if (theorySub && theorySub.mat_cod && theorySub.mat_cod.includes("-0")) {
+          const practiceCod = theorySub.mat_cod.replace("-0", "-P");
           const practiceSub = allSubjects.find(s => s.mat_cod === practiceCod);
           if (practiceSub && !projectedIds.includes(practiceSub.mat_id)) {
             additionalIds.push(practiceSub.mat_id);
@@ -1032,11 +1085,94 @@
       });
 
       projectedSubjectIds = [...projectedIds, ...additionalIds];
+
+      if (projectedSubjectIds.length === 0) {
+        showRegistrationFlow(null, studentData); // Found but no projection
+      }
+
       updateSelectsOptions(); // Refresh selects to show projections
     } catch (err) {
       console.error("Puntaje proyección no disponible", err);
       projectedSubjectIds = [];
+      showRegistrationFlow(null, studentData); // Error usually means no projection
       updateSelectsOptions(); // Refresh even on error to clear projections
+    }
+  }
+
+  function showRegistrationFlow(cedula, existingData) {
+    const regContainer = document.getElementById("student-registration");
+    const resultContainer = document.getElementById("student-result");
+
+    resultContainer.style.display = "none";
+    regContainer.style.display = "block";
+
+    const nameInput = document.getElementById("reg-nombre");
+    const emailInput = document.getElementById("reg-correo");
+
+    if (existingData) {
+      nameInput.value = existingData.est_nombre || "";
+      emailInput.value = existingData.est_correo || "";
+    } else {
+      nameInput.value = "";
+      emailInput.value = "";
+    }
+
+    const nextBtn = document.getElementById("btn-step1-next");
+    nextBtn.disabled = false;
+    nextBtn.classList.remove("btn-disabled");
+    requestAnimationFrame(updateViewportHeight);
+  }
+
+  async function handleStep1Click() {
+    const regContainer = document.getElementById("student-registration");
+    if (regContainer.style.display === "block") {
+      await registrarYContinuar();
+    } else {
+      slide(1);
+    }
+  }
+
+  async function registrarYContinuar() {
+    const cedula = document.getElementById("input-cedula").value.trim();
+    const nombre = document.getElementById("reg-nombre").value.trim();
+    const correo = document.getElementById("reg-correo").value.trim();
+    const nextBtn = document.getElementById("btn-step1-next");
+
+    if (!nombre || !correo) {
+      alert("Por favor, ingresa tu nombre y correo para continuar.");
+      return;
+    }
+
+    const originalText = nextBtn.innerHTML;
+    nextBtn.disabled = true;
+    nextBtn.innerHTML = '<div class="spinner"></div> Registrando...';
+
+    try {
+      const { data: estId, error } = await sbClient.rpc("upsert_student_simple", {
+        p_cedula: parseInt(cedula),
+        p_nombre: nombre,
+        p_correo: correo,
+        p_car_id: CARRERA_ID
+      });
+
+      if (error) throw error;
+
+      // Actualizar studentData local
+      studentData = {
+        est_id: estId,
+        est_cedula: cedula,
+        est_nombre: nombre,
+        est_correo: correo,
+        est_cod_programa: CAREER_SHORT_CODE
+      };
+
+      slide(1);
+    } catch (err) {
+      console.error("Error registrando estudiante:", err);
+      alert("No se pudo registrar la información. Intente de nuevo.");
+    } finally {
+      nextBtn.disabled = false;
+      nextBtn.innerHTML = originalText;
     }
   }
 
@@ -1069,11 +1205,7 @@
 
     const rowCarrera = document.getElementById("row-carrera");
     if (data.est_cod_programa) {
-      let carreraDisplay = data.est_cod_programa;
-      if (carreraDisplay === "LICINFORM001") {
-        carreraDisplay = "Ingeniería Informática";
-      }
-      document.getElementById("val-carrera").textContent = carreraDisplay;
+      document.getElementById("val-carrera").textContent = CARRERA_NOMBRE || data.est_cod_programa;
       rowCarrera.style.display = "flex";
     } else {
       rowCarrera.style.display = "none";
@@ -1145,7 +1277,7 @@
   const MAX_REQUEST_ROWS = 10;
   function generateSubjectOptionsHTML() {
     let html = '<option value="">Seleccionar Asignatura...</option>';
-    
+
     // 1. Proyectadas (siempre de primero)
     if (projectedSubjectIds.length > 0) {
       const projSubjects = allSubjects.filter((m) =>
@@ -1163,7 +1295,7 @@
 
     // 2. Agrupadas por semestre / electivas
     const semesters = [...new Set(allSubjects.map((s) => s.mat_semestre || ''))];
-    
+
     // Ordenar semestres: Primero los que tienen valor (01SE, 02SE...) y de último los vacíos (electivas)
     semesters.sort((a, b) => {
       if (!a) return 1;
@@ -1183,7 +1315,7 @@
         html += "</optgroup>";
       }
     });
-    
+
     return html;
   }
 

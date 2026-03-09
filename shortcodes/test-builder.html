@@ -1,0 +1,3077 @@
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<style>
+    #er-container-INFO table th {
+        padding: 7px !important;
+    }
+
+    #er-container-INFO table tr td {
+        padding: 0.857em 0.587em !important;
+    }
+
+    #er-error-message-INFO {
+        color: #c4151c;
+    }
+
+    .report-error {
+        margin-top: 22px;
+    }
+
+    #er-ssn-search-INFO {
+        position: relative;
+        top: -1px;
+        margin-right: 12px;
+        height: 3.08em;
+        width: calc(100% - 125px);
+        padding: 14px;
+        color: #999;
+        font-size: 1rem;
+        background-color: #eee;
+        border: 2px solid #c5c4c4;
+        border-radius: 3px;
+        -webkit-appearance: none;
+        appearance: none;
+    }
+
+    .form-button {
+        cursor: pointer;
+        line-height: 1.64em !important;
+    }
+
+    #optional-subject-warn-INFO,
+    #optional-subject-record-INFO {
+        margin-top: 22px;
+    }
+
+    #er-details-INFO p:first-child {
+        margin: 8px 0;
+        padding: 12px 0 8px 0;
+        border-bottom: 2px solid #c5c4c4;
+    }
+
+    #er-details-INFO .projected-info p {
+        border-bottom: none !important;
+    }
+
+    #er-details-INFO .alert {
+        color: #c4151c;
+    }
+
+    #total-projected-uc-INFO {
+        font-weight: 600;
+    }
+
+    input[type="checkbox"] {
+        box-sizing: border-box;
+        width: 20px;
+        height: 20px;
+        margin: 6px auto;
+        display: block;
+        padding: 0;
+        border: 2px solid #c5c4c4;
+        appearance: none;
+        background-color: #eee;
+        outline: none;
+        transition: outline 0.1s;
+    }
+
+    input[type="checkbox"]:checked {
+        background-size: cover;
+        padding: 2px;
+    }
+
+    input[type="checkbox"]:not(:disabled):indeterminate {
+        border-color: #c5c4c4;
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="16" height="16" viewBox="0 0 412 420"><path style="fill:%230071bb" d="M28.21 250.35l0 -100.29 353.22 -0.01 -0.02 100.3 -353.2 0zm0 0l0 0 0 0z"/></svg>');
+    }
+
+    input[type="checkbox"]:not(:disabled):checked {
+        border-color: #c5c4c4;
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" viewBox="0 0 34 34" xml:space="preserve"><path style="fill: %230071bb" d="M11.941,28.877l-11.941-11.942l5.695-5.696l6.246,6.246l14.364-14.364L32,8.818"/></svg>');
+    }
+
+    input[type="checkbox"]:disabled {
+        background-color: var(--checkbox-disabled-bg-color);
+    }
+
+    input[type="checkbox"]:disabled:checked {
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="16" height="16" viewBox="0 0 34 34" xml:space="preserve"><path style="fill: %238b8c89" d="M11.941,28.877l-11.941-11.942l5.695-5.696l6.246,6.246l14.364-14.364L32,8.818"/></svg>');
+    }
+
+    @media (hover: hover) {
+        input[type="checkbox"]:not(:disabled):hover {
+            cursor: pointer;
+            outline: 2px solid #005288;
+            transform: scale(1.05);
+        }
+    }
+
+    input[type="checkbox"]:focus-visible {
+        outline: 4px solid #0071bb;
+        transform: scale(1.05);
+    }
+
+    #schedules-container-INFO {
+        padding: 22px 0 0 0;
+    }
+
+    #subject-schedules-content-INFO .schedule-header h4,
+    #subject-schedules-content-INFO .schedule-header .subject-info {
+        padding: 0;
+    }
+
+    #subject-schedules-content-INFO .schedule-header .subject-professor {
+        padding: 0;
+    }
+
+    .projected-info .selected-credits {
+        margin-bottom: 22px;
+        padding: 1.25rem;
+        background-color: #eee;
+        text-align: center;
+    }
+
+    .er-mode-switch {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin: 0 0 16px 0;
+        padding: 12px;
+    }
+
+    .er-mode-switch label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        border: 1px solid #c5c4c4;
+        border-radius: 4px;
+        background: #fff;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .er-mode-switch label:hover {
+        border-color: #0071bb;
+    }
+
+    .er-mode-switch label.is-active {
+        background: #0071bb;
+        border-color: #005288;
+        color: #fff;
+    }
+
+    .er-mode-switch input[type="radio"] {
+        margin: 0;
+        width: 16px;
+        height: 16px;
+        accent-color: #0071bb;
+    }
+
+    .er-mode-switch label.is-active input[type="radio"] {
+        accent-color: #fff;
+    }
+
+    .er-semester-tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 0 0 14px 0;
+    }
+
+    .er-semester-tab {
+        cursor: pointer;
+        border: 1px solid #c5c4c4;
+        background: #f8f9fa;
+        color: #343434;
+        padding: 6px 10px;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .er-semester-tab.active {
+        background: #0071bb;
+        color: #fff;
+        border-color: #005288;
+    }
+
+    .unique:not(:only-child) {
+        display: none;
+    }
+
+    .unique:only-child {
+        display: block;
+    }
+
+    /* Graphical Schedule CSS based on formulario_observaciones */
+    .er-schedule-container {
+        font-family: inherit;
+        background: #ffffff;
+        border: 1px solid #e1e4e8;
+        border-radius: 6px;
+        overflow: hidden;
+        margin-top: 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    .er-schedule-header {
+        background: #edf2f7;
+        padding: 12px 20px;
+        border-bottom: 1px solid #e1e4e8;
+        font-weight: 600;
+        color: #343434;
+        font-size: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .er-schedule-grid {
+        display: grid;
+        grid-template-columns: 45px repeat(7, 1fr);
+        grid-template-rows: auto repeat(28, minmax(14px, 1fr));
+        background-color: #eee;
+        gap: 1px;
+    }
+
+    .er-grid-header {
+        background-color: #f8f9fa;
+        text-align: center;
+        font-weight: 600;
+        color: #555;
+        padding: 4px 0;
+        font-size: 0.75rem;
+        border-bottom: 2px solid #ddd;
+    }
+
+    .er-time-label-col {
+        background-color: #fefefe;
+        text-align: right;
+        padding: 2px 4px;
+        font-size: 0.65rem;
+        color: #888;
+        border-right: 1px solid #ddd;
+        min-height: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+    }
+
+    .er-grid-cell {
+        background-color: #fff;
+        position: relative;
+        z-index: 1;
+    }
+
+    .er-class-block {
+        position: relative;
+        background-color: #0071bb;
+        color: #fff;
+        border-radius: 4px;
+        padding: 2px;
+        font-size: 0.65rem;
+        line-height: 1.1;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: center;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        transition:
+            transform 0.2s,
+            box-shadow 0.2s;
+        margin: 1px;
+        z-index: 5;
+    }
+
+    .er-modality-badge {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        background: rgba(255, 255, 255, 0.3);
+        color: #fff;
+        padding: 1px 4px;
+        border-radius: 3px;
+        font-weight: bold;
+        font-size: 0.55rem;
+        line-height: 1;
+        z-index: 2;
+    }
+
+    .er-class-block:hover {
+        transform: scale(1.02);
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+        z-index: 10;
+    }
+
+    .er-class-block .subject-title {
+        font-weight: bold;
+        font-size: 0.7rem;
+        margin-bottom: 1px;
+    }
+
+    .er-class-block .subject-acronym {
+        font-size: 0.55rem;
+        opacity: 0.85;
+    }
+
+    .er-class-block .subject-professor {
+        font-size: 0.55rem;
+        opacity: 0.9;
+        font-style: italic;
+    }
+
+    .er-empty-state {
+        padding: 30px;
+        text-align: center;
+        color: #666;
+        font-style: italic;
+    }
+
+    /* Modal Styles */
+    .er-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 2147483646;
+        display: none;
+        /* Hidden by default */
+        justify-content: center;
+        align-items: center;
+        backdrop-filter: blur(3px);
+    }
+
+    .er-modal-content {
+        background: #fff;
+        width: 95%;
+        max-width: 1100px;
+        max-height: 90vh;
+        border-radius: 8px;
+        box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        position: relative;
+        z-index: 2147483647;
+    }
+
+    .er-modal-header {
+        padding: 15px 20px;
+        border-bottom: 1px solid #e1e4e8;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #edf2f7;
+        flex-shrink: 0;
+    }
+
+    .er-modal-header h3 {
+        margin: 0;
+        color: #0071bb;
+        font-size: 1.25rem;
+    }
+
+    .er-modal-close {
+        cursor: pointer;
+        font-size: 1.5rem;
+        color: #888;
+        background: none;
+        border: none;
+        padding: 0;
+        line-height: 1;
+    }
+
+    .er-modal-close:hover {
+        color: #c4151c;
+    }
+
+    .er-modal-tabs {
+        display: flex;
+        background: #edf2f7;
+        padding: 0 20px;
+        border-bottom: 1px solid #e1e4e8;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        flex-shrink: 0;
+    }
+
+    .er-modal-tab {
+        padding: 10px 15px;
+        cursor: pointer;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #555;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s ease;
+        margin-right: 10px;
+        margin-bottom: -1px;
+        /* Overlap the border */
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .er-modal-tab:hover {
+        color: #0071bb;
+    }
+
+    .er-modal-tab.active {
+        color: #0071bb;
+        border-bottom-color: #0071bb;
+    }
+
+    .er-table-search-container {
+        margin-bottom: 15px;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .er-table-search-container label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #555;
+    }
+
+    .er-table-search-input {
+        padding: 6px 10px;
+        border: 1px solid #c5c4c4;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        width: 200px;
+    }
+
+    .er-modal-body {
+        padding: 20px;
+        overflow-y: auto;
+    }
+
+    .er-schedule-wrapper {
+        margin-bottom: 30px;
+        border: 3px solid #ccc;
+        border-radius: 0;
+        overflow: hidden;
+    }
+
+    .er-schedule-wrapper-title {
+        background: #f8f9fa;
+        padding: 10px 15px;
+        font-weight: bold;
+        border-bottom: 1px solid #ccc;
+        font-size: 1.1rem;
+        color: #333;
+    }
+
+    @media (max-width: 768px) {
+        .er-schedule-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background: transparent;
+        }
+
+        .er-grid-header,
+        .er-time-label-col,
+        .er-grid-cell {
+            display: none;
+        }
+
+        .er-mobile-day {
+            background: #fff;
+            border: 1px solid #e1e4e8;
+            border-radius: 4px;
+            padding: 15px;
+        }
+
+        .er-mobile-day h4 {
+            margin: 0 0 10px 0;
+            color: #0071bb;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+
+        .er-mobile-class {
+            margin-bottom: 10px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-left: 4px solid #0071bb;
+            border-radius: 2px;
+        }
+    }
+
+    .er-small-btn {
+        padding: 8px 16px !important;
+        font-size: 0.9em !important;
+        line-height: 1.4em !important;
+    }
+
+    /* Responsive subject-selection table */
+    .projected-subjects {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    @media (max-width: 600px) {
+        .projected-subjects table.tablepress {
+            min-width: 480px;
+        }
+
+        .projected-subjects table.tablepress th,
+        .projected-subjects table.tablepress td {
+            white-space: nowrap;
+            font-size: 0.82rem !important;
+            padding: 6px 6px !important;
+        }
+
+        .projected-subjects table.tablepress td:nth-child(4) {
+            white-space: normal;
+            min-width: 120px;
+        }
+    }
+
+    /* =========================================
+     Interactive Builder CSS
+  ========================================= */
+    .er-builder-active .er-schedules-table,
+    .er-builder-active .er-schedule-wrapper,
+    .er-builder-active .er-table-search-container {
+        display: none !important;
+    }
+
+    .er-builder-layout {
+        display: flex;
+        flex-direction: row;
+        height: 100%;
+        min-height: 500px;
+        gap: 15px;
+        position: relative;
+    }
+
+    .er-builder-sidebar {
+        width: 320px;
+        background: #ffffff;
+        border-right: 1px solid #e1e4e8;
+        display: flex;
+        flex-direction: column;
+        z-index: 100;
+        transition: transform 0.3s ease;
+    }
+
+    .er-builder-sidebar-header {
+        padding: 15px;
+        background: #0071bb;
+        color: white;
+        font-weight: bold;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    #er-builder-accordion-INFO {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 10px;
+        scrollbar-width: thin;
+    }
+
+    .er-builder-main {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        position: relative;
+    }
+
+    .er-builder-top-bar {
+        padding: 10px 20px;
+        background: #fff;
+        border-bottom: 1px solid #e1e4e8;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 10;
+    }
+
+    .er-builder-stats {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #4a5568;
+        background: #edf2f7;
+        padding: 4px 12px;
+        border-radius: 20px;
+    }
+
+    .er-builder-grid-container {
+        flex-grow: 1;
+        position: relative;
+        overflow: auto;
+        /* Allow both scrolls */
+        background: #fff;
+    }
+
+    /* Empty State Overlay */
+    .er-builder-empty-overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 50;
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 40px;
+    }
+
+    .empty-overlay-content {
+        max-width: 400px;
+        animation: fadeInScale 0.4s ease-out;
+    }
+
+    @keyframes fadeInScale {
+        from {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    .empty-icon {
+        font-size: 4rem;
+        color: #0071bb;
+        margin-bottom: 20px;
+        opacity: 0.8;
+    }
+
+    .er-builder-empty-overlay h4 {
+        font-size: 1.5rem;
+        color: #2d3748;
+        margin-bottom: 12px;
+    }
+
+    .er-builder-empty-overlay p {
+        color: #718096;
+        margin-bottom: 25px;
+        font-size: 1rem;
+    }
+
+    .er-large-btn {
+        padding: 12px 30px !important;
+        font-size: 1.1rem !important;
+        border-radius: 30px !important;
+        box-shadow: 0 4px 15px rgba(0, 113, 187, 0.3);
+    }
+
+    .er-btn-outline {
+        background: transparent !important;
+        color: #0071bb !important;
+        border: 2px solid #0071bb !important;
+    }
+
+    .er-btn-outline:hover {
+        background: #0071bb !important;
+        color: #fff !important;
+    }
+
+    /* Grid Styling Updates */
+    .er-builder-grid-container .er-schedule-grid {
+        min-width: 800px;
+        /* Force minimum width for scroll on small areas */
+    }
+
+    .er-builder-grid-container .er-grid-header {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        background: #f8f9fa;
+    }
+
+    .er-builder-grid-container .er-time-label-col {
+        position: sticky;
+        left: 0;
+        z-index: 15;
+        background: #f8f9fa;
+        border-right: 1px solid #ddd;
+    }
+
+    /* Subject Blocks - Premium Colors */
+    .er-class-block {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .er-class-block:hover {
+        z-index: 10;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .er-builder-grouped-block {
+        cursor: pointer;
+        background: linear-gradient(135deg, #f6ad55 0%, #ed8936 100%) !important;
+        border: 2px dashed rgba(255, 255, 255, 0.8) !important;
+    }
+
+    .er-builder-fixed-block {
+        cursor: pointer;
+        background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%) !important;
+        border: 2px solid #fff !important;
+    }
+
+    .er-builder-fixed-block::after {
+        content: '\f058';
+        font-family: FontAwesome;
+        position: absolute;
+        top: 2px;
+        right: 5px;
+        font-size: 0.8rem;
+        color: white;
+    }
+
+    /* Popover Styling */
+    .er-builder-popover {
+        position: absolute;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        width: 280px;
+        z-index: 1000;
+        display: none;
+        border: 1px solid #e1e4e8;
+        overflow: hidden;
+    }
+
+    .er-builder-popover-header {
+        background: #f7fafc;
+        padding: 10px 15px;
+        border-bottom: 1px solid #edf2f7;
+        font-weight: bold;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .popover-item {
+        padding: 12px 15px;
+        border-bottom: 1px solid #f7fafc;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .popover-item:last-child {
+        border-bottom: none;
+    }
+
+    .popover-item:hover {
+        background: #ebf8ff;
+    }
+
+    .popover-item strong {
+        display: block;
+        color: #2b6cb0;
+        margin-bottom: 4px;
+    }
+
+    .popover-item .prof {
+        font-size: 0.8rem;
+        color: #718096;
+        font-style: italic;
+    }
+
+    /* Accordion styles */
+    .er-builder-semester-header {
+        padding: 12px 15px;
+        background: #edf2f7;
+        border-radius: 6px;
+        margin-bottom: 5px;
+        cursor: pointer;
+        font-weight: 600;
+        display: flex;
+        justify-content: space-between;
+        transition: background 0.2s;
+    }
+
+    .er-builder-semester-header:hover {
+        background: #e2e8f0;
+    }
+
+    .er-builder-subject-item {
+        padding: 8px;
+        border-bottom: 1px solid #f7fafc;
+    }
+
+    .er-builder-subject-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .er-builder-subj-toggle {
+        cursor: pointer;
+        flex-grow: 1;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    .er-builder-section-list {
+        margin-left: 30px;
+        padding: 5px 0;
+        display: none;
+    }
+
+    .er-builder-section-item {
+        padding: 4px 0;
+        font-size: 0.8rem;
+        color: #4a5568;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Responsive Transitions */
+    @media (max-width: 768px) {
+        .er-builder-layout {
+            height: calc(100vh - 120px);
+            flex-direction: column;
+        }
+
+        .er-builder-sidebar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            height: 80%;
+            border-right: none;
+            border-top: 2px solid #e1e4e8;
+            border-radius: 20px 20px 0 0;
+            transform: translateY(100%);
+            box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .er-builder-sidebar.mobile-open {
+            transform: translateY(0);
+        }
+
+        .er-builder-top-bar {
+            padding: 10px;
+        }
+
+        .er-builder-stats {
+            font-size: 0.8rem;
+        }
+    }
+</style>
+<div id="er-container-INFO">
+    <div id="er-projection-controls-INFO">
+        <form id="er-ssn-search-frm-INFO">
+            <input id="er-ssn-search-INFO" name="ssn" type="text"
+                placeholder="Introduce tu número de cédula de identidad" />
+            <button id="er-ssn-search-btn-INFO" class="form-button et_pb_button" type="submit">
+                Buscar
+            </button>
+    </div>
+
+    <div id="er-semester-controls-INFO" style="display: none; text-align: center; margin-bottom: 20px;">
+        <button id="er-projection-mode-btn-INFO" class="form-button et_pb_button er-small-btn" type="button">
+            Volver a proyecciones
+        </button>
+    </div>
+    <img id="er-loader-INFO"
+        src="https://ingenieria.ucab.edu.ve/informatica/wp-content/uploads/sites/4/2019/07/popup_loading.gif"
+        style="display: none" />
+    <div id="er-details-container-INFO" style="display: none">
+        <div id="er-details-INFO">
+            <p id="er-student-summary-INFO">
+                <strong>Nombre:</strong> <span class="name"></span><br />
+                <strong>Programa:</strong> <span class="program"></span><br />
+                <strong>Promedio:</strong> <span class="agp"></span> / 20 puntos<br />
+                <strong>Ubicación:</strong> <span class="sem-loc"></span> (<span class="accum-uc"></span>
+                UC acumuladas)
+            </p>
+            <p id="er-projection-intro-INFO" style="margin: 7px 0">
+                A continuación, se listan las asignaturas que podrás cursar en este
+                período, de acuerdo a tu récord académico.
+                <strong>Toma en especial consideración las asignaturas que se marcan en el
+                    cuadro de verificación, y el orden en que aparecen las mismas</strong>, pues constituyen la
+                recomendación de
+                inscripción que desde la Escuela
+                te hacemos, basados en la naturaleza de las asignaturas disponibles y tu
+                historial académico:
+            </p>
+            <div class="projected-subjects"></div>
+            <div class="projected-info">
+                <div class="selected-credits">
+                    Has seleccionado un total
+                    <span id="total-projected-uc-INFO">0</span> UC.<br />
+                    <div id="er-view-schedules-container-INFO" style="display: none; margin-top: 15px">
+                        <button id="er-view-schedules-btn-INFO" class="form-button et_pb_button">
+                            Ver horarios
+                        </button>
+                    </div>
+                </div>
+                <div id="er-recommendations-wrapper-INFO">
+                    [box type="download"]
+                    <div id="recommendations-INFO">
+                        Por tu ubicación en la malla curricular te recomendamos cursar hasta
+                        un máximo de
+                        <strong style="color: #0d793d"><span id="max-recommended-uc-INFO">0</span> UC</strong>
+                        en este semestre.
+                    </div>
+                    [/box]
+                </div>
+            </div>
+            <div id="optional-subject-warn-INFO">
+                [box type="warning"]Toma en cuenta que no todas las asignaturas
+                electivas ofrecidas en la Universidad tienen la misma cantidad de
+                unidades crédito (UC). En la lista de asignaturas proyectadas se
+                muestran las asignaturas electivas con cuatro (4) UC como referencia.
+                Para obtener el título de Ingeniero/a en Informática
+                <strong>debes aprobar un total de doce (12) UC en asignaturas
+                    electivas</strong>. [/box]
+                <p style="border: none">&nbsp;</p>
+                [box type="alert"] Si cursaste alguna asignatura electiva que es
+                obligatoria en otras unidades académicas
+                <strong>
+                    <a href="https://www.ucab.edu.ve/informacion-institucional/secretaria/servicios/solicitud-de-registro-de-materias-electivas/"
+                        target="_blank" style="
+              color: rgba(196, 21, 28);
+              text-decoration: underline;
+              cursor: pointer;
+            ">debes registrarlas ante Secretaría General</a></strong>. Si no lo has hecho, no aparecerán en tu récord
+                académico, y por
+                tanto, aparecerán como "pendientes por cursar" en la presente lista de
+                asignaturas.<br /><br />
+                Ahora bien, si hiciste el registro con antelación a este proceso de
+                solicitud de inscripción en línea y todavía te aparece proyectada alguna
+                asignatura electiva, a pesar de haberla cursado y registrado como tal
+                ante Secretaría General, no dudes en reportarlo a través del formulario
+                respectivo. [/box]
+            </div>
+            <div class="report-error">
+                [box type="info"]Si consideras que hay un error en la proyección aquí
+                desplegada, por favor
+                <a id="report-error-link-INFO" href="#" target="_blank" style="font-weight: bold">reporta el error
+                    haciendo clic
+                    aquí</a>.[/box]
+            </div>
+
+            <div id="er-schedule-modal-INFO" class="er-modal-overlay">
+                <div class="er-modal-content">
+                    <div class="er-modal-header">
+                        <h3>Horarios de Clase</h3>
+                        <button type="button" class="er-modal-close" id="er-close-modal-btn-INFO">
+                            &times;
+                        </button>
+                    </div>
+                    <div class="er-modal-tabs" id="er-modal-tabs-INFO">
+                        <div class="er-modal-tab active" data-tab="all">Ver todo</div>
+                        <div class="er-modal-tab" data-tab="individual">Ver por materia individual</div>
+                        <div class="er-modal-tab" data-tab="table">Ver en formato de tabla</div>
+                        <div class="er-modal-tab" data-tab="builder">Constructor Interactivo <span
+                                style="background:#0071bb; color:white; font-size: 0.65rem; padding: 2px 6px; border-radius: 10px; margin-left: 5px; vertical-align: top;">Nuevo</span>
+                        </div>
+                    </div>
+                    <div class="er-modal-body" id="er-modal-body-INFO">
+                        <div id="subject-schedules-container-INFO">
+                            <!-- Se inyectarán los horarios gráficos aquí (vista clásica) -->
+                        </div>
+
+                        <!-- CONTENEDOR DEL CONSTRUCTOR INTERACTIVO -->
+                        <div class="er-builder-layout" style="display: none;" id="er-builder-layout-INFO">
+
+                            <div class="er-builder-sidebar" id="er-builder-sidebar-INFO">
+                                <div id="er-builder-sidebar-close-INFO" style="display: none;">Cerrar y Ver Grilla</div>
+                                <!-- Accordion inyectado dinámicamente -->
+                                <div id="er-builder-accordion-INFO"></div>
+                            </div>
+
+                            <div class="er-builder-main">
+                                <div class="er-builder-top-bar">
+                                    <div class="er-builder-actions">
+                                        <button id="er-builder-mobile-add-btn-INFO"
+                                            class="form-button et_pb_button er-small-btn"
+                                            style="display: none;">Configurar Materias</button>
+                                        <button id="er-builder-add-secondary-btn-INFO"
+                                            class="form-button et_pb_button er-small-btn er-btn-outline"
+                                            style="display: none;">
+                                            <i class="fa fa-plus-circle"></i> Agregar Materias
+                                        </button>
+                                    </div>
+                                    <div class="er-builder-stats" style="display: none;">
+                                        Total Seleccionado: <span class="stats-uc">0</span> UC
+                                    </div>
+                                </div>
+
+                                <div class="er-builder-grid-container" id="er-builder-grid-container-INFO">
+                                    <div class="er-builder-empty-overlay" id="er-builder-empty-overlay-INFO">
+                                        <div class="empty-overlay-content">
+                                            <div class="empty-icon"><i class="fa fa-calendar-plus-o"></i></div>
+                                            <h4>Tu horario está vacío</h4>
+                                            <p>Selecciona las materias que deseas cursar desde el panel lateral para
+                                                visualizarlas aquí.</p>
+                                            <button id="er-builder-add-initial-btn-INFO"
+                                                class="form-button et_pb_button er-large-btn">
+                                                <i class="fa fa-plus"></i> Agregar Materias
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <!-- The builder grid injects here -->
+                                    <div id="er-builder-grid-target-INFO"></div>
+
+                                    <!-- Popover for grouped classes -->
+                                    <div class="er-builder-popover" id="er-builder-popover-INFO">
+                                        <div class="er-builder-popover-header">
+                                            <span>Elige una sección</span>
+                                            <span class="popover-close">&times;</span>
+                                        </div>
+                                        <div class="popover-content"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="er-semester-mode-prompt-INFO"
+        style="margin: 20px 0; text-align: left; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+        <p style="margin: 0; font-size: 1rem; color: #555;">De igual manera, puedes consultar los horarios por semestre
+            aquí:</p>
+        <button id="er-semester-mode-btn-INFO" class="form-button et_pb_button er-small-btn" type="button">
+            Ver horarios por semestre
+        </button>
+    </div>
+
+    <!-- Banner exclusivo para carreras tipo MINOR -->
+    <div id="er-minor-banner-INFO"
+        style="display: none; margin: 0 0 20px 0; padding: 18px 22px; background: #edf5fc; border-left: 4px solid #0071bb; border-radius: 4px;">
+        <p id="er-minor-banner-text-INFO" style="margin: 0; font-size: 1.05rem; color: #1a1a1a; line-height: 1.6;"></p>
+    </div>
+
+    <div id="er-error-message-INFO" style="display: none"></div>
+</div>
+
+<script>
+    (function () {
+        const CAREER_SHORT_CODE = "INFO";
+        let term = null; // Active semester TERM, loaded from DB in initCareer()
+        const { createClient } = supabase;
+        const supabaseUrl = "https://zmvecicbbxbpuhbnexiz.supabase.co";
+        const supabaseAnonKey =
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptdmVjaWNiYnhicHVoYm5leGl6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4ODQzMzAsImV4cCI6MjA4NTQ2MDMzMH0.m5lHEASg8lCo4qjajA4yLzjqYN12g3tlNkZh4h_vBmE";
+        const _supabase = createClient(supabaseUrl, supabaseAnonKey);
+        const invalidSsn =
+            "Debes introducir un número de cédula de identidad válido.";
+        const notFound =
+            "No se encontró ninguna información asociada a la cédula de identidad N° <strong>@SSN@</strong>.";
+        const generalError =
+            "Hubo un error inesperado al intentar obtener la información. Intenta más tarde&hellip;";
+        const SPEED = 250;
+
+        // Career info loaded dynamically from DB via er_get_career_info
+        let CAREER_ID = null;
+        let CAREER_NAME = "";
+        let CAREER_CLASSIFICATION = "MAJOR"; // 'MAJOR' or 'MINOR'
+
+        // Valid semesters loaded dynamically from DB via er_get_career_semesters
+        // Only includes semesters with at least one non-requirement subject
+        let VALID_SEMESTERS = [];
+
+        const SCHEDULE_MODE = {
+            PROJECTION: "projection",
+            SEMESTER: "semester",
+        };
+        const excludedSubjects = [
+            "INFO-00192",
+            "INFO-IILCT",
+            "INFO-IILTG",
+            "CUSC",
+            "IISC",
+        ];
+        const reportLink =
+            "https://docs.google.com/forms/d/e/1FAIpQLSfhMWpdDPe2EowqEAYkx6_lHwcGmaDc_pyOp244DOSuD14BXg/viewform?usp=pp_url&entry.66360717=@@SSN@@&entry.134787551=@@lastName@@&entry.1083683938=@@name@@&entry.875582967=@@report@@";
+
+        let electiveSubjectIds = new Set();
+        let careerMetadataLoaded = false;
+
+        // --- Interactive Builder State ---
+        let builderSubjectSelection = new Set(); // Set of subjectIds
+        let builderSectionSelection = new Set(); // Set of 'subjectId|crn'
+        let builderFixedSections = {};           // Map of subjectId -> crn
+
+        async function ensureCareerMetadata() {
+            if (careerMetadataLoaded) return;
+            if (CAREER_ID === null) return; // not yet initialized
+            try {
+                // Only need to fetch elective subject IDs; modality now comes directly from the RPCs
+                const { data: elData } = await _supabase
+                    .from("materia_carrera")
+                    .select("materia:materia_id(mat_cod)")
+                    .eq("carrera_id", CAREER_ID)
+                    .eq("mat_sec_is_elective", true);
+
+                if (elData) {
+                    elData.forEach((r) => {
+                        if (r.materia && r.materia.mat_cod) {
+                            electiveSubjectIds.add(r.materia.mat_cod);
+                        }
+                    });
+                }
+                careerMetadataLoaded = true;
+            } catch (err) {
+                console.error("Failed to load career metadata", err);
+            }
+        }
+
+        // Load career info and valid semesters from DB, then bootstrap the UI
+        async function initCareer() {
+            try {
+                // 1. Fetch career info by short code
+                const { data: careerInfo, error: careerErr } = await _supabase.rpc(
+                    "er_get_career_info",
+                    { p_car_cod_corto: CAREER_SHORT_CODE }
+                );
+
+                if (careerErr || !careerInfo) {
+                    console.error("Could not load career info", careerErr);
+                    return;
+                }
+
+                CAREER_ID = careerInfo.id;
+                CAREER_NAME = careerInfo.nombre;
+                CAREER_CLASSIFICATION = careerInfo.clasificacion || "MAJOR";
+
+                // 1b. Fetch active term from DB
+                const { data: activeTerm } = await _supabase.rpc("er_get_active_term");
+                term = activeTerm || null;
+
+                // 2. Fetch valid semesters (non-requirement subjects only)
+                const { data: semestersData, error: semErr } = await _supabase.rpc(
+                    "er_get_career_semesters",
+                    { p_career_id: CAREER_ID }
+                );
+
+                if (!semErr && Array.isArray(semestersData)) {
+                    VALID_SEMESTERS = semestersData.sort();
+                } else {
+                    console.warn("Could not load career semesters", semErr);
+                    VALID_SEMESTERS = [];
+                }
+
+                // 3. Bootstrap the correct UI flow
+                if (CAREER_CLASSIFICATION === "MINOR") {
+                    bootstrapMinorFlow();
+                } else {
+                    bootstrapMajorFlow();
+                }
+            } catch (err) {
+                console.error("initCareer failed", err);
+            }
+        }
+
+        function bootstrapMinorFlow() {
+            // Hide projection-related elements
+            jQuery("#er-projection-controls-" + CAREER_SHORT_CODE).hide();
+            jQuery("#er-semester-mode-prompt-" + CAREER_SHORT_CODE).hide();
+            jQuery("#er-semester-controls-" + CAREER_SHORT_CODE).hide();
+
+            // Show descriptive banner for minor
+            const bannerText =
+                `\u00bfEstudias el <strong>${CAREER_NAME}</strong>? ` +
+                `Aqu\u00ed puedes consultar los horarios de las asignaturas del minor organizados por semestre, ` +
+                `de acuerdo con el plan de estudios vigente.`;
+            jQuery("#er-minor-banner-text-" + CAREER_SHORT_CODE).html(bannerText);
+            jQuery("#er-minor-banner-" + CAREER_SHORT_CODE).show();
+
+            // Pre-load semester schedules immediately (no cedula needed)
+            jQuery("#er-details-container-" + CAREER_SHORT_CODE).show();
+            jQuery("#er-student-summary-" + CAREER_SHORT_CODE).hide();
+            jQuery("#er-projection-intro-" + CAREER_SHORT_CODE).hide();
+            jQuery("#er-recommendations-wrapper-" + CAREER_SHORT_CODE).hide();
+            jQuery(".report-error").hide();
+            jQuery("#optional-subject-warn-" + CAREER_SHORT_CODE).hide();
+            jQuery("#er-view-schedules-container-" + CAREER_SHORT_CODE).hide();
+        }
+
+        function bootstrapMajorFlow() {
+            // Major flow: nothing special to do here, jQuery ready will handle the UI
+            // (the projection controls are already visible by default)
+        }
+
+        jQuery(() => {
+            const $searchForm = jQuery("#er-ssn-search-frm-" + CAREER_SHORT_CODE);
+            const $frm = jQuery("#er-ssn-search-frm-" + CAREER_SHORT_CODE);
+            const $ssn = jQuery("#er-ssn-search-" + CAREER_SHORT_CODE);
+            const $detailsContainer = jQuery("#er-details-container-" + CAREER_SHORT_CODE);
+            const $errMsg = jQuery("#er-error-message-" + CAREER_SHORT_CODE);
+            const $loader = jQuery("#er-loader-" + CAREER_SHORT_CODE);
+            const $name = $detailsContainer.find(".name");
+            const $program = $detailsContainer.find(".program");
+            const $agp = $detailsContainer.find(".agp");
+            const $semLoc = $detailsContainer.find(".sem-loc");
+            const $accumUc = $detailsContainer.find(".accum-uc");
+            const $projectedSubjects = $detailsContainer.find(".projected-subjects");
+            const $totalUc = jQuery("#total-projected-uc-" + CAREER_SHORT_CODE);
+            const $maxRecommendedUc = jQuery("#max-recommended-uc-" + CAREER_SHORT_CODE);
+            const $studentSummary = jQuery("#er-student-summary-" + CAREER_SHORT_CODE);
+            const $projectionIntro = jQuery("#er-projection-intro-" + CAREER_SHORT_CODE);
+            const $reportError = $detailsContainer.find(".report-error");
+            const $recommendations = jQuery("#recommendations-" + CAREER_SHORT_CODE);
+
+            // Modal references
+            const $schedulesModal = jQuery("#er-schedule-modal-" + CAREER_SHORT_CODE);
+            const $viewSchedulesContainer = jQuery("#er-view-schedules-container-" + CAREER_SHORT_CODE);
+            const $viewSchedulesBtn = jQuery("#er-view-schedules-btn-" + CAREER_SHORT_CODE);
+            const $closeModalBtn = jQuery("#er-close-modal-btn-" + CAREER_SHORT_CODE);
+            const $schedulesContainer = jQuery("#subject-schedules-container-" + CAREER_SHORT_CODE);
+
+            if ($schedulesModal.parent()[0] !== document.body) {
+                $schedulesModal.appendTo(document.body);
+            }
+
+            let ssn = null;
+            let totalCredits = 0;
+            let studentSchedules = [];
+            let projectionSchedules = [];
+            let projectionSubjects = [];
+            let semesterSubjectsBySemester = {};
+            let semesterSchedules = [];
+            let hasOptionalSubjects = false;
+            let selectedSubjects = new Set();
+            let scheduleMode = SCHEDULE_MODE.PROJECTION;
+            let activeSemesterTab = VALID_SEMESTERS[0] || "01SE";
+            let activeModalSemesterTab = VALID_SEMESTERS[0] || "01SE";
+            let activeModalTab = "all";
+            let hasLoadedSemesterModeData = false;
+
+            $detailsContainer.on("click", "input[type=checkbox]", handleCheckboxClick);
+            $detailsContainer.on(
+                "click",
+                "#er-semester-tabs-INFO .er-semester-tab",
+                handleSemesterTabClick,
+            );
+            $schedulesContainer.on(
+                "click",
+                "#er-modal-semester-tabs .er-semester-tab",
+                handleModalSemesterTabClick,
+            );
+            $frm.on("submit", handleSsnSearchSubmit);
+            jQuery("#er-semester-mode-btn-" + CAREER_SHORT_CODE).on("click", () => {
+                const $erContainer = jQuery("#er-container-" + CAREER_SHORT_CODE);
+                if ($erContainer.length) {
+                    jQuery("html, body").animate(
+                        { scrollTop: $erContainer.offset().top - 20 },
+                        400,
+                        "swing",
+                    );
+                }
+                setScheduleMode(SCHEDULE_MODE.SEMESTER);
+            });
+            jQuery("#er-projection-mode-btn-" + CAREER_SHORT_CODE).on("click", () => setScheduleMode(SCHEDULE_MODE.PROJECTION));
+
+            // Bootstrap the career-aware UI (async: fetches career info + semesters from DB)
+            initCareer().then(() => {
+                if (CAREER_CLASSIFICATION === "MINOR") {
+                    // For minor: load semester view immediately without student search
+                    activeSemesterTab = VALID_SEMESTERS[0] || "01SE";
+                    activeModalSemesterTab = activeSemesterTab;
+                    jQuery("#er-loader-" + CAREER_SHORT_CODE).show();
+                    ensureSemesterModeData()
+                        .then(() => {
+                            jQuery("#er-loader-" + CAREER_SHORT_CODE).hide();
+                            renderSubjects(getSubjectsForSemester(activeSemesterTab), null, {
+                                mode: SCHEDULE_MODE.SEMESTER,
+                            });
+                            renderSemesterTabs();
+                            renderSchedules();
+                        })
+                        .catch((err) => {
+                            jQuery("#er-loader-" + CAREER_SHORT_CODE).hide();
+                            console.error(err);
+                        });
+                } else {
+                    applyModeLayout(SCHEDULE_MODE.PROJECTION);
+                }
+            });
+
+            // Modal events
+            $viewSchedulesBtn.on("click", function (e) {
+                e.preventDefault();
+                $schedulesModal.css("display", "flex");
+            });
+            $closeModalBtn.on("click", function () {
+                $schedulesModal.hide();
+            });
+            $schedulesModal.on("click", function (e) {
+                if (e.target === this) {
+                    $schedulesModal.hide();
+                }
+            });
+            $schedulesModal.on("click", ".er-modal-tab", async function () {
+                if (jQuery(this).hasClass("active")) return;
+                jQuery(this).siblings().removeClass("active");
+                jQuery(this).addClass("active");
+                activeModalTab = jQuery(this).data("tab");
+
+                if (activeModalTab === "builder") {
+                    jQuery("#subject-schedules-container-" + CAREER_SHORT_CODE).hide();
+                    jQuery("#er-builder-layout-" + CAREER_SHORT_CODE).show();
+                    // Reset global state so builder starts clean
+                    selectedSubjects.clear();
+                    $totalUc.text("0");
+                    $totalUc.parent().removeClass("alert");
+                    showLoader();
+                    try {
+                        await ensureSemesterModeData();
+                        initializeBuilder();
+                    } catch (e) {
+                        console.error(e);
+                    } finally {
+                        hideLoader();
+                    }
+                } else {
+                    jQuery("#subject-schedules-container-" + CAREER_SHORT_CODE).show();
+                    jQuery("#er-builder-layout-" + CAREER_SHORT_CODE).hide();
+                    renderSchedules();
+                }
+            });
+
+            $schedulesModal.on("keyup", ".er-table-search-input", function () {
+                const value = jQuery(this).val().toLowerCase();
+                $schedulesContainer.find(".er-schedules-table tbody tr").filter(function () {
+                    jQuery(this).toggle(jQuery(this).text().toLowerCase().indexOf(value) > -1);
+                });
+            });
+
+            function validateSsn(ssn) {
+                const matched = ssn.match(/^(?:AS){0,1}(\d+)$/i);
+                return matched !== null;
+            }
+
+            async function handleFetchStudentResponse(data) {
+                $totalUc.text("0");
+                studentSchedules = [];
+                projectionSchedules = [];
+                semesterSchedules = [];
+                projectionSubjects = [];
+                semesterSubjectsBySemester = {};
+                builderPanelBuilt = false;
+                hasLoadedSemesterModeData = false;
+                activeSemesterTab = VALID_SEMESTERS[0] || "01SE";
+                activeModalSemesterTab = VALID_SEMESTERS[0] || "01SE";
+                selectedSubjects.clear();
+                $schedulesContainer.empty();
+                scheduleMode = SCHEDULE_MODE.PROJECTION;
+                applyModeLayout(SCHEDULE_MODE.PROJECTION);
+
+                if (data === null) {
+                    hideLoader(notFound.replace("@SSN@", ssn));
+                } else {
+                    hideLoader();
+                    updateStudentInfo(data);
+                    projectionSubjects = Array.isArray(data.subjects) ? data.subjects : [];
+
+                    await fetchSchedules(term, data.info.program, projectionSubjects)
+                        .then(handleStudentSchedules)
+                        .catch(handleError);
+                    renderSubjects(projectionSubjects, semesterLoad[data.info.location]);
+                    if (projectionSubjects.length > 0) {
+                        checkSubjects(projectionSubjects, semesterLoad[data.info.location]);
+                    }
+                    renderErrorReportLink(data);
+
+                    $maxRecommendedUc.text(semesterLoad[data.info.location] || 0);
+                }
+            }
+
+            function handleStudentSchedules(data) {
+                projectionSchedules = data;
+                studentSchedules = data;
+            }
+
+            function handleSemesterSchedules(data) {
+                semesterSchedules = data;
+                studentSchedules = data;
+                semesterSubjectsBySemester = buildSemesterSubjectsMap(data);
+                hasLoadedSemesterModeData = true;
+            }
+
+            async function ensureSemesterModeData() {
+                if (hasLoadedSemesterModeData) {
+                    return;
+                }
+
+                await fetchSchedulesBySemester(CAREER_ID)
+                    .then(handleSemesterSchedules)
+                    .catch(handleError);
+            }
+
+            function setScheduleMode(mode) {
+                if (scheduleMode === mode) return;
+                scheduleMode = mode;
+                selectedSubjects.clear();
+                $totalUc.text("0");
+                $totalUc.parent().removeClass("alert");
+                applyModeLayout(scheduleMode);
+
+                if (scheduleMode === SCHEDULE_MODE.PROJECTION) {
+                    studentSchedules = projectionSchedules;
+                    if (projectionSubjects.length > 0) {
+                        renderSubjects(projectionSubjects, semesterLoad[$semLoc.text()]);
+                        checkSubjects(projectionSubjects, semesterLoad[$semLoc.text()]);
+                    } else {
+                        $detailsContainer.hide();
+                    }
+                } else {
+                    studentSchedules = semesterSchedules;
+                    activeModalSemesterTab = activeSemesterTab;
+                    showLoader();
+                    ensureSemesterModeData()
+                        .then(() => {
+                            hideLoader();
+                            renderSubjects(getSubjectsForSemester(activeSemesterTab), null, {
+                                mode: SCHEDULE_MODE.SEMESTER,
+                            });
+                            renderSemesterTabs();
+                            renderSemesterTabs();
+                            restoreCheckboxes();
+                            renderSchedules();
+                        })
+                        .catch(handleError);
+                }
+            }
+
+            function applyModeLayout(mode) {
+                const isProjectionMode = mode === SCHEDULE_MODE.PROJECTION;
+
+                if (isProjectionMode) {
+                    jQuery("#er-projection-controls-" + CAREER_SHORT_CODE).show();
+                    jQuery("#er-semester-controls-" + CAREER_SHORT_CODE).hide();
+                    $studentSummary.show();
+                    $projectionIntro.show();
+                    jQuery("#er-recommendations-wrapper-" + CAREER_SHORT_CODE).show();
+                    $reportError.show();
+                    jQuery("#optional-subject-warn-" + CAREER_SHORT_CODE).show();
+                    jQuery("#er-semester-mode-prompt-" + CAREER_SHORT_CODE).show();
+
+                    if (projectionSubjects.length === 0) {
+                        $detailsContainer.hide();
+                        $schedulesContainer.empty();
+                    }
+                } else {
+                    jQuery("#er-projection-controls-" + CAREER_SHORT_CODE).hide();
+                    jQuery("#er-semester-controls-" + CAREER_SHORT_CODE).show();
+                    $studentSummary.hide();
+                    $projectionIntro.hide();
+                    jQuery("#er-recommendations-wrapper-" + CAREER_SHORT_CODE).hide();
+                    $reportError.hide();
+                    jQuery("#optional-subject-warn-" + CAREER_SHORT_CODE).hide();
+                    $detailsContainer.show();
+                    jQuery("#er-semester-mode-prompt-" + CAREER_SHORT_CODE).hide();
+                }
+            }
+
+            function handleSemesterTabClick(evt) {
+                const targetSemester = jQuery(evt.currentTarget).data("semester");
+                if (!targetSemester || activeSemesterTab === targetSemester) {
+                    return;
+                }
+
+                activeSemesterTab = targetSemester;
+                activeModalSemesterTab = targetSemester;
+                renderSubjects(getSubjectsForSemester(activeSemesterTab), null, {
+                    mode: SCHEDULE_MODE.SEMESTER,
+                });
+                renderSemesterTabs();
+                restoreCheckboxes();
+                renderSchedules();
+            }
+
+            function handleError(err) {
+                console.error(err);
+                hideLoader(generalError);
+            }
+
+            function updateStudentInfo(data) {
+                $name.text(data.info.name);
+
+                let carCodigo = data.info.program;
+                if (data.info.campus && carCodigo.endsWith(data.info.campus)) {
+                    carCodigo = carCodigo.slice(0, -data.info.campus.length);
+                }
+
+                let planName = "Programa";
+                for (const key of Object.keys(studyPlans)) {
+                    if (carCodigo.startsWith(key)) {
+                        planName = studyPlans[key];
+                        break;
+                    }
+                }
+
+                $program.text(
+                    `${planName} (${carCodigo} | ${campus[data.info.campus] || data.info.campus})`,
+                );
+                $agp.text(data.info.agp.toLocaleString("es-VE"));
+                $semLoc.text(data.info.location);
+                $accumUc.text(data.info.accumUc);
+            }
+
+            function updateTotalUc(credits, isAdding) {
+                let totalUcValue = parseFloat($totalUc.text()) || 0;
+
+                if (isAdding) {
+                    totalUcValue += credits;
+                } else {
+                    totalUcValue -= credits;
+                }
+
+                $totalUc.text(totalUcValue.toFixed(0));
+
+                if (
+                    scheduleMode === SCHEDULE_MODE.PROJECTION &&
+                    totalUcValue.toFixed(0) > (semesterLoad[$semLoc.text()] || 0)
+                ) {
+                    $totalUc.parent().addClass("alert");
+                } else {
+                    $totalUc.parent().removeClass("alert");
+                }
+            }
+
+            function updateSelectedSubjects(subjectId, isSelected) {
+                if (isSelected) {
+                    selectedSubjects.add(subjectId);
+                } else {
+                    selectedSubjects.delete(subjectId);
+                }
+
+                renderSchedules();
+            }
+
+            function checkOverlap(blockSchedules, newSection) {
+                const daysMap = [
+                    "monday",
+                    "tuesday",
+                    "wednesday",
+                    "thursday",
+                    "friday",
+                    "saturday",
+                    "sunday",
+                ];
+
+                for (let existingSection of blockSchedules) {
+                    for (let day of daysMap) {
+                        const ex = existingSection.schedules[day];
+                        const nw = newSection.schedules[day];
+
+                        if (ex && nw) {
+                            // Validar superposición usando los minutos precalculados
+                            if (ex.startMins < nw.endMins && ex.endMins > nw.startMins) {
+                                return true; // Overlap found
+                            }
+                        }
+                    }
+                }
+                return false;
+            }
+
+            function getSelectedSchedules() {
+                return studentSchedules.filter((s) => {
+                    if (selectedSubjects.has(s.subjectId)) return true;
+
+                    if (s.subjectId.includes("-P")) {
+                        const theoryFormat0 = s.subjectId.replace("-P", "-0");
+                        const theoryFormat1 = s.subjectId.replace("-P", "-1");
+                        if (
+                            selectedSubjects.has(theoryFormat0) ||
+                            selectedSubjects.has(theoryFormat1)
+                        ) {
+                            return true;
+                        }
+                    }
+
+                    if (
+                        electiveSubjectIds.has(s.subjectId) &&
+                        (selectedSubjects.has("FING-ELEC1") ||
+                            selectedSubjects.has("FING-ELEC2") ||
+                            selectedSubjects.has("FING-ELEC3"))
+                    ) {
+                        return true;
+                    }
+
+                    return false;
+                });
+            }
+
+            function groupSchedulesWithoutOverlap(schedules) {
+                const groupedBlocks = [];
+
+                for (const section of schedules) {
+                    let placed = false;
+                    for (const block of groupedBlocks) {
+                        if (!checkOverlap(block, section)) {
+                            block.push(section);
+                            placed = true;
+                            break;
+                        }
+                    }
+                    if (!placed) {
+                        groupedBlocks.push([section]);
+                    }
+                }
+
+                return groupedBlocks;
+            }
+
+            function renderTableFormat(schedules, $container) {
+                if (schedules.length === 0) return;
+
+                const searchId = "er-table-search-" + CAREER_SHORT_CODE;
+                let tableHtml = `
+          <div class="er-table-search-container">
+            <label for="${searchId}">Buscar:</label>
+            <input type="text" id="${searchId}" class="er-table-search-input" placeholder="Filtrar materias...">
+          </div>
+          <div style="overflow-x: auto;">
+          <table class="tablepress er-schedules-table" style="width: 100%; border-collapse: collapse; margin-top: 5px;">
+              <thead>
+                  <tr>
+                      <th style="padding: 10px; background: #edf2f7; border-bottom: 2px solid #c5c4c4; text-align: left;">Materia</th>
+                      <th style="padding: 10px; background: #edf2f7; border-bottom: 2px solid #c5c4c4; text-align: center;">NRC</th>
+                      <th style="padding: 10px; background: #edf2f7; border-bottom: 2px solid #c5c4c4; text-align: center;">Sección</th>
+                      <th style="padding: 10px; background: #edf2f7; border-bottom: 2px solid #c5c4c4; text-align: left;">Profesor</th>
+                      <th style="padding: 10px; background: #edf2f7; border-bottom: 2px solid #c5c4c4; text-align: center;">Modalidad</th>
+                      <th style="padding: 10px; background: #edf2f7; border-bottom: 2px solid #c5c4c4; text-align: left;">Horario</th>
+                  </tr>
+              </thead>
+              <tbody>
+          `;
+
+                const sorted = [...schedules].sort((a, b) => {
+                    const nameA = a.subjectName || a.subjectId;
+                    const nameB = b.subjectName || b.subjectId;
+                    if (nameA !== nameB) return nameA.localeCompare(nameB);
+                    return String(a.section || '').localeCompare(String(b.section || ''));
+                });
+
+                const daysMap = { monday: "Lunes", tuesday: "Martes", wednesday: "Miércoles", thursday: "Jueves", friday: "Viernes", saturday: "Sábado", sunday: "Domingo" };
+
+                sorted.forEach(s => {
+                    let scheduleTexts = [];
+                    Object.keys(daysMap).forEach(dayKey => {
+                        if (s.schedules[dayKey]) {
+                            scheduleTexts.push(`<strong>${daysMap[dayKey]}</strong> ${s.schedules[dayKey].start}-${s.schedules[dayKey].end}`);
+                        }
+                    });
+
+                    const schedStr = scheduleTexts.length > 0 ? scheduleTexts.join("<br>") : "Por definir";
+
+                    tableHtml += `
+                  <tr style="border-bottom: 1px solid #e1e4e8;">
+                      <td style="padding: 10px; vertical-align: middle;"><strong>${s.subjectName || s.subjectId}</strong><br><small style="color: #666;">${s.subjectId}</small></td>
+                      <td style="padding: 10px; text-align: center; vertical-align: middle;">${s.crn || '-'}</td>
+                      <td style="padding: 10px; text-align: center; vertical-align: middle;">${s.section || '-'}</td>
+                      <td style="padding: 10px; vertical-align: middle;">${s.professor || 'Por definir'}</td>
+                      <td style="padding: 10px; text-align: center; vertical-align: middle;">${s.modality || '-'}</td>
+                      <td style="padding: 10px; vertical-align: middle; font-size: 0.9em; line-height: 1.4;">${schedStr}</td>
+                  </tr>
+              `;
+                });
+
+                tableHtml += `</tbody></table></div>`;
+                $container.append(tableHtml);
+
+            }
+
+            function renderSchedules() {
+                const $container = jQuery("#subject-schedules-container-" + CAREER_SHORT_CODE);
+                const selectedSchedules = getSelectedSchedules();
+
+                // Scroll to top of modal body
+                $container.closest(".er-modal-body").scrollTop(0);
+
+                if (selectedSchedules.length === 0) {
+                    $container.empty();
+                    $viewSchedulesContainer.hide();
+                    $container.html(
+                        '<div class="er-empty-state">No se seleccionaron asignaturas con horarios.</div>',
+                    );
+                    return;
+                }
+
+                $viewSchedulesContainer.show();
+                $container.empty();
+
+                if (activeModalTab === "all") {
+                    renderScheduleBlocks(groupSchedulesWithoutOverlap(selectedSchedules), $container);
+                } else if (activeModalTab === "individual") {
+                    const subjectMap = {};
+                    selectedSchedules.forEach(s => {
+                        const effectiveId = s.subjectId;
+                        if (!subjectMap[effectiveId]) subjectMap[effectiveId] = { id: effectiveId, name: s.subjectName || s.subjectId, schedules: [] };
+                        subjectMap[effectiveId].schedules.push(s);
+                    });
+                    Object.keys(subjectMap).forEach(subjId => {
+                        const subj = subjectMap[subjId];
+                        const $subjContainer = jQuery('<div></div>');
+                        $subjContainer.append(`<h4 style="margin: 20px 0 10px 0; color: #0071bb; border-bottom: 2px solid #eee; padding-bottom: 5px;">${subj.name} (${subjId})</h4>`);
+                        renderScheduleBlocks(groupSchedulesWithoutOverlap(subj.schedules), $subjContainer, true, true);
+                        $container.append($subjContainer);
+                    });
+                } else if (activeModalTab === "table") {
+                    renderTableFormat(selectedSchedules, $container);
+                }
+            }
+
+            function handleModalSemesterTabClick(evt) {
+                const targetSemester = jQuery(evt.currentTarget).data("semester");
+                if (!targetSemester || activeModalSemesterTab === targetSemester) {
+                    return;
+                }
+
+                activeModalSemesterTab = targetSemester;
+                renderSchedules();
+            }
+
+            function renderScheduleBlocks(groupedBlocks, $container, hideBlockTitle = false, dynamicTimeRange = false) {
+                const activeColors = [
+                    "#0071bb",
+                    "#1c7c54",
+                    "#f1b417",
+                    "#c4151c",
+                    "#6f42c1",
+                    "#fd7e14",
+                    "#e83e8c",
+                    "#20c997",
+                    "#005288",
+                    "#d35400",
+                ];
+
+                const daysMap = {
+                    monday: 1,
+                    tuesday: 2,
+                    wednesday: 3,
+                    thursday: 4,
+                    friday: 5,
+                    saturday: 6,
+                    sunday: 7,
+                };
+                const dayNames = {
+                    1: "Lunes",
+                    2: "Martes",
+                    3: "Miércoles",
+                    4: "Jueves",
+                    5: "Viernes",
+                    6: "Sábado",
+                    7: "Domingo",
+                };
+
+                groupedBlocks.forEach((blockSchedules, blockIndex) => {
+                    let minHour = 7;
+                    let maxHour = 20;
+
+                    if (dynamicTimeRange) {
+                        let earliest = 20;
+                        let latest = 7;
+                        blockSchedules.forEach(s => {
+                            Object.keys(daysMap).forEach(day => {
+                                if (s.schedules[day]) {
+                                    const startParts = s.schedules[day].start.split(":");
+                                    const endParts = s.schedules[day].end.split(":");
+                                    const startH = parseInt(startParts[0], 10);
+                                    let endH = parseInt(endParts[0], 10);
+                                    if (isNaN(endH)) {
+                                        const cleanEnd = s.schedules[day].end.replace(/[^\d:]/g, "");
+                                        if (cleanEnd.includes(":")) {
+                                            endH = parseInt(cleanEnd.split(":")[0], 10);
+                                        }
+                                    }
+                                    if (!isNaN(startH) && startH < earliest) earliest = startH;
+                                    if (!isNaN(endH) && endH > latest) latest = endH;
+                                }
+                            });
+                        });
+                        if (earliest <= latest) {
+                            minHour = Math.max(7, earliest - 1);
+                            maxHour = Math.min(20, latest + 1);
+                        }
+                    }
+
+                    const titleHtml = (hideBlockTitle && groupedBlocks.length === 1) ? '' : `<div class="er-schedule-wrapper-title">Bloque ${blockIndex + 1} (${blockSchedules.length} secciones)</div>`;
+                    const headerHtml = `
+                    <div class="er-schedule-wrapper">
+                        ${titleHtml}
+                        <div class="er-schedule-grid" style="grid-template-rows: auto repeat(${(maxHour - minHour) * 2}, minmax(14px, 1fr));">
+                            <div class="er-grid-header" style="grid-column: 1; grid-row: 1;">Hora</div>
+                            <div class="er-grid-header" style="grid-column: 2; grid-row: 1;">Lunes</div>
+                            <div class="er-grid-header" style="grid-column: 3; grid-row: 1;">Martes</div>
+                            <div class="er-grid-header" style="grid-column: 4; grid-row: 1;">Miércoles</div>
+                            <div class="er-grid-header" style="grid-column: 5; grid-row: 1;">Jueves</div>
+                            <div class="er-grid-header" style="grid-column: 6; grid-row: 1;">Viernes</div>
+                            <div class="er-grid-header" style="grid-column: 7; grid-row: 1;">Sábado</div>
+                            <div class="er-grid-header" style="grid-column: 8; grid-row: 1;">Domingo</div>
+                `;
+
+                    let timeRowsHtml = "";
+                    for (let hour = minHour; hour <= maxHour; hour++) {
+                        const h1 = hour.toString().padStart(2, "0") + ":00";
+                        const rowH1 = 2 + (hour - minHour) * 2;
+                        timeRowsHtml += `<div class="er-time-label-col" style="grid-column: 1; grid-row: ${rowH1} / span 2; align-items: flex-start; padding-top: 6px;"><span>${h1}</span></div>`;
+                    }
+
+                    for (let r = 2; r <= 2 + (maxHour - minHour) * 2; r += 2) {
+                        for (let c = 2; c <= 8; c++) {
+                            timeRowsHtml += `<div class="er-grid-cell" style="grid-column: ${c}; grid-row: ${r} / span 2;"></div>`;
+                        }
+                    }
+
+                    let blocksHtml = "";
+                    let mobileBlocksHtml = "";
+                    const mobileDaysData = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] };
+
+                    const sortedSchedules = [...blockSchedules].sort((a, b) =>
+                        a.subjectId.localeCompare(b.subjectId),
+                    );
+
+                    sortedSchedules.forEach((schedule, index) => {
+                        const color = activeColors[index % activeColors.length];
+
+                        Object.keys(daysMap).forEach((day) => {
+                            const block = schedule.schedules[day];
+                            if (block) {
+                                const dayCol = daysMap[day];
+                                const startParts = block.start.split(":");
+                                const endParts = block.end.split(":");
+
+                                const startHour = parseInt(startParts[0], 10);
+                                const startMin = parseInt(startParts[1], 10);
+                                const startRow =
+                                    2 + (startHour - minHour) * 2 + (startMin >= 30 ? 1 : 0);
+
+                                let endHour = parseInt(endParts[0], 10);
+                                let endMin = parseInt(endParts[1], 10);
+
+                                if (isNaN(endMin)) {
+                                    const cleanEnd = block.end.replace(/[^\d:]/g, "");
+                                    if (cleanEnd.includes(":")) {
+                                        const cleanEndParts = cleanEnd.split(":");
+                                        endHour = parseInt(cleanEndParts[0], 10);
+                                        endMin = parseInt(cleanEndParts[1], 10);
+                                    }
+                                }
+
+                                let endRow = 2 + (endHour - minHour) * 2 + (endMin >= 30 ? 1 : 0);
+                                if (endMin >= 50) {
+                                    endRow += 1;
+                                }
+
+                                let modalityBadge = "";
+                                if (schedule.modality) {
+                                    const modInitial = schedule.modality.charAt(0).toUpperCase();
+                                    modalityBadge = `<div class="er-modality-badge" title="${schedule.modality}">${modInitial}</div>`;
+                                }
+
+                                blocksHtml += `
+                                <div class="er-class-block" style="grid-column: ${dayCol + 1}; grid-row: ${startRow} / ${endRow}; background-color: ${color};">
+                                    ${modalityBadge}
+                                    <span class="subject-title">${schedule.subjectName}</span>
+                                    <span class="subject-acronym">${schedule.subjectId} <br/> (NRC <strong>${schedule.crn}</strong>)</span>
+                                    <span class="subject-professor">${schedule.professor || 'Profesor no asignado'}</span>
+                                    <span>${block.start} - ${block.end}</span>
+                                </div>
+                            `;
+
+                                mobileDaysData[dayCol].push({
+                                    subject: schedule.subjectName,
+                                    acronym: schedule.subjectId,
+                                    crn: schedule.crn,
+                                    professor: schedule.professor,
+                                    modality: schedule.modality,
+                                    time: `${block.start} - ${block.end}`,
+                                    color: color,
+                                });
+                            }
+                        });
+                    });
+
+                    Object.keys(mobileDaysData).forEach((dayIndex) => {
+                        const dayClasses = mobileDaysData[dayIndex];
+                        if (dayClasses.length > 0) {
+                            dayClasses.sort((a, b) => a.time.localeCompare(b.time));
+                            mobileBlocksHtml += `<div class="er-mobile-day">`;
+                            mobileBlocksHtml += `<h4>${dayNames[dayIndex]}</h4>`;
+                            dayClasses.forEach((cls) => {
+                                let modText = cls.modality ? ` - <strong>${cls.modality}</strong>` : "";
+                                mobileBlocksHtml += `
+                                <div class="er-mobile-class" style="border-left-color: ${cls.color}; position: relative;">
+                                    <strong>${cls.subject}</strong><br>
+                                    <small>${cls.acronym} (NRC <strong>${cls.crn}</strong>)${modText}</small><br>
+                                    <small class="subject-professor">${cls.professor || 'Profesor no asignado'}</small><br>
+                                    <small>${cls.time}</small>
+                                </div>
+                            `;
+                            });
+                            mobileBlocksHtml += `</div>`;
+                        }
+                    });
+
+                    if (blocksHtml === "") {
+                        blocksHtml = `<div class="er-empty-state" style="grid-column: 1 / -1; grid-row: 2 / -1;">Las materias seleccionadas para este bloque no tienen horarios publicados o son virtuales.</div>`;
+                    }
+
+                    const footerHtml = `
+                            ${blocksHtml}
+                        </div>
+                        ${mobileBlocksHtml !== "" && blocksHtml.includes("er-empty-state") ? mobileBlocksHtml : `<div class="er-schedule-grid er-mobile-grid-inject" style="display:none;">${mobileBlocksHtml}</div>`}
+                    </div>
+                `;
+
+                    $container.append(headerHtml + timeRowsHtml + footerHtml);
+                });
+
+                if (window.innerWidth <= 768) {
+                    $container.find(".er-schedule-grid:not(.er-mobile-grid-inject)").hide();
+                    $container.find(".er-mobile-grid-inject").css("display", "flex");
+                }
+            }
+
+            function buildSemesterSubjectsMap(schedules) {
+                const includeElectives = CAREER_CLASSIFICATION !== "MINOR";
+                const ALL_TABS = includeElectives ? [...VALID_SEMESTERS, "Electivas"] : [...VALID_SEMESTERS];
+                const semestersMap = ALL_TABS.reduce((acc, semester) => {
+                    acc[semester] = {};
+                    return acc;
+                }, {});
+
+                schedules.forEach((schedule) => {
+                    const semester = schedule.subjectSemester;
+                    if (!semester || !semestersMap[semester]) {
+                        return;
+                    }
+                    if (!semestersMap[semester][schedule.subjectId]) {
+                        semestersMap[semester][schedule.subjectId] = {
+                            id: schedule.subjectId,
+                            semester,
+                            name: schedule.subjectName,
+                            credits: schedule.uc || 0,
+                        };
+                    }
+                });
+
+                const normalized = {};
+                ALL_TABS.forEach((semester) => {
+                    normalized[semester] = Object.values(semestersMap[semester]).sort(
+                        (a, b) => a.id.localeCompare(b.id),
+                    );
+                });
+
+                return normalized;
+            }
+
+            function getSubjectsForSemester(semester) {
+                return semesterSubjectsBySemester[semester] || [];
+            }
+
+            function renderSemesterTabs() {
+                const includeElectives = CAREER_CLASSIFICATION !== "MINOR";
+                const ALL_TABS = includeElectives ? [...VALID_SEMESTERS, "Electivas"] : [...VALID_SEMESTERS];
+                const tabsHtml = ALL_TABS.map((semester) => {
+                    return `<button type="button" class="er-semester-tab ${activeSemesterTab === semester ? "active" : ""}" data-semester="${semester}">${semester}</button>`;
+                }).join("");
+
+                $projectedSubjects.find("#er-semester-tabs-" + CAREER_SHORT_CODE).remove();
+                $projectedSubjects.find(".er-semester-notice").remove();
+
+                const noticeHtml = scheduleMode === SCHEDULE_MODE.SEMESTER ? `<div class="er-semester-notice" style="margin-bottom: 15px; padding: 10px; background: #e8f4f8; border-left: 4px solid #0071bb; color: #333; font-size: 0.95rem;">
+          <strong style="color: #0071bb;"><i class="fa fa-info-circle"></i> Nota:</strong> Puedes seleccionar materias de distintos semestres.
+        </div>` : "";
+
+                $projectedSubjects.prepend(
+                    `${noticeHtml}<div id="er-semester-tabs-INFO" class="er-semester-tabs">${tabsHtml}</div>`
+                );
+            }
+
+            function handleSsnSearchSubmit(evt) {
+                evt.preventDefault();
+
+                if (ssn !== $ssn.val()) {
+                    ssn = $ssn.val();
+
+                    if (ssn) {
+                        if (!validateSsn(ssn)) {
+                            hideLoader(invalidSsn);
+                        } else {
+                            showLoader();
+                            fetchStudent(ssn)
+                                .then(handleFetchStudentResponse)
+                                .catch(handleError);
+                        }
+                    } else {
+                        hideLoader(invalidSsn);
+                    }
+                }
+            }
+
+            function restoreCheckboxes() {
+                const idColumnIndex = 3;
+                let allChecked = true;
+                let anyChecked = false;
+                let totalBoxes = 0;
+
+                $detailsContainer.find("input[type=checkbox]:not(.select-all)").each(function () {
+                    totalBoxes++;
+                    const $row = jQuery(this).closest("tr");
+                    const subjectId = $row.find(`td:nth-child(${idColumnIndex})`).text();
+                    if (selectedSubjects.has(subjectId)) {
+                        jQuery(this).prop("checked", true);
+                        anyChecked = true;
+                    } else {
+                        jQuery(this).prop("checked", false);
+                        allChecked = false;
+                    }
+                });
+
+                const $selectAll = $detailsContainer.find(".select-all");
+                if (totalBoxes === 0) {
+                    $selectAll.prop("checked", false).prop("indeterminate", false);
+                } else if (allChecked) {
+                    $selectAll.prop("checked", true).prop("indeterminate", false);
+                } else if (anyChecked) {
+                    $selectAll.prop("checked", false).prop("indeterminate", true);
+                } else {
+                    $selectAll.prop("checked", false).prop("indeterminate", false);
+                }
+            }
+
+            function handleCheckboxClick(evt) {
+                const idColumnIndex = 3;
+                const creditsColumnIndex = 5;
+                const $chkbox = jQuery(evt.target);
+
+                if ($chkbox.hasClass("select-all")) {
+                    const isChecked = $chkbox.prop("checked");
+                    $detailsContainer.find("input[type=checkbox]:not(.select-all)").each(function () {
+                        if (jQuery(this).prop("checked") !== isChecked) {
+                            jQuery(this).prop("checked", isChecked);
+                            const $row = jQuery(this).closest("tr");
+                            const subjectId = $row.find(`td:nth-child(${idColumnIndex})`).text();
+                            const credits = parseFloat($row.find(`td:nth-child(${creditsColumnIndex})`).text());
+                            updateTotalUc(credits, isChecked);
+
+                            if (isChecked) {
+                                selectedSubjects.add(subjectId);
+                            } else {
+                                selectedSubjects.delete(subjectId);
+                            }
+                        }
+                    });
+
+                    if (isChecked) {
+                        $chkbox.prop("indeterminate", false);
+                    }
+
+                    renderSchedules();
+                } else {
+                    const $row = $chkbox.closest("tr");
+                    const subjectId = $row.find(`td:nth-child(${idColumnIndex})`).text();
+                    const credits = parseFloat($row.find(`td:nth-child(${creditsColumnIndex})`).text());
+
+                    const $chkboxes = $detailsContainer.find("input[type=checkbox]:not(.select-all)");
+                    const $chkboxesChecked = $chkboxes.filter(":checked");
+
+                    $detailsContainer.find(".select-all").prop("indeterminate", false);
+
+                    if ($chkboxes.length > 0 && $chkboxes.length === $chkboxesChecked.length) {
+                        $detailsContainer.find(".select-all").prop("checked", true);
+                    } else if ($chkboxesChecked.length === 0) {
+                        $detailsContainer.find(".select-all").prop("checked", false);
+                    } else {
+                        $detailsContainer.find(".select-all").prop("indeterminate", true);
+                    }
+
+                    updateTotalUc(credits, $chkbox.prop("checked"));
+                    updateSelectedSubjects(subjectId, $chkbox.prop("checked"));
+                }
+            }
+
+            function checkSubjects(subjects, maxLoad) {
+                let totalCredits = 0;
+                let requiresRender = false;
+
+                subjects.forEach((subject) => {
+                    totalCredits += subject.credits;
+
+                    if (totalCredits <= maxLoad) {
+                        const $chk = jQuery(`#sub-${subject.id.toLowerCase()} input[type=checkbox]`);
+                        if (!$chk.prop("checked")) {
+                            $chk.prop("checked", true);
+                            selectedSubjects.add(subject.id);
+                            updateTotalUc(subject.credits, true);
+                            requiresRender = true;
+                        }
+                    }
+                });
+
+                if (requiresRender) {
+                    const $chkboxes = $detailsContainer.find("input[type=checkbox]:not(.select-all)");
+                    const $chkboxesChecked = $chkboxes.filter(":checked");
+                    const $selectAll = $detailsContainer.find(".select-all");
+
+                    if ($chkboxes.length > 0 && $chkboxes.length === $chkboxesChecked.length) {
+                        $selectAll.prop("checked", true).prop("indeterminate", false);
+                    } else if ($chkboxesChecked.length === 0) {
+                        $selectAll.prop("checked", false).prop("indeterminate", false);
+                    } else {
+                        $selectAll.prop("checked", false).prop("indeterminate", true);
+                    }
+
+                    renderSchedules();
+                }
+            }
+
+            function showLoader() {
+                $detailsContainer.stop(true, true).hide();
+                $errMsg.stop(true, true).hide();
+                $loader.stop(true, true).fadeIn(SPEED);
+            }
+
+            function hideLoader(msg) {
+                if (msg) {
+                    $loader.stop(true, true).hide();
+                    $detailsContainer.stop(true, true).hide();
+                    $errMsg
+                        .stop(true, true)
+                        .html(
+                            `<i class="fa fa-exclamation-circle" aria-hidden="true"></i> ${msg}`,
+                        )
+                        .fadeIn(SPEED);
+                } else {
+                    $loader.stop(true, true).hide();
+                    $errMsg.stop(true, true).hide();
+                    $detailsContainer.stop(true, true).fadeIn(SPEED);
+                }
+            }
+
+            // ==========================================
+            // INTERACTIVE BUILDER LOGIC
+            // ==========================================
+
+            let builderPanelBuilt = false;
+
+            function initializeBuilder() {
+                if (!builderPanelBuilt) {
+                    bindBuilderEvents();
+                    renderBuilderPanel();
+                    builderPanelBuilt = true;
+                }
+
+                updateBuilderAfterSelection();
+            }
+
+            function bindBuilderEvents() {
+                const $accordion = jQuery("#er-builder-accordion-" + CAREER_SHORT_CODE);
+
+                // --- Bind accordion toggle events (semester headers) ---
+                $accordion.off("click", ".er-builder-semester-header").on("click", ".er-builder-semester-header", function (e) {
+                    e.stopPropagation();
+                    const $content = jQuery(this).next(".er-builder-semester-content");
+                    const isVisible = $content.is(":visible");
+
+                    jQuery(this).find("span:last-child").html(isVisible ? "&#9662;" : "&#9652;");
+                    $content.slideToggle(200);
+                });
+
+                // --- Bind subject-level toggle (expand/collapse section list) ---
+                $accordion.off("click", ".er-builder-subj-toggle").on("click", ".er-builder-subj-toggle", function (e) {
+                    e.stopPropagation();
+                    jQuery(this).closest(".er-builder-subject-item").find(".er-builder-section-list").slideToggle(200);
+                });
+
+                // --- Bind subject checkbox (select/deselect all sections) ---
+                $accordion.off("change", ".er-builder-subject-chk").on("change", ".er-builder-subject-chk", function (e) {
+                    e.stopPropagation();
+                    const subjId = jQuery(this).val();
+                    const isChecked = jQuery(this).is(":checked");
+
+                    const $secChks = $accordion.find(`.er-builder-section-chk[data-subj="${subjId}"]`);
+                    $secChks.prop("checked", isChecked);
+
+                    if (isChecked) {
+                        builderSubjectSelection.add(subjId);
+                        selectedSubjects.add(subjId);
+                        $secChks.each(function () {
+                            builderSectionSelection.add(jQuery(this).val());
+                        });
+                    } else {
+                        builderSubjectSelection.delete(subjId);
+                        selectedSubjects.delete(subjId);
+                        $secChks.each(function () {
+                            builderSectionSelection.delete(jQuery(this).val());
+                        });
+                        delete builderFixedSections[subjId];
+                    }
+
+                    updateBuilderAfterSelection();
+                });
+
+                // --- Bind section checkbox (individual section toggle) ---
+                $accordion.off("change", ".er-builder-section-chk").on("change", ".er-builder-section-chk", function (e) {
+                    e.stopPropagation();
+                    const subjId = jQuery(this).data("subj");
+                    const val = jQuery(this).val();
+                    const isChecked = jQuery(this).is(":checked");
+
+                    if (isChecked) {
+                        builderSectionSelection.add(val);
+                        builderSubjectSelection.add(subjId);
+                        selectedSubjects.add(subjId);
+                    } else {
+                        builderSectionSelection.delete(val);
+                        if (builderFixedSections[subjId] === val.split("|")[1]) {
+                            delete builderFixedSections[subjId];
+                        }
+                    }
+
+                    // Update parent checkbox indeterminate state
+                    const $parentChk = $accordion.find(`.er-builder-subject-chk[value="${subjId}"]`);
+                    const totalSecs = $accordion.find(`.er-builder-section-chk[data-subj="${subjId}"]`).length;
+                    const checkedSecs = $accordion.find(`.er-builder-section-chk[data-subj="${subjId}"]:checked`).length;
+
+                    if (checkedSecs === 0) {
+                        $parentChk.prop("checked", false).prop("indeterminate", false);
+                        builderSubjectSelection.delete(subjId);
+                        selectedSubjects.delete(subjId);
+                    } else if (checkedSecs === totalSecs) {
+                        $parentChk.prop("checked", true).prop("indeterminate", false);
+                    } else {
+                        $parentChk.prop("checked", false).prop("indeterminate", true);
+                    }
+
+                    updateBuilderAfterSelection();
+                });
+            }
+
+            function updateBuilderAfterSelection() {
+                const $overlay = jQuery("#er-builder-empty-overlay-" + CAREER_SHORT_CODE);
+                const $secondaryBtn = jQuery("#er-builder-add-secondary-btn-" + CAREER_SHORT_CODE);
+                const $stats = jQuery("#er-builder-layout-" + CAREER_SHORT_CODE + " .er-builder-stats");
+                const $gridTarget = jQuery("#er-builder-grid-target-" + CAREER_SHORT_CODE);
+
+                if (builderSubjectSelection.size === 0) {
+                    $overlay.fadeIn(200);
+                    $secondaryBtn.hide();
+                    $stats.hide();
+                    $gridTarget.empty();
+                } else {
+                    $overlay.fadeOut(200);
+                    $secondaryBtn.show();
+                    $stats.show();
+                    renderBuilderGrid();
+                }
+
+                syncBuilderPanelState();
+                syncGlobalCheckboxes();
+                updateUCStats();
+            }
+
+            function updateUCStats() {
+                const $statsUc = jQuery("#er-builder-layout-" + CAREER_SHORT_CODE + " .stats-uc");
+                let total = 0;
+                builderSubjectSelection.forEach(subjId => {
+                    // Find credits for this subject in the schedules metadata
+                    const sub = semesterSchedules.find(s => s.subjectId === subjId);
+                    if (sub) total += (parseFloat(sub.uc) || 0);
+                });
+                $statsUc.text(total.toFixed(0));
+            }
+
+            function renderBuilderPanel() {
+                const $accordion = jQuery("#er-builder-accordion-" + CAREER_SHORT_CODE);
+                $accordion.empty();
+
+                const includeElectives = CAREER_CLASSIFICATION !== "MINOR";
+                const ALL_TABS = includeElectives ? [...VALID_SEMESTERS, "Electivas"] : [...VALID_SEMESTERS];
+
+                ALL_TABS.forEach((semId) => {
+                    const subjectsInSem = semesterSubjectsBySemester[semId] || [];
+                    if (subjectsInSem.length === 0) return;
+
+                    let semesterHtml = `
+          <div class="er-builder-semester-group">
+            <div class="er-builder-semester-header" data-sem="${semId}">
+               <span>${semId === 'Electivas' ? 'Electivas' : 'Semestre ' + semId.replace("SE", "")}</span>
+               <span>&#9662;</span>
+            </div>
+            <div class="er-builder-semester-content" id="er-builder-sem-content-${semId}" style="display: none;">
+        `;
+
+                    subjectsInSem.forEach(sub => {
+                        const sections = semesterSchedules.filter(s => s.subjectId === sub.id && (s.subjectSemester === semId || (semId === 'Electivas' && s.subjectSemester === 'Electivas')));
+                        if (sections.length === 0) return;
+
+                        semesterHtml += `
+            <div class="er-builder-subject-item" data-subj="${sub.id}">
+              <div class="er-builder-subject-header">
+                <input type="checkbox" class="er-builder-subject-chk" value="${sub.id}" />
+                <div class="er-builder-subj-toggle">
+                  <strong>${sub.id}</strong> - ${sub.name}
+                  <div style="font-weight:normal; font-size:0.75rem; color:#888;">${sections.length} secciones disponibles</div>
+                </div>
+              </div>
+              <div class="er-builder-section-list" id="er-builder-seclist-${sub.id}">
+          `;
+
+                        sections.forEach(sec => {
+                            semesterHtml += `
+              <div class="er-builder-section-item">
+                <input type="checkbox" class="er-builder-section-chk" 
+                       data-subj="${sub.id}" 
+                       value="${sub.id}|${sec.crn}" />
+                <span>Sec ${sec.section} (${sec.crn}) - ${sec.professor}</span>
+              </div>
+            `;
+                        });
+
+                        semesterHtml += `</div></div>`;
+                    });
+
+                    semesterHtml += `</div></div>`;
+                    $accordion.append(semesterHtml);
+                });
+            }
+
+            function syncGlobalCheckboxes() {
+                const $detailsContainer = jQuery("#er-details-container-" + CAREER_SHORT_CODE);
+                let totalSum = 0;
+
+                $detailsContainer.find("input[type=checkbox]:not(.select-all)").each(function () {
+                    const rowSubj = jQuery(this).closest("tr").find("td:nth-child(3)").text().trim();
+                    const rowCredits = parseFloat(jQuery(this).closest("tr").find("td:nth-child(5)").text()) || 0;
+
+                    if (selectedSubjects.has(rowSubj)) {
+                        jQuery(this).prop("checked", true);
+                        totalSum += rowCredits;
+                    } else {
+                        jQuery(this).prop("checked", false);
+                    }
+                });
+
+                const $totalUcStr = jQuery("#total-projected-uc-" + CAREER_SHORT_CODE);
+                if ($totalUcStr.length) {
+                    $totalUcStr.text(totalSum.toFixed(0));
+                }
+
+                const $chkboxes = $detailsContainer.find("input[type=checkbox]:not(.select-all)");
+                const $chkboxesChecked = $chkboxes.filter(":checked");
+                const $selectAll = $detailsContainer.find(".select-all");
+
+                if ($chkboxes.length > 0 && $chkboxes.length === $chkboxesChecked.length) {
+                    $selectAll.prop("checked", true).prop("indeterminate", false);
+                } else if ($chkboxesChecked.length === 0) {
+                    $selectAll.prop("checked", false).prop("indeterminate", false);
+                } else {
+                    $selectAll.prop("checked", false).prop("indeterminate", true);
+                }
+            }
+
+            function syncBuilderPanelState() {
+                const $accordion = jQuery("#er-builder-accordion-" + CAREER_SHORT_CODE);
+
+                // Update section checkboxes
+                $accordion.find(".er-builder-section-chk").each(function () {
+                    const val = jQuery(this).val();
+                    jQuery(this).prop("checked", builderSectionSelection.has(val));
+                });
+
+                // Update subject checkboxes based on sections
+                $accordion.find(".er-builder-subject-chk").each(function () {
+                    const subjId = jQuery(this).val();
+                    const $sections = $accordion.find(`.er-builder-section-chk[data-subj="${subjId}"]`);
+                    const totalSecs = $sections.length;
+                    const checkedSecs = $sections.filter(":checked").length;
+
+                    if (checkedSecs === 0) {
+                        jQuery(this).prop("checked", false).prop("indeterminate", false);
+                    } else if (checkedSecs === totalSecs) {
+                        jQuery(this).prop("checked", true).prop("indeterminate", false);
+                    } else {
+                        jQuery(this).prop("checked", false).prop("indeterminate", true);
+                    }
+                });
+            }
+
+            function clearAllBuilderSelections() {
+                // Reset as requested: "si ya previamente seleccioné materias a,b,c, se resetea ese estado al darle al boton agregar materias"
+                builderSubjectSelection.clear();
+                builderSectionSelection.clear();
+                builderFixedSections = {};
+                selectedSubjects.clear();
+
+                syncBuilderPanelState();
+                updateBuilderAfterSelection();
+            }
+
+            // Bind buttons
+            jQuery("#er-builder-add-initial-btn-" + CAREER_SHORT_CODE).on("click", function () {
+                clearAllBuilderSelections();
+                if (jQuery(window).width() <= 768) {
+                    jQuery("#er-builder-sidebar-" + CAREER_SHORT_CODE).addClass("mobile-open");
+                }
+            });
+
+            jQuery("#er-builder-add-secondary-btn-" + CAREER_SHORT_CODE + ", #er-builder-mobile-add-btn-" + CAREER_SHORT_CODE).on("click", function () {
+                if (jQuery(window).width() <= 768) {
+                    jQuery("#er-builder-sidebar-" + CAREER_SHORT_CODE).addClass("mobile-open");
+                } else {
+                    // On desktop, the sidebar is always there, but maybe they want to scroll to it or highlight it
+                    jQuery("#er-builder-sidebar-" + CAREER_SHORT_CODE).css("box-shadow", "0 0 15px rgba(0,113,187,0.5)");
+                    setTimeout(() => {
+                        jQuery("#er-builder-sidebar-" + CAREER_SHORT_CODE).css("box-shadow", "none");
+                    }, 500);
+                }
+            });
+
+            jQuery("#er-builder-sidebar-close-" + CAREER_SHORT_CODE).on("click", function () {
+                jQuery("#er-builder-sidebar-" + CAREER_SHORT_CODE).removeClass("mobile-open");
+            });
+
+            // Builder Grid Rendering
+            function buildVirtualSchedules() {
+                const selSections = [];
+                builderSectionSelection.forEach(val => {
+                    const [subjId, crn] = val.split("|");
+                    if (builderFixedSections[subjId] && String(builderFixedSections[subjId]) !== String(crn)) {
+                        return;
+                    }
+                    const s = semesterSchedules.find(x => String(x.crn) === String(crn) && x.subjectId === subjId);
+                    if (s) {
+                        const clone = JSON.parse(JSON.stringify(s));
+                        if (String(builderFixedSections[subjId]) === String(crn)) {
+                            clone.isFixed = true;
+                        }
+                        selSections.push(clone);
+                    }
+                });
+
+                const bySubject = {};
+                selSections.forEach(s => {
+                    if (!bySubject[s.subjectId]) bySubject[s.subjectId] = [];
+                    bySubject[s.subjectId].push(s);
+                });
+
+                const virtualBlocks = [];
+                Object.keys(bySubject).forEach(subjId => {
+                    const sections = bySubject[subjId];
+                    if (builderFixedSections[subjId]) {
+                        virtualBlocks.push([sections[0]]);
+                        return;
+                    }
+
+                    const groupedSubj = [];
+                    sections.forEach(sec => {
+                        let placed = false;
+                        for (const grp of groupedSubj) {
+                            let overlaps = false;
+                            for (const elem of grp) {
+                                if (checkOverlap([elem], sec)) { overlaps = true; break; }
+                            }
+                            if (overlaps) {
+                                grp.push(sec);
+                                placed = true;
+                                break;
+                            }
+                        }
+                        if (!placed) {
+                            groupedSubj.push([sec]);
+                        }
+                    });
+
+                    groupedSubj.forEach(grp => virtualBlocks.push(grp));
+                });
+
+                return virtualBlocks;
+            }
+
+            function renderBuilderGrid() {
+                const groupedBlocks = buildVirtualSchedules();
+                const $target = jQuery("#er-builder-grid-target-" + CAREER_SHORT_CODE);
+                renderScheduleBlocksCustomized(groupedBlocks, $target);
+            }
+
+            function renderScheduleBlocksCustomized(blockGroups, $container) {
+                $container.empty();
+                if (blockGroups.length === 0) return;
+
+                let minMins = 24 * 60;
+                let maxMins = 0;
+
+                blockGroups.forEach((group) => {
+                    group.forEach(s => {
+                        Object.values(s.schedules).forEach((daySchedule) => {
+                            if (!daySchedule) return;
+                            if (daySchedule.startMins < minMins) minMins = daySchedule.startMins;
+                            if (daySchedule.endMins > maxMins) maxMins = daySchedule.endMins;
+                        });
+                    });
+                });
+
+                if (minMins >= maxMins) return;
+
+                minMins = Math.floor(minMins / 60) * 60;
+                maxMins = Math.ceil(maxMins / 60) * 60;
+                const totalMins = maxMins - minMins;
+
+                let headerHtml = `<div class="er-grid-header"><div class="er-time-col-header"></div>`;
+                Object.keys(weekDays).forEach((dayKey) => {
+                    headerHtml += `<div class="er-day-col-header">${weekDays[dayKey]}</div>`;
+                });
+                headerHtml += `</div>`;
+
+                let bodyHtml = `<div class="er-grid-body"><div class="er-time-label-col">`;
+                for (let m = minMins; m < maxMins; m += 60) {
+                    const hour = Math.floor(m / 60);
+                    const ampm = hour >= 12 ? "PM" : "AM";
+                    const dHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+                    const timeStr = `${dHour}:00 ${ampm}`;
+                    bodyHtml += `<div class="er-time-label" style="height: ${(60 / totalMins) * 100}%;">${timeStr}</div>`;
+                }
+                bodyHtml += `</div>`;
+
+                Object.keys(weekDays).forEach((dayKey) => {
+                    bodyHtml += `<div class="er-grid-cell" style="position: relative;">`;
+
+                    blockGroups.forEach((group, groupIndex) => {
+                        const baseSection = group[0];
+                        const ds = baseSection.schedules[dayKey];
+
+                        if (ds) {
+                            const startOffset = ds.startMins - minMins;
+                            const duration = ds.endMins - ds.startMins;
+                            const topPct = (startOffset / totalMins) * 100;
+                            const heightPct = (duration / totalMins) * 100;
+
+                            const isGroup = group.length > 1;
+                            const isFixed = baseSection.isFixed;
+
+                            let extraCls = "";
+                            let title = baseSection.subjectName || baseSection.subjectId;
+                            let subTitle = `Sec: ${baseSection.section} | ${ds.room}`;
+
+                            if (isGroup) {
+                                extraCls = "er-builder-grouped-block";
+                                title += ` (${group.length} secciones)`;
+                                subTitle = "¡Hay un conflicto!";
+                            } else if (isFixed) {
+                                extraCls = "er-builder-fixed-block";
+                            }
+
+                            const groupData = encodeURIComponent(JSON.stringify(group));
+
+                            bodyHtml += `
+              <div class="er-class-block ${extraCls}" 
+                   style="top: ${topPct}%; height: ${heightPct}%;" 
+                   data-group-data="${groupData}">
+                <div class="subject-title" title="${title}">${title}</div>
+                <div class="subject-professor">${subTitle}</div>
+              </div>
+            `;
+                        }
+                    });
+                    bodyHtml += `</div>`;
+                });
+                bodyHtml += `</div>`;
+
+                let gridHtml = `
+          <div class="er-schedule-wrapper">
+              <div class="er-schedule-wrapper-title">Planificador Visual</div>
+              <div class="er-schedule-grid">
+                  ${headerHtml}
+                  ${bodyHtml}
+              </div>
+          </div>
+      `;
+                $container.html(gridHtml);
+                bindPopoverEvents($container);
+            }
+
+            function bindPopoverEvents($container) {
+                const $popover = jQuery("#er-builder-popover-" + CAREER_SHORT_CODE);
+                const $content = $popover.find(".popover-content");
+
+                $container.find(".er-builder-grouped-block, .er-builder-fixed-block").off("click").on("click", function (e) {
+                    e.stopPropagation();
+
+                    const isCurrentlyFixed = jQuery(this).hasClass("er-builder-fixed-block");
+                    const group = JSON.parse(decodeURIComponent(jQuery(this).attr("data-group-data")));
+                    const subjId = group[0].subjectId;
+
+                    if (isCurrentlyFixed) {
+                        delete builderFixedSections[subjId];
+                        updateBuilderAfterSelection();
+                        $popover.hide();
+                        return;
+                    }
+
+                    let html = "";
+                    group.forEach(sec => {
+                        // Get teacher and room from the first day schedule found
+                        let teacher = sec.professor || "Por asignar";
+                        let room = "Aula por definir";
+                        for (let d of Object.keys(sec.schedules)) {
+                            if (sec.schedules[d] && sec.schedules[d].room) {
+                                room = sec.schedules[d].room;
+                                break;
+                            }
+                        }
+
+                        html += `
+            <div class="popover-item" data-subj="${sec.subjectId}" data-crn="${sec.crn}">
+              <strong>Sección ${sec.section}</strong>
+              <div class="prof"><i class="fa fa-user"></i> ${teacher}</div>
+              <div class="prof"><i class="fa fa-map-marker"></i> ${room}</div>
+            </div>
+          `;
+                    });
+                    $content.html(html);
+
+                    const offset = jQuery(this).offset();
+                    const gridOffset = jQuery("#er-builder-layout-" + CAREER_SHORT_CODE).offset();
+
+                    $popover.css({
+                        top: Math.min(offset.top - gridOffset.top + 20, jQuery("#er-builder-layout-" + CAREER_SHORT_CODE).height() - 200) + "px",
+                        left: Math.min(offset.left - gridOffset.left + 20, jQuery("#er-builder-layout-" + CAREER_SHORT_CODE).width() - 300) + "px",
+                        display: "block"
+                    });
+                });
+
+                $popover.off("click", ".popover-item").on("click", ".popover-item", function (e) {
+                    e.stopPropagation();
+                    const crn = jQuery(this).data("crn");
+                    const subj = jQuery(this).data("subj");
+
+                    builderFixedSections[subj] = String(crn);
+                    $popover.hide();
+                    updateBuilderAfterSelection();
+                });
+
+                jQuery(document).on("click", function () { $popover.hide(); });
+                $popover.find(".popover-close").on("click", function (e) {
+                    e.stopPropagation();
+                    $popover.hide();
+                });
+            }
+        });
+
+        function renderSubjects(subjects, maxLoad, options = {}) {
+            const mode = options.mode || SCHEDULE_MODE.PROJECTION;
+            const $projectedSubjects = jQuery(
+                "#er-details-container-INFO .projected-subjects",
+            );
+            $projectedSubjects.empty();
+            jQuery("#er-view-schedules-container-" + CAREER_SHORT_CODE).hide();
+
+            const $table = jQuery('<table class="tablepress"></table>');
+            const $thead = jQuery("<thead></thead>");
+            const $tbody = jQuery('<tbody class="row-hover"></tbody>');
+
+            const $theadRow = jQuery("<tr></tr>");
+            $theadRow.append(
+                '<th style="width:36px;text-align:center;line-height:1rem;"><input class="select-all" type="checkbox" /></th>',
+            );
+            $theadRow.append('<th style="width:66px;text-align:center;">Sem.</th>');
+            $theadRow.append('<th style="width:100px;text-align:center;">Cód.</th>');
+            $theadRow.append('<th style="text-align:center;">Nombre</th>');
+            $theadRow.append('<th style="width:50px;text-align:center;">UC</th>');
+
+            $thead.append($theadRow);
+
+            const optionalEquivs = [];
+            jQuery("div.temp").remove();
+
+            subjects.forEach((subject) => {
+                if (mode === SCHEDULE_MODE.PROJECTION && subject.equiv) {
+                    optionalEquivs.push({
+                        subject: `${subject.id} - ${subject.name}`,
+                        equiv: subject.equiv,
+                    });
+                } else {
+                    const $row = jQuery(`<tr id="sub-${subject.id.toLowerCase()}"></tr>`);
+
+                    $row.append(
+                        `<td style="text-align:center;"><input type="checkbox" /></td>`,
+                    );
+                    $row.append(`<td style="text-align:center;">${subject.semester}</td>`);
+                    $row.append(`<td style="text-align:center;">${subject.id}</td>`);
+                    $row.append(`<td>${subject.name}</td>`);
+                    $row.append(`<td style="text-align:center;">${subject.credits}</td>`);
+
+                    $tbody.append($row);
+                }
+            });
+
+            $table.append($thead);
+            $table.append($tbody);
+
+            if (subjects.length > 0) {
+                $projectedSubjects.append($table);
+            } else if (mode === SCHEDULE_MODE.SEMESTER) {
+                $projectedSubjects.append(
+                    '<div class="er-empty-state">No hay materias disponibles para este semestre.</div>',
+                );
+            } else {
+                $projectedSubjects.append(
+                    '<div class="er-empty-state">Este estudiante no tiene proyecciones para el período activo.</div>',
+                );
+            }
+
+            if (mode === SCHEDULE_MODE.SEMESTER) {
+                return;
+            }
+
+            const defaultLoad = maxLoad || 0;
+            jQuery("#max-recommended-uc-" + CAREER_SHORT_CODE).text(defaultLoad);
+
+            if (
+                subjects.some(
+                    (s) =>
+                        s.id === "FING-ELEC1" ||
+                        s.id === "FING-ELEC2" ||
+                        s.id === "FING-ELEC3",
+                ) &&
+                optionalEquivs.length < 1
+            ) {
+                jQuery("#optional-subject-warn-" + CAREER_SHORT_CODE).fadeIn();
+            } else {
+                jQuery("#optional-subject-warn-" + CAREER_SHORT_CODE).fadeOut();
+            }
+
+            if (optionalEquivs.length > 0) {
+                const equivs = optionalEquivs.length;
+
+                if (equivs > 0) {
+                    let equivSubjects = `<p style="margin: 0;">Se está${equivs > 1 ? "n" : ""} <strong>reconociendo</strong> la${equivs > 1 ? "s" : ""} siguiente${equivs > 1 ? "s" : ""} asignatura${equivs > 1 ? "s" : ""} ya cursada${equivs > 1 ? "s" : ""} por ti como electiva${equivs > 1 ? "s" : ""}: </p><ul>`;
+
+                    optionalEquivs.forEach((equiv) => {
+                        equivSubjects += `<li> ${equiv.subject} (equivale a ${equiv.equiv})</li>`;
+                    });
+
+                    equivSubjects += "</ul>";
+
+                    jQuery("#recommendations-" + CAREER_SHORT_CODE).append(
+                        `<div class="temp">${equivSubjects}</div>`,
+                    );
+                }
+            }
+        }
+
+        function renderErrorReportLink(data) {
+            const $reportLink = jQuery("#report-error-link-" + CAREER_SHORT_CODE);
+            const subjects = data.subjects.map(
+                (s, idx) => `${idx + 1}) ${s.semester}: ${s.name} (${s.credits} UC)`,
+            );
+            const reportBody = `Hola. Considero que hay un error en el cálculo de las proyecciones mostradas. Las proyecciones desplegadas originalmente son: ${subjects.join(
+                ",\n ",
+            )}.\n Y de acuerdo a mis cálculos, serían: \n\n[**** Inserta aquí el ajuste que consideres necesario ****].`;
+            const reportUrl = reportLink
+                .replace("@@SSN@@", data.info.ssn)
+                .replace("@@name@@", data.info.name.split(",")[1])
+                .replace("@@lastName@@", data.info.name.split(",")[0])
+                .replace("@@report@@", reportBody);
+
+            $reportLink.attr("href", reportUrl);
+        }
+
+        async function fetchSchedules(term, program, subjects) {
+            try {
+                await ensureCareerMetadata();
+
+                const semesterBySubjectId = subjects.reduce((acc, subject) => {
+                    acc[subject.id] = subject.semester;
+                    return acc;
+                }, {});
+
+                // The RPC er_get_subject_schedules automatically expands FING-ELEC1/2/3 placeholders
+                // to the real elective subject schedules internally
+                const matIds = subjects
+                    .filter((s) => !excludedSubjects.includes(s.id))
+                    .map((s) => s.id);
+
+                if (matIds.length === 0) return [];
+
+                const { data, error } = await _supabase.rpc("er_get_subject_schedules", {
+                    p_mat_ids: matIds,
+                });
+
+                if (error) {
+                    return [];
+                }
+
+                if (!data || data === null) {
+                    return [];
+                }
+
+                const schedules = data.map((d) => {
+                    const schedule = {
+                        type: d.type,
+                        crn: d.crn,
+                        subjectId: d.subject_id,
+                        subjectName: d.subject_name,
+                        subjectSemester: semesterBySubjectId[d.subject_id] || null,
+                        taxonomy: d.taxonomy,
+                        modality: d.modality,
+                        uc: d.uc,
+                        section: d.section,
+                        professor: d.professor,
+                        schedules: {
+                            monday: parseSchedule(d.monday),
+                            tuesday: parseSchedule(d.tuesday),
+                            wednesday: parseSchedule(d.wednesday),
+                            thursday: parseSchedule(d.thursday),
+                            friday: parseSchedule(d.friday),
+                            saturday: parseSchedule(d.saturday),
+                            sunday: parseSchedule(d.sunday),
+                        },
+                    };
+
+                    return schedule;
+                });
+
+                return schedules;
+            } catch (err) {
+                console.error(
+                    `Error al consultar los horarios de clase para PROGRAM "${program}"`,
+                    err,
+                );
+                return [];
+            }
+        }
+
+        async function fetchSchedulesBySemester(careerId) {
+            try {
+                await ensureCareerMetadata();
+
+                // Fetch both regular semester schedules and elective catalog in parallel
+                const [semResult, elecResult] = await Promise.all([
+                    _supabase.rpc("er_get_semester_subject_schedules", { p_career_id: careerId }),
+                    _supabase.rpc("er_get_elective_catalog", { p_career_id: careerId }),
+                ]);
+
+                if (semResult.error) throw semResult.error;
+
+                const mapSchedule = (d) => ({
+                    type: d.type,
+                    crn: d.crn,
+                    subjectId: d.subject_id,
+                    subjectName: d.subject_name,
+                    subjectSemester: d.subject_semester || null,
+                    taxonomy: d.taxonomy,
+                    modality: d.modality,
+                    uc: d.uc,
+                    section: d.section,
+                    professor: d.professor,
+                    schedules: {
+                        monday: parseSchedule(d.monday),
+                        tuesday: parseSchedule(d.tuesday),
+                        wednesday: parseSchedule(d.wednesday),
+                        thursday: parseSchedule(d.thursday),
+                        friday: parseSchedule(d.friday),
+                        saturday: parseSchedule(d.saturday),
+                        sunday: parseSchedule(d.sunday),
+                    },
+                });
+
+                const semSchedules = (semResult.data || [])
+                    .filter((d) => d.subject_id && !excludedSubjects.includes(d.subject_id) && VALID_SEMESTERS.includes(d.subject_semester))
+                    .map(mapSchedule);
+
+                // Elective catalog: override subjectSemester to 'Electivas' so buildSemesterSubjectsMap places them correctly
+                const elecSchedules = (elecResult.data || [])
+                    .filter((d) => d.subject_id && !excludedSubjects.includes(d.subject_id))
+                    .map((d) => ({ ...mapSchedule(d), subjectSemester: 'Electivas' }));
+
+                // Update electiveSubjectIds from actual elective catalog results
+                elecSchedules.forEach((s) => electiveSubjectIds.add(s.subjectId));
+
+                return [...semSchedules, ...elecSchedules];
+            } catch (err) {
+                console.error(
+                    `Error al consultar horarios por semestre para carrera ${careerId}`,
+                    err,
+                );
+                return [];
+            }
+        }
+
+        async function fetchStudent(ssn) {
+            try {
+                const parsedSsn = parseInt(ssn.replace(/\D/g, ""), 10);
+
+                if (!Number.isInteger(parsedSsn) || parsedSsn <= 0) {
+                    return null;
+                }
+
+                const { data, error } = await _supabase.rpc(
+                    "er_get_student_projections",
+                    { p_cedula: parsedSsn },
+                );
+
+                if (error) {
+                    throw error;
+                }
+
+                if (!data || data === null || !data.info) {
+                    return null;
+                }
+
+                const studentInfo = data.info;
+
+                const baseSubjects = Array.isArray(data.subjects) ? data.subjects : [];
+                const subjectInfo = baseSubjects.map((d) => {
+                    const subject = { ...d };
+                    subject.priority = calculatePriority(
+                        subject,
+                        extractSemesterNumber(studentInfo.location),
+                    );
+                    return subject;
+                });
+
+                // Ordenar por prioridad descendente para que refleje la recomendación real
+                subjectInfo.sort((a, b) => b.priority - a.priority);
+
+                return {
+                    info: studentInfo,
+                    subjects: subjectInfo,
+                };
+            } catch (err) {
+                console.error(
+                    `Error al consultar la información del alumno "${ssn}"`,
+                    err,
+                );
+                return null;
+            }
+        }
+
+        function calculatePriority(subject, currentSemester) {
+            // Pesos de cada dimensión
+            const weights = {
+                semester: 0.3,
+                contributesTo: 0.1,
+                credits: 0.1,
+                attempts: 0.15,
+            };
+
+            // Calcular el valor de cada dimensión
+            const semesterValue =
+                (currentSemester - extractSemesterNumber(subject.semester)) /
+                currentSemester;
+            const contributesToValue = subject.contributesTo / 3; // Asumiendo que el valor máximo de contributesTo es 3
+            const creditsValue = subject.credits / 265; // Asumiendo que el valor máximo de credits es 265
+            const attemptsValue = subject.attempts / 4; // Asumiendo que el valor máximo de attempts es 4
+
+            // Calcular el porcentaje de recomendación
+            const priority =
+                semesterValue * weights.semester +
+                contributesToValue * weights.contributesTo +
+                creditsValue * weights.credits +
+                attemptsValue * weights.attempts;
+
+            // Convertir a porcentaje
+            return priority * 100;
+        }
+
+        function extractSemesterNumber(str) {
+            const match = str.match(/^(\d{2})SE$/);
+
+            if (match) {
+                return parseInt(match[1], 10);
+            }
+
+            return 0;
+        }
+
+        function parseSchedule(schedule) {
+            if (!schedule || schedule === null || schedule === "") {
+                return null;
+            }
+
+            const [timePart, room] = schedule.trim().split(" ");
+            const [start, end] = (timePart || "").trim().split("_");
+
+            let startMins = 0;
+            let endMins = 0;
+
+            if (start && start.includes(":")) {
+                const parts = start.split(":");
+                startMins = parseInt(parts[0], 10) * 60 + parseInt(parts[1] || 0, 10);
+            }
+
+            if (end) {
+                const cleanEnd = end.replace(/[^\d:]/g, "");
+                if (cleanEnd.includes(":")) {
+                    const parts = cleanEnd.split(":");
+                    endMins = parseInt(parts[0], 10) * 60 + parseInt(parts[1] || 0, 10);
+                }
+            }
+
+            return {
+                start,
+                end,
+                room,
+                startMins,
+                endMins
+            };
+        }
+
+        const studyPlans = {
+            LICINFORM: "Pensum Nuevo",
+            LICINGINF: "Pensum Viejo / Derogado",
+        };
+
+        const campus = {
+            "001": "Caracas",
+            "004": "Guayana",
+        };
+
+        const semesterLoad = {
+            "00SE": 25,
+            "01SE": 25,
+            "02SE": 31,
+            "03SE": 33,
+            "04SE": 31,
+            "05SE": 31,
+            "06SE": 31,
+            "07SE": 30,
+            "08SE": 28,
+            "09SE": 26,
+            "10SE": 17,
+        };
+
+        const weekDays = {
+            monday: "Lunes",
+            tuesday: "Martes",
+            wednesday: "Miércoles",
+            thursday: "Jueves",
+            friday: "Viernes",
+            saturday: "Sábado",
+            sunday: "Domingo",
+        };
+
+
+    })();
+</script>
