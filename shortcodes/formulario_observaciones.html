@@ -57,11 +57,13 @@
     display: flex;
     width: 700%;
     /* 7 pasos */
+    align-items: flex-start;
     transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
     margin: 0 !important;
     padding: 0 !important;
     list-style: none !important;
   }
+
 
   .obs-form-container .form-section {
     width: 14.2857%;
@@ -1012,7 +1014,24 @@
         p_est_id: estId,
       });
       if (error) throw error;
-      projectedSubjectIds = data.map((p) => p.mat_id);
+      
+      // Get base projected IDs
+      const projectedIds = data.map((p) => p.mat_id);
+      
+      // Automatically add associated practices (e.g., INFO-0XXXX -> INFO-PXXXX)
+      const additionalIds = [];
+      projectedIds.forEach(id => {
+        const theorySub = allSubjects.find(s => s.mat_id === id);
+        if (theorySub && theorySub.mat_cod && theorySub.mat_cod.startsWith("INFO-0")) {
+          const practiceCod = theorySub.mat_cod.replace("INFO-0", "INFO-P");
+          const practiceSub = allSubjects.find(s => s.mat_cod === practiceCod);
+          if (practiceSub && !projectedIds.includes(practiceSub.mat_id)) {
+            additionalIds.push(practiceSub.mat_id);
+          }
+        }
+      });
+
+      projectedSubjectIds = [...projectedIds, ...additionalIds];
       updateSelectsOptions(); // Refresh selects to show projections
     } catch (err) {
       console.error("Puntaje proyección no disponible", err);
@@ -1020,6 +1039,7 @@
       updateSelectsOptions(); // Refresh even on error to clear projections
     }
   }
+
 
   async function fetchSectionsForSubject(subjectId) {
     if (!sbClient || !subjectId) return [];
@@ -1125,31 +1145,48 @@
   const MAX_REQUEST_ROWS = 10;
   function generateSubjectOptionsHTML() {
     let html = '<option value="">Seleccionar Asignatura...</option>';
+    
+    // 1. Proyectadas (siempre de primero)
     if (projectedSubjectIds.length > 0) {
-      html += '<optgroup label="⭐ Proyectadas para ti">';
       const projSubjects = allSubjects.filter((m) =>
         projectedSubjectIds.includes(m.mat_id),
       );
-      projSubjects.forEach((sub) => {
-        html += `<option value="${sub.mat_id}">${sub.mat_nombre} (${sub.mat_semestre})</option>`;
-      });
-      html += "</optgroup>";
+      if (projSubjects.length > 0) {
+        html += '<optgroup label="⭐ Proyectadas para ti">';
+        projSubjects.forEach((sub) => {
+          const semLabel = sub.mat_semestre ? ` - ${sub.mat_semestre}` : '';
+          html += `<option value="${sub.mat_id}">${sub.mat_nombre}${semLabel}</option>`;
+        });
+        html += "</optgroup>";
+      }
     }
-    const semesters = [
-      ...new Set(allSubjects.map((s) => s.mat_semestre)),
-    ].sort();
+
+    // 2. Agrupadas por semestre / electivas
+    const semesters = [...new Set(allSubjects.map((s) => s.mat_semestre || ''))];
+    
+    // Ordenar semestres: Primero los que tienen valor (01SE, 02SE...) y de último los vacíos (electivas)
+    semesters.sort((a, b) => {
+      if (!a) return 1;
+      if (!b) return -1;
+      return a.localeCompare(b);
+    });
+
     semesters.forEach((sem) => {
-      const subjectsInSem = allSubjects.filter((s) => s.mat_semestre === sem);
+      const subjectsInSem = allSubjects.filter((s) => (s.mat_semestre || '') === sem);
       if (subjectsInSem.length > 0) {
-        html += `<optgroup label="Semestre ${sem}">`;
+        // Label especial para electivas (semestre vacío)
+        const label = sem ? `Semestre ${sem}` : "Electivas / Otros";
+        html += `<optgroup label="${label}">`;
         subjectsInSem.forEach((sub) => {
           html += `<option value="${sub.mat_id}">${sub.mat_nombre}</option>`;
         });
         html += "</optgroup>";
       }
     });
+    
     return html;
   }
+
 
   function updateNrcPlaceholder(select) {
     const row = select.closest(".request-row");
