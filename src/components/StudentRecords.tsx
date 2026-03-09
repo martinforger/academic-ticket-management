@@ -147,30 +147,34 @@ export const StudentRecords: React.FC = () => {
     };
   }, []);
 
-  const filteredRequests = useMemo(() => {
-    return requests.filter(r => {
-      // Dept filter
-      if (selectedDepts.length > 0 && !selectedDepts.includes(r.classification)) {
-        return false;
-      }
-      // Semester filter
-      if (selectedSemester !== 'All' && r.semester !== selectedSemester) {
-        return false;
-      }
-      // Status filter
-      if (selectedStatus !== 'All' && r.status !== selectedStatus) {
-        return false;
-      }
-      // Subject filter
-      if (selectedSubject !== 'All' && r.subject !== selectedSubject) {
-        return false;
-      }
-      return true;
-    });
-  }, [requests, selectedDepts, selectedSemester, selectedStatus, selectedSubject]);
+  // Group all requests by student first
+  const groupedStudents = useMemo(() => groupRequestsByStudent(requests), [requests]);
 
-  // Group by student first, then filter by search term
-  const allStudents = useMemo(() => groupRequestsByStudent(filteredRequests), [filteredRequests]);
+  // Apply filters to students (a student matches if at least one of their requests matches the filters)
+  const allStudents = useMemo(() => {
+    return groupedStudents.filter(student => {
+      // A student matches if AT LEAST ONE of their requests matches ALL active filters
+      return student.requests.some(r => {
+        // Dept filter
+        if (selectedDepts.length > 0 && !selectedDepts.includes(r.classification)) {
+          return false;
+        }
+        // Semester filter
+        if (selectedSemester !== 'All' && r.semester !== selectedSemester) {
+          return false;
+        }
+        // Status filter
+        if (selectedStatus !== 'All' && r.status !== selectedStatus) {
+          return false;
+        }
+        // Subject filter
+        if (selectedSubject !== 'All' && r.subject !== selectedSubject) {
+          return false;
+        }
+        return true;
+      });
+    });
+  }, [groupedStudents, selectedDepts, selectedSemester, selectedStatus, selectedSubject]);
 
   // Unique subjects for filter
   const subjects = useMemo(() => {
