@@ -6,6 +6,8 @@ import { supabase } from '../lib/supabase';
 import { OutcomeModal } from './OutcomeModal';
 import { DeleteConfirmationModal } from './DeleteConfirmationModal';
 import { exportObservationsToExcel } from '../utils/exportUtils';
+import { MateriaModal } from './MateriaModal';
+import type { MateriaData } from './MateriaModal';
 
 interface StudentRow {
   campus: string;
@@ -63,7 +65,7 @@ interface CarreraData {
   car_nombre: string;
 }
 
-type UploadType = 'proyecciones' | 'horarios' | 'estudiantes' | 'semestres';
+type UploadType = 'proyecciones' | 'horarios' | 'estudiantes' | 'semestres' | 'materias';
 
 const getExpectedSheetSemester = (sem: string) => {
   if (!sem || sem.length !== 6) return sem;
@@ -89,9 +91,15 @@ export function UploadProjections() {
   const [newSemesterTerm, setNewSemesterTerm] = useState('');
   const [carrerasList, setCarrerasList] = useState<CarreraData[]>([]);
 
+  // Materias state
+  const [materiasList, setMateriasList] = useState<MateriaData[]>([]);
+  const [isMateriaModalOpen, setIsMateriaModalOpen] = useState(false);
+  const [editingMateria, setEditingMateria] = useState<MateriaData | null>(null);
+
   useEffect(() => {
     fetchSemesters();
     fetchCarreras();
+    fetchMaterias();
   }, []);
 
   const fetchSemesters = async () => {
@@ -118,6 +126,19 @@ export function UploadProjections() {
       setCarrerasList(data as CarreraData[]);
     } else if (error) {
       console.error("Error fetching carreras:", error);
+    }
+  };
+
+  const fetchMaterias = async () => {
+    const { data, error } = await supabase
+      .from('materia')
+      .select('*')
+      .order('mat_cod');
+
+    if (error) {
+      console.error("Error fetching materias:", error);
+    } else if (data) {
+      setMateriasList(data as MateriaData[]);
     }
   };
 
@@ -773,6 +794,20 @@ export function UploadProjections() {
               >
                 Semestres
               </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setUploadType('materias');
+                  resetPreview();
+                }}
+                disabled={loading}
+                className={`px-4 py-3 rounded-lg border text-sm font-semibold transition-colors ${uploadType === 'materias'
+                  ? 'border-primary/40 bg-primary/10 text-primary'
+                  : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                  }`}
+              >
+                Materias
+              </button>
             </div>
           </div>
 
@@ -838,6 +873,77 @@ export function UploadProjections() {
                       <tr>
                         <td colSpan={4} className="px-4 py-4 text-center text-slate-500">
                           No hay semestres registrados.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : uploadType === 'materias' ? (
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-bold text-slate-800 dark:text-white">Gestión de Materias</h3>
+                <button
+                  onClick={() => {
+                    setEditingMateria(null);
+                    setIsMateriaModalOpen(true);
+                  }}
+                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium flex items-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-sm">add</span>
+                  Nueva Materia
+                </button>
+              </div>
+
+              <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg overflow-y-auto custom-scrollbar relative" style={{ maxHeight: '500px' }}>
+                <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
+                  <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-10">
+                    <tr>
+                      <th className="px-4 py-3 font-semibold">Código</th>
+                      <th className="px-4 py-3 font-semibold">Nombre</th>
+                      <th className="px-4 py-3 font-semibold">UC</th>
+                      <th className="px-4 py-3 font-semibold">Dpto</th>
+                      <th className="px-4 py-3 font-semibold">Tax.</th>
+                      <th className="px-4 py-3 font-semibold">Modalidad</th>
+                      <th className="px-4 py-3 font-semibold text-right">Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {materiasList.map(mat => (
+                      <tr key={mat.mat_id} className="border-b border-slate-100 dark:border-slate-700/50 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-700/20">
+                        <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">{mat.mat_cod}</td>
+                        <td className="px-4 py-3">{mat.mat_nombre}</td>
+                        <td className="px-4 py-3">{mat.mat_creditos}</td>
+                        <td className="px-4 py-3">{mat.mat_departamento}</td>
+                        <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-300">
+                          {mat.mat_taxonomia ? (
+                            <span className="bg-slate-100 dark:bg-slate-700 font-mono text-xs px-2 py-1 rounded">
+                              {mat.mat_taxonomia}
+                            </span>
+                          ) : '-'}
+                        </td>
+                        <td className="px-4 py-3">
+                          {mat.mat_modality === 'P' ? 'Presencial' : 'Virtual / En línea'}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            onClick={() => {
+                              setEditingMateria(mat);
+                              setIsMateriaModalOpen(true);
+                            }}
+                            className="text-primary hover:text-primary/80 font-medium p-1 rounded hover:bg-primary/10 transition-colors"
+                            title="Editar"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">edit</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {materiasList.length === 0 && (
+                      <tr>
+                        <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
+                          No hay materias registradas.
                         </td>
                       </tr>
                     )}
@@ -1047,7 +1153,7 @@ export function UploadProjections() {
           </div>
         </div>
 
-      </main>
+      </main >
 
       <OutcomeModal
         isOpen={modal.isOpen}
@@ -1063,6 +1169,22 @@ export function UploadProjections() {
         onConfirm={handleDownloadAndDelete}
         isDeleting={isDeletingData}
       />
-    </div>
+
+      <MateriaModal
+        isOpen={isMateriaModalOpen}
+        onClose={() => setIsMateriaModalOpen(false)}
+        materia={editingMateria}
+        onSave={() => {
+          setIsMateriaModalOpen(false);
+          fetchMaterias();
+          setModal({
+            isOpen: true,
+            type: 'success',
+            title: 'Éxito',
+            message: editingMateria ? 'Materia actualizada correctamente.' : 'Materia creada correctamente.',
+          });
+        }}
+      />
+    </div >
   );
 }
