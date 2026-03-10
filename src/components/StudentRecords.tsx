@@ -94,56 +94,67 @@ export const StudentRecords: React.FC = () => {
       .on(
         'postgres_changes',
         {
-          event: 'UPDATE',
+          event: '*', // Listen to all events
           schema: 'public',
           table: 'observacion'
         },
-        (payload) => {
-          const updatedRow = payload.new as {
-            obs_id: number;
-            obs_estatus: string;
-            obs_responsable: string;
-            obs_respuesta_interna: string;
-            obs_respuesta_externa: string;
-          };
+        async (payload) => {
+          if (payload.eventType === 'INSERT') {
+            await fetchRequests();
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedRow = payload.new as any;
 
-          // Update requests list
-          setRequests(prev => prev.map(req => {
-            if (req.id === updatedRow.obs_id) {
-              return {
-                ...req,
-                status: updatedRow.obs_estatus as Status,
-                responsible: updatedRow.obs_responsable || '',
-                internalResponse: updatedRow.obs_respuesta_interna || '',
-                studentResponse: updatedRow.obs_respuesta_externa || ''
-              };
-            }
-            return req;
-          }));
+            // Update requests list
+            setRequests(prev => prev.map(req => {
+              if (req.id === updatedRow.obs_id) {
+                return {
+                  ...req,
+                  status: updatedRow.obs_estatus as Status,
+                  responsible: updatedRow.obs_responsable || '',
+                  classification: updatedRow.obs_clasificacion || req.classification,
+                  action: updatedRow.obs_accion || req.action,
+                  internalResponse: updatedRow.obs_respuesta_interna || req.internalResponse,
+                  studentResponse: updatedRow.obs_respuesta_externa || req.studentResponse
+                };
+              }
+              return req;
+            }));
 
-          // Update selectedStudent if it contains the updated request
-          setSelectedStudent(prev => {
-            if (!prev) return null;
+            // Update selectedStudent if it contains the updated request
+            setSelectedStudent(prev => {
+              if (!prev) return null;
 
-            const requestIndex = prev.requests.findIndex(r => r.id === updatedRow.obs_id);
-            if (requestIndex !== -1) {
-              const newRequests = [...prev.requests];
-              newRequests[requestIndex] = {
-                ...newRequests[requestIndex],
-                status: updatedRow.obs_estatus as Status,
-                responsible: updatedRow.obs_responsable || '',
-                internalResponse: updatedRow.obs_respuesta_interna || '',
-                studentResponse: updatedRow.obs_respuesta_externa || ''
-              };
+              const requestIndex = prev.requests.findIndex(r => r.id === updatedRow.obs_id);
+              if (requestIndex !== -1) {
+                const newRequests = [...prev.requests];
+                newRequests[requestIndex] = {
+                  ...newRequests[requestIndex],
+                  status: updatedRow.obs_estatus as Status,
+                  responsible: updatedRow.obs_responsable || '',
+                  classification: updatedRow.obs_clasificacion || newRequests[requestIndex].classification,
+                  action: updatedRow.obs_accion || newRequests[requestIndex].action,
+                  internalResponse: updatedRow.obs_respuesta_interna || '',
+                  studentResponse: updatedRow.obs_respuesta_externa || ''
+                };
 
-              // Recalculate summary stats if needed (simplified for now as only status/responsible changed)
-              return {
-                ...prev,
-                requests: newRequests
-              };
-            }
-            return prev;
-          });
+                return {
+                  ...prev,
+                  requests: newRequests
+                };
+              }
+              return prev;
+            });
+          } else if (payload.eventType === 'DELETE') {
+            const deletedId = (payload.old as any).obs_id;
+            setRequests(prev => prev.filter(req => req.id !== deletedId));
+            setSelectedStudent(prev => {
+              if (!prev) return null;
+              const filtered = prev.requests.filter(r => r.id !== deletedId);
+              if (filtered.length === prev.requests.length) return prev;
+              if (filtered.length === 0) return null; // Close if all requests for this student are gone
+              return { ...prev, requests: filtered };
+            });
+          }
         }
       )
       .subscribe();
@@ -151,7 +162,7 @@ export const StudentRecords: React.FC = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [fetchRequests]);
 
   // Group all requests by student first
   const groupedStudents = useMemo(() => groupRequestsByStudent(requests), [requests]);

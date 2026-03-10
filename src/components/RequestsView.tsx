@@ -53,74 +53,74 @@ export const RequestsView: React.FC = () => {
     'IGNORADO',
   ];
 
+  const fetchRequests = async () => {
+    try {
+      // Fetch from normalized tables with joins
+      const { data, error } = await supabase
+        .from('observacion')
+        .select(`
+          obs_id,
+          obs_estatus,
+          obs_clasificacion,
+          obs_num_caso,
+          obs_fecha,
+          obs_autoriza,
+          obs_accion,
+          obs_nrc_solicitado,
+          obs_comentarios,
+          obs_responsable,
+          obs_respuesta_interna,
+          obs_respuesta_externa,
+          estudiante (
+            est_cedula,
+            est_nombre,
+            est_ubic_sem,
+            est_promedio,
+            est_creditos_acum,
+            est_correo
+          ),
+          materia (
+            mat_nombre
+          )
+        `);
+
+      if (error) throw error;
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const formattedRequests: Request[] = (data || []).map((row: any) => ({
+        id: row.obs_id,
+        status: row.obs_estatus,
+        classification: row.obs_clasificacion,
+        caseId: row.obs_num_caso,
+        date: row.obs_fecha,
+        studentId: row.estudiante?.est_cedula?.toString() || '',
+        studentName: row.estudiante?.est_nombre || 'Desconocido',
+        credits: row.estudiante?.est_creditos_acum || 0,
+        semester: row.estudiante?.est_ubic_sem || '',
+        gpa: row.estudiante?.est_promedio || 0,
+        authorized: row.obs_autoriza,
+        action: row.obs_accion || '',
+        subject: row.materia?.mat_nombre || '',
+        nrc: row.obs_nrc_solicitado || 0,
+        comments: row.obs_comentarios || '',
+        contact: row.estudiante?.est_correo || '',
+        responsible: row.obs_responsable || '',
+        internalResponse: row.obs_respuesta_interna || '',
+        studentResponse: row.obs_respuesta_externa || ''
+      }));
+
+      // Sort by caseId (obs_num_caso) ascending
+      formattedRequests.sort((a, b) => (a.caseId || '').localeCompare(b.caseId || ''));
+
+      setRequests(formattedRequests);
+    } catch (err) {
+      console.error('Error fetching requests:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchRequests = async () => {
-      try {
-        // Fetch from normalized tables with joins
-        const { data, error } = await supabase
-          .from('observacion')
-          .select(`
-            obs_id,
-            obs_estatus,
-            obs_clasificacion,
-            obs_num_caso,
-            obs_fecha,
-            obs_autoriza,
-            obs_accion,
-            obs_nrc_solicitado,
-            obs_comentarios,
-            obs_responsable,
-            obs_respuesta_interna,
-            obs_respuesta_externa,
-            estudiante (
-              est_cedula,
-              est_nombre,
-              est_ubic_sem,
-              est_promedio,
-              est_creditos_acum,
-              est_correo
-            ),
-            materia (
-              mat_nombre
-            )
-          `);
-
-        if (error) throw error;
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const formattedRequests: Request[] = (data || []).map((row: any) => ({
-          id: row.obs_id,
-          status: row.obs_estatus,
-          classification: row.obs_clasificacion,
-          caseId: row.obs_num_caso,
-          date: row.obs_fecha,
-          studentId: row.estudiante?.est_cedula?.toString() || '',
-          studentName: row.estudiante?.est_nombre || 'Desconocido',
-          credits: row.estudiante?.est_creditos_acum || 0,
-          semester: row.estudiante?.est_ubic_sem || '',
-          gpa: row.estudiante?.est_promedio || 0,
-          authorized: row.obs_autoriza,
-          action: row.obs_accion || '',
-          subject: row.materia?.mat_nombre || '',
-          nrc: row.obs_nrc_solicitado || 0,
-          comments: row.obs_comentarios || '',
-          contact: row.estudiante?.est_correo || '',
-          responsible: row.obs_responsable || '',
-          internalResponse: row.obs_respuesta_interna || '',
-          studentResponse: row.obs_respuesta_externa || ''
-        }));
-
-        // Sort by caseId (obs_num_caso) ascending
-        formattedRequests.sort((a, b) => (a.caseId || '').localeCompare(b.caseId || ''));
-
-        setRequests(formattedRequests);
-      } catch (err) {
-        console.error('Error fetching requests:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchRequests();
 
     // Subscribe to realtime updates for the observacion table
@@ -129,40 +129,49 @@ export const RequestsView: React.FC = () => {
       .on(
         'postgres_changes',
         {
-          event: 'UPDATE',
+          event: '*',
           schema: 'public',
           table: 'observacion'
         },
-        (payload) => {
-          // Update the request in the local state
-          const updatedRow = payload.new as {
-            obs_id: number;
-            obs_estatus: string;
-            obs_responsable: string;
-          };
+        async (payload) => {
+          if (payload.eventType === 'INSERT') {
+            await fetchRequests();
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedRow = payload.new as any;
+            setRequests(prev => prev.map(req => {
+              if (req.id === updatedRow.obs_id) {
+                return {
+                  ...req,
+                  status: updatedRow.obs_estatus as Status,
+                  responsible: updatedRow.obs_responsable || '',
+                  classification: updatedRow.obs_clasificacion || req.classification,
+                  action: updatedRow.obs_accion || req.action,
+                  internalResponse: updatedRow.obs_respuesta_interna || req.internalResponse,
+                  studentResponse: updatedRow.obs_respuesta_externa || req.studentResponse
+                };
+              }
+              return req;
+            }));
 
-          setRequests(prev => prev.map(req => {
-            if (req.id === updatedRow.obs_id) {
-              return {
-                ...req,
-                status: updatedRow.obs_estatus as Status,
-                responsible: updatedRow.obs_responsable || ''
-              };
-            }
-            return req;
-          }));
-
-          // Also update selectedRequest if it matches
-          setSelectedRequest(prev => {
-            if (prev && prev.id === updatedRow.obs_id) {
-              return {
-                ...prev,
-                status: updatedRow.obs_estatus as Status,
-                responsible: updatedRow.obs_responsable || ''
-              };
-            }
-            return prev;
-          });
+            setSelectedRequest(prev => {
+              if (prev && prev.id === updatedRow.obs_id) {
+                return {
+                  ...prev,
+                  status: updatedRow.obs_estatus as Status,
+                  responsible: updatedRow.obs_responsable || '',
+                  classification: updatedRow.obs_clasificacion || prev.classification,
+                  action: updatedRow.obs_accion || prev.action,
+                  internalResponse: updatedRow.obs_respuesta_interna || prev.internalResponse,
+                  studentResponse: updatedRow.obs_respuesta_externa || prev.studentResponse
+                };
+              }
+              return prev;
+            });
+          } else if (payload.eventType === 'DELETE') {
+            const deletedId = (payload.old as any).obs_id;
+            setRequests(prev => prev.filter(req => req.id !== deletedId));
+            setSelectedRequest(prev => (prev?.id === deletedId ? null : prev));
+          }
         }
       )
       .subscribe();
@@ -950,8 +959,7 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
             </div>
           </div>
 
-          {/* Materia and Action Info */}
-          {/* Materia and Action Info */}
+          {/* Materia and Action Info slice - removed double block */}
           <div className="grid grid-cols-1 md:grid-cols-10 gap-4">
             <div
               className="md:col-span-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 border-l-4"

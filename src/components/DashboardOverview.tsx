@@ -185,6 +185,87 @@ export const DashboardOverview: React.FC = () => {
     fetchData();
   }, [profile, daysBack]);
 
+  // Realtime subscription for dashboard stats
+  useEffect(() => {
+    const channel = supabase
+      .channel('dashboard-stats-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events: INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'observacion'
+        },
+        () => {
+          // Trigger data re-fetch when any change occurs
+          const fetchData = async () => {
+            try {
+              const [
+                statsResult,
+                statusResult,
+                deptResult,
+                respResult,
+                volumeResult
+              ] = await Promise.all([
+                supabase.rpc('get_dashboard_stats'),
+                supabase.rpc('get_status_distribution'),
+                supabase.rpc('get_department_distribution'),
+                supabase.rpc('get_top_responsibles', { limit_count: 5 }),
+                supabase.rpc('get_daily_volume', { 
+                  days_back: daysBack,
+                  interval_text: daysBack === 1 ? '1 hour' : daysBack === 7 ? '6 hours' : '1 day'
+                })
+              ]);
+
+              if (statsResult.data) {
+                const s = statsResult.data;
+                const total = s.total || 0;
+                const solved = s.solved || 0;
+                const noProcede = s.no_procede || 0;
+                const uniqueDates = s.unique_dates || 1;
+
+                setStats({
+                  totalStudents: s.unique_students || 0,
+                  activeRequests: s.active_requests || 0,
+                  completionRate: total > 0 ? Math.round((solved / total) * 100) : 0,
+                  urgentCases: s.urgent || 0,
+                  rejectionRate: total > 0 ? Math.round((noProcede / total) * 100 * 10) / 10 : 0,
+                  addCount: s.add_count || 0,
+                  removeCount: s.remove_count || 0,
+                  dailyAverage: uniqueDates > 0 ? Math.round(total / uniqueDates) : 0
+                });
+              }
+
+              if (statusResult.data) setStatusDistribution(statusResult.data);
+              
+              if (deptResult.data) {
+                const deptStats: DepartmentStats[] = deptResult.data.map((d: any) => ({
+                  id: d.id,
+                  name: DEPARTMENT_NAMES[d.id] || d.id,
+                  count: d.count,
+                  percentage: d.percentage,
+                  color: DEPARTMENT_COLORS[d.id] || '#94a3b8'
+                }));
+                setDepartmentStats(deptStats);
+              }
+
+              if (respResult.data) setResponsibleStats(respResult.data || []);
+              if (volumeResult.data) setChartData(volumeResult.data as { day: string; count: number }[]);
+              
+            } catch (err) {
+              console.error('Error re-fetching dashboard data:', err);
+            }
+          };
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [daysBack]);
+
   // Separate effect for Audit Logs to handle pagination/filtering without reloading everything
   useEffect(() => {
     const fetchLogs = async () => {
