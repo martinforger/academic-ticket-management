@@ -34,7 +34,7 @@
     background: var(--ucab-bg) !important;
     border: none !important;
     border-radius: 8px !important;
-    padding: 24px 28px !important;
+    /* padding: 24px 28px !important; */
     box-shadow: none !important;
   }
 
@@ -468,24 +468,26 @@
       }
 
       function hideLoader(msg) {
+        $loader.stop(true, true).fadeOut(SPEED);
         if (msg) {
-          $loader.fadeOut(SPEED, () => {
-            $resultsContainer.fadeOut(SPEED, () => {
-              $errMsg
-                .html(
-                  `<span class="enr-resp-alert-icon" aria-hidden="true">⚠️</span><span class="enr-resp-alert-text">${msg}</span>`,
-                )
-                .fadeIn();
-            });
+          $resultsContainer.stop(true, true).fadeOut(SPEED, () => {
+            $errMsg
+              .html(
+                `<span class="enr-resp-alert-icon" aria-hidden="true">⚠️</span><span class="enr-resp-alert-text">${msg}</span>`,
+              )
+              .stop(true, true)
+              .fadeIn(SPEED);
           });
         } else {
-          $loader.fadeOut(SPEED, () => $resultsContainer.fadeIn());
+          $errMsg.stop(true, true).fadeOut(SPEED);
+          $resultsContainer.stop(true, true).fadeIn(SPEED);
         }
       }
 
       function showLoader() {
-        $resultsContainer.fadeOut(SPEED, () => {
-          $errMsg.fadeOut(SPEED, () => $loader.fadeIn());
+        $errMsg.stop(true, true).fadeOut(SPEED);
+        $resultsContainer.stop(true, true).fadeOut(SPEED, () => {
+          $loader.stop(true, true).fadeIn(SPEED);
         });
       }
 
