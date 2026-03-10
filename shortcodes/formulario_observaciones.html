@@ -118,7 +118,7 @@
     display: block !important;
     width: 100% !important;
     max-width: 100% !important;
-    padding: 10px 14px !important;
+    padding: 14px !important;
     border: 2px solid #c5c4c4 !important;
     border-radius: 4px !important;
     font-family: inherit !important;
@@ -129,7 +129,7 @@
     margin: 0 !important;
     color: #333333 !important;
     box-shadow: none !important;
-    height: 48px !important;
+    height: 3.08em;
     -webkit-appearance: auto !important;
     /* Re-enable for better cross-browser arrow */
     appearance: auto !important;
@@ -153,9 +153,7 @@
   .obs-form-container .search-input:focus,
   .obs-form-container select:focus,
   .obs-form-container textarea:focus {
-    border-color: var(--ucab-blue) !important;
     outline: none !important;
-    background-color: #fff !important;
     color: #333 !important;
   }
 
@@ -164,7 +162,7 @@
     cursor: pointer !important;
     padding: 10px 24px !important;
     border-radius: 3px !important;
-    font-size: 1rem !important;
+    font-size: 20px;
     font-weight: 600 !important;
     transition: all var(--transition-speed);
     border: 2px solid var(--ucab-blue) !important;
@@ -174,7 +172,6 @@
     align-items: center !important;
     justify-content: center !important;
     gap: 8px !important;
-    line-height: 1.64em !important;
     text-transform: none !important;
     text-decoration: none !important;
     height: auto !important;
@@ -284,11 +281,7 @@
 
   /* Error container remains as it is used for dynamic validation errors */
   .obs-form-container .error-container {
-    background-color: #fef2f2 !important;
-    border: 1px solid #fecaca !important;
-    color: #b91c1c !important;
-    padding: 12px !important;
-    border-radius: 4px !important;
+    color: #c4151c !important;
     margin-top: 15px !important;
     display: none;
     animation: obsShake 0.4s ease;
@@ -930,10 +923,10 @@
 
   // --- CONSTANTES ---
   const MSG = {
-    invalidSsn: "Por favor, introduce un número de cédula válido.",
-    missingFields: "Por favor complete todos los campos requeridos.",
-    studentNotFound: "Cédula no encontrada.",
-    generalError: "Ocurrió un error. Intente nuevamente.",
+    invalidSsn: '<i class="fa fa-exclamation-circle" aria-hidden="true"></i> Por favor, introduce un número de cédula válido.',
+    missingFields: 'Por favor complete todos los campos requeridos.',
+    studentNotFound: 'Cédula no encontrada.',
+    generalError: 'Ocurrió un error. Intente nuevamente.',
   };
 
   // --- ESTADO ---

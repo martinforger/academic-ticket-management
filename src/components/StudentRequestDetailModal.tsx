@@ -79,6 +79,13 @@ const RequestItem = ({ request, allRequests, onChange, isReader, isLockedByOther
   const [internalResponse, setInternalResponse] = useState(request.internalResponse || '');
   const [response, setResponse] = useState(request.studentResponse || '');
 
+  // Sync state when props change (Realtime updates)
+  useEffect(() => {
+    setStatus(request.status);
+    setInternalResponse(request.internalResponse || '');
+    setResponse(request.studentResponse || '');
+  }, [request.status, request.internalResponse, request.studentResponse]);
+
   // Find the next related case (consecutive middle number)
   const getNextRelatedCase = (): Request | null => {
     if (!request.caseId) return null;
@@ -533,7 +540,10 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
       // Clear auto-claimed refs since user explicitly saved
       autoClaimedIdsRef.current = [];
       setRequestChanges({});
+      
+      // Refresh parent state to ensure UI reflects database
       if (onRefresh) onRefresh();
+      
       setShowSuccessModal(true);
     } catch (err) {
       console.error("Error saving batch:", err);

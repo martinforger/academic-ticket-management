@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { StudentFilters } from './StudentFilters';
 import { StudentTable } from './StudentTable';
 import { StudentRequestDetailModal } from './StudentRequestDetailModal';
@@ -18,74 +18,74 @@ export const StudentRecords: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
   const [selectedSubject, setSelectedSubject] = useState<string>('All');
 
+  const fetchRequests = useCallback(async () => {
+    try {
+      // Fetch from normalized tables with joins
+      const { data, error } = await supabase
+        .from('observacion')
+        .select(`
+          obs_id,
+          obs_estatus,
+          obs_clasificacion,
+          obs_num_caso,
+          obs_fecha,
+          obs_autoriza,
+          obs_accion,
+          obs_nrc_solicitado,
+          obs_comentarios,
+          obs_responsable,
+          obs_respuesta_interna,
+          obs_respuesta_externa,
+          estudiante (
+            est_cedula,
+            est_nombre,
+            est_ubic_sem,
+            est_promedio,
+            est_creditos_acum,
+            est_correo
+          ),
+          materia (
+            mat_nombre
+          )
+        `);
+
+      if (error) throw error;
+
+      // Transformar datos de Supabase a nuestro tipo Request
+      const formattedRequests: Request[] = (data || []).map((row: any) => ({
+        id: row.obs_id,
+        status: row.obs_estatus,
+        classification: row.obs_clasificacion,
+        caseId: row.obs_num_caso,
+        date: row.obs_fecha,
+        studentId: row.estudiante?.est_cedula?.toString() || '',
+        studentName: row.estudiante?.est_nombre || 'Desconocido',
+        credits: row.estudiante?.est_creditos_acum || 0,
+        semester: row.estudiante?.est_ubic_sem || '',
+        gpa: row.estudiante?.est_promedio || 0,
+        authorized: row.obs_autoriza,
+        action: row.obs_accion || '',
+        subject: row.materia?.mat_nombre || '',
+        nrc: row.obs_nrc_solicitado || 0,
+        comments: row.obs_comentarios || '',
+        contact: row.estudiante?.est_correo || '',
+        responsible: row.obs_responsable || '',
+        internalResponse: row.obs_respuesta_interna || '',
+        studentResponse: row.obs_respuesta_externa || ''
+      }));
+
+      // Sort by caseId (obs_num_caso) ascending
+      formattedRequests.sort((a, b) => (a.caseId || '').localeCompare(b.caseId || ''));
+
+      setRequests(formattedRequests);
+    } catch (err) {
+      console.error('Error fetching requests:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    const fetchRequests = async () => {
-      try {
-        // Fetch from normalized tables with joins
-        const { data, error } = await supabase
-          .from('observacion')
-          .select(`
-            obs_id,
-            obs_estatus,
-            obs_clasificacion,
-            obs_num_caso,
-            obs_fecha,
-            obs_autoriza,
-            obs_accion,
-            obs_nrc_solicitado,
-            obs_comentarios,
-            obs_responsable,
-            obs_respuesta_interna,
-            obs_respuesta_externa,
-            estudiante (
-              est_cedula,
-              est_nombre,
-              est_ubic_sem,
-              est_promedio,
-              est_creditos_acum,
-              est_correo
-            ),
-            materia (
-              mat_nombre
-            )
-          `);
-
-        if (error) throw error;
-
-        // Transformar datos de Supabase a nuestro tipo Request
-        const formattedRequests: Request[] = (data || []).map((row: any) => ({
-          id: row.obs_id,
-          status: row.obs_estatus,
-          classification: row.obs_clasificacion,
-          caseId: row.obs_num_caso,
-          date: row.obs_fecha,
-          studentId: row.estudiante?.est_cedula?.toString() || '',
-          studentName: row.estudiante?.est_nombre || 'Desconocido',
-          credits: row.estudiante?.est_creditos_acum || 0,
-          semester: row.estudiante?.est_ubic_sem || '',
-          gpa: row.estudiante?.est_promedio || 0,
-          authorized: row.obs_autoriza,
-          action: row.obs_accion || '',
-          subject: row.materia?.mat_nombre || '',
-          nrc: row.obs_nrc_solicitado || 0,
-          comments: row.obs_comentarios || '',
-          contact: row.estudiante?.est_correo || '',
-          responsible: row.obs_responsable || '',
-          internalResponse: row.obs_respuesta_interna || '',
-          studentResponse: row.obs_respuesta_externa || ''
-        }));
-
-        // Sort by caseId (obs_num_caso) ascending
-        formattedRequests.sort((a, b) => (a.caseId || '').localeCompare(b.caseId || ''));
-
-        setRequests(formattedRequests);
-      } catch (err) {
-        console.error('Error fetching requests:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchRequests();
 
     // Subscribe to realtime updates for the observacion table
@@ -103,6 +103,8 @@ export const StudentRecords: React.FC = () => {
             obs_id: number;
             obs_estatus: string;
             obs_responsable: string;
+            obs_respuesta_interna: string;
+            obs_respuesta_externa: string;
           };
 
           // Update requests list
@@ -111,7 +113,9 @@ export const StudentRecords: React.FC = () => {
               return {
                 ...req,
                 status: updatedRow.obs_estatus as Status,
-                responsible: updatedRow.obs_responsable || ''
+                responsible: updatedRow.obs_responsable || '',
+                internalResponse: updatedRow.obs_respuesta_interna || '',
+                studentResponse: updatedRow.obs_respuesta_externa || ''
               };
             }
             return req;
@@ -127,7 +131,9 @@ export const StudentRecords: React.FC = () => {
               newRequests[requestIndex] = {
                 ...newRequests[requestIndex],
                 status: updatedRow.obs_estatus as Status,
-                responsible: updatedRow.obs_responsable || ''
+                responsible: updatedRow.obs_responsable || '',
+                internalResponse: updatedRow.obs_respuesta_interna || '',
+                studentResponse: updatedRow.obs_respuesta_externa || ''
               };
 
               // Recalculate summary stats if needed (simplified for now as only status/responsible changed)
@@ -293,6 +299,7 @@ export const StudentRecords: React.FC = () => {
         isOpen={!!selectedStudent}
         onClose={() => setSelectedStudent(null)}
         student={selectedStudent}
+        onRefresh={fetchRequests}
       />
     </div>
   );
