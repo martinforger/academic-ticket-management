@@ -1,7 +1,34 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import type { AuditLog } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Filler,
+  Legend,
+  type ChartOptions
+} from 'chart.js';
+import { Line, Doughnut } from 'react-chartjs-2';
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Filler,
+  Legend
+);
 
 import { DEPARTMENT_COLORS, DEPARTMENT_NAMES } from '../constants/departments';
 
@@ -67,7 +94,8 @@ export const DashboardOverview: React.FC = () => {
     removeCount: 0,
     dailyAverage: 0
   });
-  const [chartData, setChartData] = useState<{ x: number; y: number }[]>([]);
+  const [chartData, setChartData] = useState<{ day: string; count: number }[]>([]);
+  const [daysBack, setDaysBack] = useState<number>(7);
   const [statusDistribution, setStatusDistribution] = useState<Record<string, number>>({});
   const [departmentStats, setDepartmentStats] = useState<DepartmentStats[]>([]);
   const [responsibleStats, setResponsibleStats] = useState<ResponsibleStats[]>([]);
@@ -94,7 +122,10 @@ export const DashboardOverview: React.FC = () => {
           supabase.rpc('get_status_distribution'),
           supabase.rpc('get_department_distribution'),
           supabase.rpc('get_top_responsibles', { limit_count: 5 }),
-          supabase.rpc('get_daily_volume', { days_back: 30 })
+          supabase.rpc('get_daily_volume', { 
+            days_back: daysBack,
+            interval_text: daysBack === 1 ? '1 hour' : daysBack === 7 ? '6 hours' : '1 day'
+          })
         ]);
 
         // 1. Process basic statistics
@@ -141,15 +172,7 @@ export const DashboardOverview: React.FC = () => {
 
         // 5. Line Chart Data
         if (volumeResult.data) {
-          const dailyData = volumeResult.data as { day: string; count: number }[];
-          const maxCount = Math.max(...dailyData.map(d => d.count), 1);
-
-          const points = dailyData.map((d, index) => ({
-            x: (index / 30) * 400,
-            y: 100 - (d.count / maxCount) * 80 - 10
-          }));
-
-          setChartData(points);
+          setChartData(volumeResult.data as { day: string; count: number }[]);
         }
 
       } catch (err) {
@@ -160,7 +183,7 @@ export const DashboardOverview: React.FC = () => {
     };
 
     fetchData();
-  }, [profile]);
+  }, [profile, daysBack]);
 
   // Separate effect for Audit Logs to handle pagination/filtering without reloading everything
   useEffect(() => {
@@ -219,54 +242,150 @@ export const DashboardOverview: React.FC = () => {
     fetchLogs();
   }, [profile, auditPage, auditFilter]);
 
-  const generatePath = () => {
-    if (chartData.length === 0) return "";
-    return `M ${chartData[0].x},${chartData[0].y} ` +
-      chartData.map((p, i) => i === 0 ? "" : `L ${p.x},${p.y}`).join(" ");
+  const lineChartData = useMemo(() => {
+    return {
+      labels: chartData.map(d => {
+        const date = new Date(d.day);
+        if (daysBack === 1) {
+          return date.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' });
+        }
+        if (daysBack === 7) {
+          // Point is the beginning of a 6h interval
+          return `${date.getHours()}:00`;
+        }
+        return date.toLocaleDateString('es-VE', { day: '2-digit', month: 'short' });
+      }),
+      datasets: [
+        {
+          label: 'Solicitudes',
+          data: chartData.map(d => d.count),
+          fill: true,
+          borderColor: '#137fec',
+          backgroundColor: 'rgba(19, 127, 236, 0.1)',
+          tension: 0.4,
+          pointRadius: daysBack > 14 ? 0 : 4,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#137fec',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+        },
+      ],
+    };
+  }, [chartData, daysBack]);
+
+  const lineChartOptions: ChartOptions<'line'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        mode: 'index',
+        intersect: false,
+        backgroundColor: 'rgba(16, 25, 34, 0.9)',
+        titleFont: { family: 'Inter', size: 12, weight: 'bold' },
+        bodyFont: { family: 'Inter', size: 14 },
+        padding: 12,
+        cornerRadius: 8,
+        displayColors: false,
+        callbacks: {
+          label: (context) => ` ${context.parsed.y} solicitudes`,
+          title: (items) => {
+            if (items.length > 0) {
+              const date = new Date(chartData[items[0].dataIndex].day);
+              if (daysBack === 1) {
+                return date.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' });
+              }
+              if (daysBack === 7) {
+                const endRange = new Date(date);
+                endRange.setHours(endRange.getHours() + 6);
+                return `${date.toLocaleDateString('es-VE', { weekday: 'short', day: 'numeric', month: 'short' })} ${date.getHours()}:00 - ${endRange.getHours()}:00`;
+              }
+              return date.toLocaleDateString('es-VE', { weekday: 'long', day: 'numeric', month: 'long' });
+            }
+            return '';
+          }
+        }
+      },
+    },
+    scales: {
+      x: {
+        grid: {
+          display: false,
+        },
+        ticks: {
+          font: { family: 'Inter', size: 10, weight: 'bold' },
+          color: '#94a3b8',
+          maxRotation: 0,
+          autoSkip: true,
+          maxTicksLimit: daysBack === 1 ? 12 : 7
+        }
+      },
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(148, 163, 184, 0.1)',
+        },
+        ticks: {
+          font: { family: 'Inter', size: 10, weight: 'bold' },
+          color: '#94a3b8',
+          stepSize: 1,
+        }
+      }
+    },
+    interaction: {
+      mode: 'nearest',
+      axis: 'x',
+      intersect: false
+    }
   };
 
-  const generateAreaPath = () => {
-    if (chartData.length === 0) return "";
-    const line = generatePath();
-    return `${line} L 400,100 L 0,100 Z`;
-  };
+  const statusList = Object.entries(statusDistribution)
+    .sort(([, a], [, b]) => b - a);
 
-  const getDonutSegments = () => {
-    const total = Object.values(statusDistribution).reduce((a, b) => a + b, 0);
-    if (total === 0) return [];
+  const doughnutChartData = useMemo(() => ({
+    labels: statusList.map(([status]) => status),
+    datasets: [{
+      data: statusList.map(([, count]) => count),
+      backgroundColor: statusList.map(([status]) => statusColors[status] || '#cbd5e1'),
+      borderWidth: 0,
+      hoverOffset: 10,
+      cutout: '75%',
+      borderRadius: 4
+    }]
+  }), [statusDistribution]);
 
-    let currentAngle = -90;
-    return Object.entries(statusDistribution).map(([status, count]) => {
-      const percentage = (count / total) * 100;
-      const angle = (count / total) * 360;
-
-      const startAngle = currentAngle;
-      const endAngle = currentAngle + angle;
-      currentAngle = endAngle;
-
-      const x1 = 50 + 40 * Math.cos((startAngle * Math.PI) / 180);
-      const y1 = 50 + 40 * Math.sin((startAngle * Math.PI) / 180);
-      const x2 = 50 + 40 * Math.cos((endAngle * Math.PI) / 180);
-      const y2 = 50 + 40 * Math.sin((endAngle * Math.PI) / 180);
-
-      const largeArcFlag = angle > 180 ? 1 : 0;
-
-      return {
-        status,
-        percentage: Math.round(percentage),
-        path: `M ${x1} ${y1} A 40 40 0 ${largeArcFlag} 1 ${x2} ${y2}`,
-        color: statusColors[status] || '#e2e8f0'
-      };
-    });
+  const doughnutChartOptions: ChartOptions<'doughnut'> = {
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: 'rgba(16, 25, 34, 0.9)',
+        titleFont: { family: 'Inter', size: 12, weight: 'bold' },
+        bodyFont: { family: 'Inter', size: 14 },
+        padding: 12,
+        cornerRadius: 8,
+        callbacks: {
+          label: (context) => ` ${context.label}: ${context.raw} (${Math.round((context.raw as number / Object.values(statusDistribution).reduce((a, b) => a + b, 0)) * 100)}%)`
+        }
+      }
+    },
+    layout: {
+      padding: 30
+    }
   };
 
   // Filters are now handled server-side via useEffect
   const filteredAuditLogs = auditLogs;
 
-  const donutSegments = getDonutSegments();
-  const globalCompletionRate = donutSegments
-    .filter(s => s.status !== 'POR REVISAR')
-    .reduce((acc, s) => acc + s.percentage, 0);
+  const totalStatusCount = Object.values(statusDistribution).reduce((a, b) => a + b, 0);
+  const globalCompletionRate = Math.round(
+    (Object.entries(statusDistribution)
+      .filter(([status]) => status !== 'POR REVISAR')
+      .reduce((acc, [, count]) => acc + count, 0) / (totalStatusCount || 1)) * 100
+  );
   const getActionIcon = (action: string) => {
     switch (action) {
       case 'UPDATE_REQUEST':
@@ -397,35 +516,40 @@ export const DashboardOverview: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Line Graph */}
           <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm hover-lift animate-fadeInLeft animate-delay-700">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-slate-900 dark:text-white font-bold text-lg">Volumen de Solicitudes (30 Días)</h3>
-              <div className="flex gap-2">
-                <span className="w-3 h-3 rounded-full bg-primary inline-block"></span>
-                <span className="text-xs text-slate-500 font-medium">Nuevas Solicitudes</span>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <div>
+                <h3 className="text-slate-900 dark:text-white font-bold text-lg">Volumen de Solicitudes</h3>
+                <p className="text-xs text-slate-400 font-medium">Histórico de casos recibidos</p>
+              </div>
+              <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+                {[
+                  { label: '30d', value: 30 },
+                  { label: '14d', value: 14 },
+                  { label: '7d', value: 7 },
+                  { label: '1d', value: 1 }
+                ].map((range) => (
+                  <button
+                    key={range.value}
+                    onClick={() => setDaysBack(range.value)}
+                    className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
+                      daysBack === range.value
+                        ? 'bg-white dark:bg-slate-700 text-primary shadow-sm ring-1 ring-slate-200 dark:ring-slate-600'
+                        : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                    }`}
+                  >
+                    {range.label}
+                  </button>
+                ))}
               </div>
             </div>
-            <div className="h-64 flex flex-col justify-end gap-2 relative">
-              <div className="absolute inset-0 flex flex-col justify-between py-2">
-                <div className="border-t border-slate-100 dark:border-slate-800 w-full h-0"></div>
-                <div className="border-t border-slate-100 dark:border-slate-800 w-full h-0"></div>
-                <div className="border-t border-slate-100 dark:border-slate-800 w-full h-0"></div>
-                <div className="border-t border-slate-100 dark:border-slate-800 w-full h-0"></div>
-              </div>
-              <svg className="w-full h-full relative z-0" preserveAspectRatio="none" viewBox="0 0 400 100">
-                <path d={generatePath()} fill="none" stroke="#137fec" strokeWidth="2" vectorEffect="non-scaling-stroke" className="chart-line"></path>
-                <path d={generateAreaPath()} fill="url(#grad1)" opacity="0.1"></path>
-                <defs>
-                  <linearGradient id="grad1" x1="0%" x2="0%" y1="0%" y2="100%">
-                    <stop offset="0%" stopColor="#137fec" stopOpacity="1"></stop>
-                    <stop offset="100%" stopColor="#137fec" stopOpacity="0"></stop>
-                  </linearGradient>
-                </defs>
-              </svg>
-              <div className="flex justify-between text-[10px] text-slate-400 font-bold px-1">
-                <span>Hace 30 días</span>
-                <span>Hace 15 días</span>
-                <span>Hoy</span>
-              </div>
+            <div className="h-64 relative">
+              {chartData.length > 0 ? (
+                <Line data={lineChartData} options={lineChartOptions} />
+              ) : (
+                <div className="h-full flex items-center justify-center text-slate-400">
+                  <p>Cargando datos del gráfico...</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -437,28 +561,7 @@ export const DashboardOverview: React.FC = () => {
             </h3>
             <div className="flex-1 flex flex-col justify-center items-center">
               <div className="relative size-52">
-                <svg viewBox="0 0 100 100" className="size-full transform -rotate-90">
-                  <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="6" className="text-slate-50 dark:text-slate-800/50" />
-                  {donutSegments.map((segment, i) => (
-                    <path
-                      key={i}
-                      d={segment.path}
-                      fill="none"
-                      stroke={segment.color}
-                      strokeWidth="8"
-                      strokeLinecap="round"
-                      className="transition-all duration-300 hover:stroke-[10px] cursor-pointer animate-drawLine"
-                      style={{
-                        strokeDasharray: '251.32',
-                        strokeDashoffset: '251.32',
-                        animationDelay: `${i * 150}ms`,
-                        animationDuration: '1s'
-                      }}
-                    >
-                      <title>{segment.status}: {segment.percentage}%</title>
-                    </path>
-                  ))}
-                </svg>
+                <Doughnut data={doughnutChartData} options={doughnutChartOptions} />
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
                   <p className="text-4xl font-black text-slate-900 dark:text-white leading-none">
                     {globalCompletionRate}%
@@ -468,41 +571,38 @@ export const DashboardOverview: React.FC = () => {
               </div>
 
               <div className="mt-8 space-y-2.5 w-full">
-                {Object.entries(statusDistribution)
-                  .sort(([, a], [, b]) => b - a)
-                  .map(([status, count]) => {
-                    const total = Object.values(statusDistribution).reduce((a, b) => a + b, 0);
-                    const percentage = Math.round((count / total) * 100);
-                    return (
-                      <div key={status} className="group flex flex-col gap-1 w-full">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span
-                              className="size-2 rounded-full flex-shrink-0 shadow-sm"
-                              style={{ backgroundColor: statusColors[status] || '#e2e8f0' }}
-                            ></span>
-                            <span className="text-xs text-slate-600 dark:text-slate-400 font-bold truncate group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
-                              {status}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-black text-slate-800 dark:text-slate-200">{count}</span>
-                            <span className="text-[10px] text-slate-400 font-medium">({percentage}%)</span>
-                          </div>
+                {statusList.map(([status, count]) => {
+                  const percentage = Math.round((count / (totalStatusCount || 1)) * 100);
+                  return (
+                    <div key={status} className="group flex flex-col gap-1 w-full">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span
+                            className="size-2 rounded-full flex-shrink-0 shadow-sm"
+                            style={{ backgroundColor: statusColors[status] || '#e2e8f0' }}
+                          ></span>
+                          <span className="text-xs text-slate-600 dark:text-slate-400 font-bold truncate group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+                            {status}
+                          </span>
                         </div>
-                        <div className="w-full bg-slate-100 dark:bg-slate-800/50 h-1.5 rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all duration-1000 ease-out animate-fadeInLeft"
-                            style={{
-                              width: `${percentage}%`,
-                              backgroundColor: statusColors[status] || '#e2e8f0',
-                              opacity: 0.8
-                            }}
-                          ></div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black text-slate-800 dark:text-slate-200">{count}</span>
+                          <span className="text-[10px] text-slate-400 font-medium">({percentage}%)</span>
                         </div>
                       </div>
-                    );
-                  })}
+                      <div className="w-full bg-slate-100 dark:bg-slate-800/50 h-1.5 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-1000 ease-out animate-fadeInLeft"
+                          style={{
+                            width: `${percentage}%`,
+                            backgroundColor: statusColors[status] || '#e2e8f0',
+                            opacity: 0.8
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
