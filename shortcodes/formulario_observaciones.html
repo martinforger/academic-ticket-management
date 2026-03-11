@@ -627,6 +627,9 @@
               <input type="email" id="reg-correo" class="search-input" placeholder="Ej: juan.perez@est.ucab.edu.ve"
                 pattern="^.+@(est\.)?ucab\.edu\.ve$" title="Solo se permiten correos @est.ucab.edu.ve o @ucab.edu.ve"
                 style="background-color: #fff !important; height: 40px !important;" />
+              <div id="reg-correo-error" style="display: none; color: var(--ucab-red); font-size: 0.75rem; font-weight: 600; margin-top: 4px;">
+                Solo se permiten correos @est.ucab.edu.ve o @ucab.edu.ve
+              </div>
             </div>
           </div>
         </div>
@@ -1119,6 +1122,7 @@
 
     const nameInput = document.getElementById("reg-nombre");
     const emailInput = document.getElementById("reg-correo");
+    const emailError = document.getElementById("reg-correo-error");
 
     if (existingData) {
       nameInput.value = existingData.est_nombre || "";
@@ -1128,6 +1132,8 @@
       emailInput.value = "";
     }
 
+    if (emailError) emailError.style.display = "none";
+
     const nextBtn = document.getElementById("btn-step1-next");
     nextBtn.disabled = false;
     nextBtn.classList.remove("btn-disabled");
@@ -1135,6 +1141,7 @@
     // Clear invalid state on input
     emailInput.addEventListener("input", function() {
       this.classList.remove("input-invalid");
+      if (emailError) emailError.style.display = "none";
     });
 
     requestAnimationFrame(updateViewportHeight);
@@ -1153,6 +1160,8 @@
     const cedula = document.getElementById("input-cedula").value.trim();
     const nombre = document.getElementById("reg-nombre").value.trim();
     const correo = document.getElementById("reg-correo").value.trim();
+    const emailInput = document.getElementById("reg-correo");
+    const emailError = document.getElementById("reg-correo-error");
     const nextBtn = document.getElementById("btn-step1-next");
 
     if (!nombre || !correo) {
@@ -1162,7 +1171,11 @@
 
     const emailRegex = /^.+@(est\.)?ucab\.edu\.ve$/i;
     if (!emailRegex.test(correo)) {
-      document.getElementById("reg-correo").classList.add("input-invalid");
+      emailInput.classList.add("input-invalid");
+      if (emailError) {
+        emailError.style.display = "block";
+        requestAnimationFrame(updateViewportHeight);
+      }
       return;
     }
 
