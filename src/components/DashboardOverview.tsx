@@ -596,7 +596,7 @@ export const DashboardOverview: React.FC = () => {
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Line Graph */}
-          <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm hover-lift animate-fadeInLeft animate-delay-700">
+          <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm flex flex-col hover-lift animate-fadeInLeft animate-delay-700">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <div>
                 <h3 className="text-slate-900 dark:text-white font-bold text-lg">Volumen de Solicitudes</h3>
@@ -623,7 +623,7 @@ export const DashboardOverview: React.FC = () => {
                 ))}
               </div>
             </div>
-            <div className="h-64 relative">
+            <div className="flex-1 min-h-[350px] relative">
               {chartData.length > 0 ? (
                 <Line data={lineChartData} options={lineChartOptions} />
               ) : (
