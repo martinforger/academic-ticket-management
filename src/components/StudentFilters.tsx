@@ -50,7 +50,7 @@ export const StudentFilters: React.FC<StudentFiltersProps> = ({
 }) => {
   return (
     <aside className="w-64 bg-surface-light dark:bg-surface-dark border-r border-[#e7edf3] dark:border-gray-700 flex flex-col overflow-y-auto hidden md:flex shrink-0">
-      <div className="p-6 flex flex-col gap-8 h-full">
+      <div className="p-6 pb-12 flex flex-col gap-8 h-full">
         {/* Dept Filters */}
         <div>
           <h3 className="text-[#0d141b] dark:text-white tracking-light text-sm uppercase font-bold leading-tight mb-4 flex items-center gap-2">

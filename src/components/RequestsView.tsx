@@ -298,7 +298,7 @@ export const RequestsView: React.FC = () => {
   return (
     <div className="flex-1 flex overflow-hidden bg-background-light dark:bg-background-dark">
       {/* Sidebar Filters */}
-      <div className="w-56 flex-shrink-0 border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 overflow-y-auto p-4 flex flex-col gap-4 custom-scrollbar">
+      <div className="w-56 flex-shrink-0 border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 overflow-y-auto p-4 pb-12 flex flex-col gap-4 custom-scrollbar">
         <div>
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
             <span className="material-symbols-outlined text-lg">filter_alt</span>
