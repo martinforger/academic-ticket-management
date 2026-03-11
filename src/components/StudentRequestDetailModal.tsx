@@ -22,9 +22,10 @@ interface RequestItemProps {
   isReader: boolean;
   isLockedByOther?: boolean;
   lockedBy?: string | null;
+  isInitiallyPending?: boolean;
 }
 
-const RequestItem = ({ request, allRequests, onChange, isReader, isLockedByOther = false, lockedBy }: RequestItemProps) => {
+const RequestItem = ({ request, allRequests, onChange, isReader, isLockedByOther = false, lockedBy, isInitiallyPending = false }: RequestItemProps) => {
   // If locked by another user, treat as read-only
   const isEffectivelyReadOnly = isReader || isLockedByOther;
 
@@ -122,7 +123,11 @@ const RequestItem = ({ request, allRequests, onChange, isReader, isLockedByOther
 
   return (
     <div
-      className="bg-white dark:bg-surface-dark rounded-xl border border-[#e7edf3] dark:border-gray-700 overflow-hidden shadow-sm hover:shadow-md transition-shadow border-l-4"
+      className={`bg-white dark:bg-surface-dark rounded-xl border-2 overflow-hidden shadow-md hover:shadow-lg transition-all border-l-8 ${
+        status === 'POR REVISAR' 
+          ? 'border-rose-200 dark:border-rose-900/50 bg-rose-50/30' 
+          : 'border-[#e7edf3] dark:border-gray-700'
+      }`}
       style={{ borderLeftColor: DEPARTMENT_COLORS[request.classification] || 'transparent' }}
     >
       {/* Header Bar */}
@@ -131,9 +136,24 @@ const RequestItem = ({ request, allRequests, onChange, isReader, isLockedByOther
           <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${iconBgClasses}`}>
             <span className="material-symbols-outlined">{icon}</span>
           </div>
-          <div>
-            <p className="font-bold text-[#0d141b] dark:text-white text-base">{displaySubject}</p>
-            <p className="text-xs text-slate-500 font-mono">
+          <div className="relative">
+            <div className="flex items-center gap-3">
+              <p className="font-bold text-[#0d141b] dark:text-white text-base">
+                {displaySubject}
+              </p>
+              {(status === 'POR REVISAR' || isInitiallyPending) && (
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-rose-100 dark:bg-rose-900/40 border border-rose-200 dark:border-rose-800 animate-fade-in shadow-sm">
+                  <span className="flex h-2 w-2 relative">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                  </span>
+                  <span className="text-[10px] font-black tracking-wider text-rose-700 dark:text-rose-300 uppercase">
+                    Pendiente
+                  </span>
+                </div>
+              )}
+            </div>
+            <p className="text-xs text-slate-500 font-mono mt-0.5">
               #{request.caseId} • NRC: {request.nrc === 0 ? 'sin nrc sugerido' : request.nrc} •
               <span className="text-primary font-black uppercase"> {request.action || 'S/A'}</span> •
               <span className="font-bold"> {DEPARTMENT_NAMES[request.classification] || request.classification}</span>
@@ -334,7 +354,13 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
   useEffect(() => {
     if (isOpen) {
       isClosingRef.current = false;
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
     }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
   }, [isOpen]);
 
   // Auto-claim effect: when modal opens, claim all "POR REVISAR" requests
@@ -346,47 +372,60 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
 
       if (!isOpen || !student || isReader || !profile) return;
 
-      const porRevisarRequests = student.requests.filter(r => r.status === 'POR REVISAR');
-      if (porRevisarRequests.length === 0) return;
+        // Filter requests that are "POR REVISAR" AND haven't been manually moved to "POR REVISAR" by the user
+        const porRevisarRequests = student.requests.filter(r => {
+          // If status in DB is not 'POR REVISAR', no need to claim
+          if (r.status !== 'POR REVISAR') return false;
+          
+          // If user manually set it to 'POR REVISAR' in this session, don't auto-reclaim
+          if (requestChanges[r.id]?.status === 'POR REVISAR') return false;
+          
+          return true;
+        });
 
-      const idsToClam = porRevisarRequests.map(r => r.id);
+        if (porRevisarRequests.length === 0) return;
 
-      try {
-        // ATOMIC UPDATE: Only claim if status is STILL "POR REVISAR" in the database
-        // This prevents race conditions
-        const { data, error } = await supabase
-          .from('observacion')
-          .update({
-            obs_estatus: 'EN REVISIÓN',
-            obs_responsable: profile.initials
-          })
-          .in('obs_id', idsToClam)
-          .eq('obs_estatus', 'POR REVISAR') // Only update if status is still POR REVISAR
-          .select('obs_id');
+        const idsToClam = porRevisarRequests.map(r => r.id);
 
-        if (error) throw error;
+        try {
+          // ATOMIC UPDATE: Only claim if status is STILL "POR REVISAR" in the database
+          // This prevents race conditions
+          const { data, error } = await supabase
+            .from('observacion')
+            .update({
+              obs_estatus: 'EN REVISIÓN',
+              obs_responsable: profile.initials
+            })
+            .in('obs_id', idsToClam)
+            .eq('obs_estatus', 'POR REVISAR') // Only update if status is still POR REVISAR
+            .select('obs_id');
 
-        // Only track the IDs that were actually claimed
-        const claimedIds = data?.map(d => d.obs_id) || [];
-        autoClaimedIdsRef.current = claimedIds;
+          if (error) throw error;
 
-        if (claimedIds.length > 0) {
-          // Audit log for batch claim
-          await supabase.from('audit_logs').insert({
-            user_id: profile.id,
-            case_id: student.studentId,
-            action: 'BATCH_CLAIM_REQUESTS',
-            details: {
-              description: 'Solicitudes tomadas automáticamente al abrir expediente estudiante',
-              count: claimedIds.length,
-              ids: claimedIds
-            },
-            changes: { status: { old: 'POR REVISAR', new: 'EN REVISIÓN' } }
-          });
-        }
+          // Only track the IDs that were actually claimed
+          const newClaimedIds = data?.map(d => d.obs_id) || [];
+          
+          if (newClaimedIds.length > 0) {
+            // Merge previously claimed IDs with new ones
+            const allClaimedIds = Array.from(new Set([...autoClaimedIdsRef.current, ...newClaimedIds]));
+            autoClaimedIdsRef.current = allClaimedIds;
+
+            // Audit log for batch claim
+            await supabase.from('audit_logs').insert({
+              user_id: profile.id,
+              case_id: student.studentId,
+              action: 'BATCH_CLAIM_REQUESTS',
+              details: {
+                description: 'Solicitudes tomadas automáticamente al abrir expediente o por actualización de estado',
+                count: newClaimedIds.length,
+                ids: newClaimedIds
+              },
+              changes: { status: { old: 'POR REVISAR', new: 'EN REVISIÓN' } }
+            });
+          }
 
         // Log if some requests were already claimed by others
-        const notClaimedIds = idsToClam.filter(id => !claimedIds.includes(id));
+        const notClaimedIds = idsToClam.filter(id => !newClaimedIds.includes(id));
         if (notClaimedIds.length > 0) {
           console.log('Some requests already claimed by another user:', notClaimedIds);
         }
@@ -398,7 +437,7 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
 
     autoClaim();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, student?.studentId]);
+  }, [isOpen, student?.studentId, student?.requests, requestChanges]);
 
   if (!isOpen || !student) return null;
 
@@ -562,7 +601,7 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
       ></div>
 
       {/* Modal Container */}
-      <div className="relative z-10 bg-white dark:bg-surface-dark w-full max-w-[1000px] h-full max-h-[90vh] rounded-xl shadow-2xl flex flex-col overflow-hidden animate-fade-in-up border-t-8 border-indigo-600">
+      <div className="relative z-10 bg-white dark:bg-surface-dark w-full max-w-[1000px] max-h-[90vh] rounded-xl shadow-2xl flex flex-col overflow-hidden animate-fade-in-up border-t-8 border-indigo-600">
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-[#e7edf3] dark:border-gray-700 bg-indigo-50/30 dark:bg-indigo-900/10 shrink-0">
           <div className="flex flex-col gap-1">
@@ -578,7 +617,7 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
         </div>
 
         {/* Modal Content (Scrollable) */}
-        <div className="flex-1 overflow-y-auto p-6 bg-slate-50 dark:bg-background-dark">
+        <div className="flex-1 overflow-y-auto p-6 bg-slate-50 dark:bg-background-dark custom-scrollbar">
           {/* Student Profile Header */}
           <div className="bg-white dark:bg-surface-dark rounded-xl p-6 shadow-sm border border-[#e7edf3] dark:border-gray-700 mb-6">
             <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
@@ -638,15 +677,20 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
           <div className="space-y-4">
             {student.requests.map((req, idx) => {
               const lockState = lockStates.get(req.id);
+              // A request is "initially pending" if its status was POR REVISAR when the modal opened.
+              // We track this by checking if it was auto-claimed in this session.
+              const wasAutoClaimed = autoClaimedIdsRef.current.includes(req.id);
+              
               return (
                 <RequestItem
-                  key={`${req.nrc}-${idx}`}
+                  key={`${req.nrc}-${req.id}-${idx}`}
                   request={req}
                   allRequests={student.requests}
                   onChange={handleRequestChange}
                   isReader={isReader}
                   isLockedByOther={lockState?.isLocked}
                   lockedBy={lockState?.lockedBy}
+                  isInitiallyPending={wasAutoClaimed}
                 />
               );
             })}

@@ -18,9 +18,10 @@ export const RequestsView: React.FC = () => {
 
   // Filter state
   const [selectedDepts, setSelectedDepts] = useState<string[]>([]);
-  const [selectedStatus, setSelectedStatus] = useState<string>('All');
+  const [selectedStatus, setSelectedStatus] = useState<string>('POR REVISAR');
   const [selectedSubject, setSelectedSubject] = useState<string>('All');
   const [selectedAction, setSelectedAction] = useState<string>('All');
+  const [selectedResponsible, setSelectedResponsible] = useState<string>('All');
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -186,6 +187,11 @@ export const RequestsView: React.FC = () => {
   const subjects = useMemo(() => {
     return Array.from(new Set(requests.map(r => r.subject).filter(Boolean)));
   }, [requests]);
+ 
+  // Unique responsibles for filter
+  const responsibles = useMemo(() => {
+    return Array.from(new Set(requests.map(r => r.responsible).filter(Boolean)));
+  }, [requests]);
 
   const filteredRequests = useMemo(() => {
     return requests.filter(r => {
@@ -221,9 +227,14 @@ export const RequestsView: React.FC = () => {
         return false;
       }
 
+      // Responsible filter
+      if (selectedResponsible !== 'All' && r.responsible !== selectedResponsible) {
+        return false;
+      }
+
       return true;
     });
-  }, [requests, searchTerm, selectedDepts, selectedStatus, selectedSubject, selectedAction]);
+  }, [requests, searchTerm, selectedDepts, selectedStatus, selectedSubject, selectedAction, selectedResponsible]);
 
   // Pagination logic
   const totalPages = Math.ceil(filteredRequests.length / pageSize);
@@ -373,7 +384,27 @@ export const RequestsView: React.FC = () => {
           </select>
         </div>
 
-        {(selectedDepts.length > 0 || selectedStatus !== 'All' || selectedSubject !== 'All' || selectedAction !== 'All' || searchTerm) && (
+        <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <span className="material-symbols-outlined text-lg">person</span>
+            Responsable
+          </h3>
+          <select
+            className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
+            value={selectedResponsible}
+            onChange={(e) => {
+              setSelectedResponsible(e.target.value);
+              setCurrentPage(1);
+            }}
+          >
+            <option value="All">Todos los responsables</option>
+            {responsibles.sort().map(r => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
+        </div>
+
+        {(selectedDepts.length > 0 || selectedStatus !== 'All' || selectedSubject !== 'All' || selectedAction !== 'All' || selectedResponsible !== 'All' || searchTerm) && (
           <div className="mt-auto pt-6">
             <button
               onClick={() => {
@@ -381,6 +412,7 @@ export const RequestsView: React.FC = () => {
                 setSelectedStatus('All');
                 setSelectedSubject('All');
                 setSelectedAction('All');
+                setSelectedResponsible('All');
                 setSearchTerm('');
                 setCurrentPage(1);
               }}

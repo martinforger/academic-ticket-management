@@ -557,6 +557,11 @@
       margin-top: 0 !important;
     }
   }
+
+  .obs-form-container .input-invalid {
+    border-color: var(--ucab-red, #dc2626) !important;
+    background-color: #fff5f5 !important;
+  }
 </style>
 
 <div class="obs-form-container">
@@ -620,6 +625,7 @@
                 style="display: block; font-size: 0.8rem; font-weight: 600; color: #666; margin-bottom: 4px;">Correo
                 Electrónico</label>
               <input type="email" id="reg-correo" class="search-input" placeholder="Ej: juan.perez@est.ucab.edu.ve"
+                pattern="^.+@(est\.)?ucab\.edu\.ve$" title="Solo se permiten correos @est.ucab.edu.ve o @ucab.edu.ve"
                 style="background-color: #fff !important; height: 40px !important;" />
             </div>
           </div>
@@ -1125,6 +1131,12 @@
     const nextBtn = document.getElementById("btn-step1-next");
     nextBtn.disabled = false;
     nextBtn.classList.remove("btn-disabled");
+
+    // Clear invalid state on input
+    emailInput.addEventListener("input", function() {
+      this.classList.remove("input-invalid");
+    });
+
     requestAnimationFrame(updateViewportHeight);
   }
 
@@ -1145,6 +1157,12 @@
 
     if (!nombre || !correo) {
       alert("Por favor, ingresa tu nombre y correo para continuar.");
+      return;
+    }
+
+    const emailRegex = /^.+@(est\.)?ucab\.edu\.ve$/i;
+    if (!emailRegex.test(correo)) {
+      document.getElementById("reg-correo").classList.add("input-invalid");
       return;
     }
 

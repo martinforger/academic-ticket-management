@@ -46,25 +46,34 @@ export function MateriaModal({ isOpen, onClose, materia, onSave }: MateriaModalP
     const isTaxonomiaValid = (tax: string) => !tax || /^TA-[1-9][A-Z]?$/.test(tax);
 
     useEffect(() => {
-        if (materia) {
-            setFormData(materia);
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+            if (materia) {
+                setFormData(materia);
+            } else {
+                setFormData({
+                    mat_cod: '',
+                    mat_departamento: '',
+                    mat_nombre: '',
+                    mat_creditos: 0,
+                    mat_taxonomia: '',
+                    mat_horas_teoria: 0,
+                    mat_horas_practica: 0,
+                    mat_horas_lab: 0,
+                    mat_horas_est_indep: 0,
+                    mat_modality: 'P',
+                    mat_is_requirement: false,
+                });
+            }
         } else {
-            setFormData({
-                mat_cod: '',
-                mat_departamento: '',
-                mat_nombre: '',
-                mat_creditos: 0,
-                mat_taxonomia: '',
-                mat_horas_teoria: 0,
-                mat_horas_practica: 0,
-                mat_horas_lab: 0,
-                mat_horas_est_indep: 0,
-                mat_modality: 'P',
-                mat_is_requirement: false,
-            });
+            document.body.style.overflow = 'unset';
         }
         setError(null);
         setTouched({ mat_cod: false, mat_taxonomia: false });
+
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
     }, [materia, isOpen]);
 
     const handleBlur = (field: 'mat_cod' | 'mat_taxonomia') => {

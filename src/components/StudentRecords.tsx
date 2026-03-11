@@ -17,6 +17,7 @@ export const StudentRecords: React.FC = () => {
   const [selectedSemester, setSelectedSemester] = useState<string>('All');
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
   const [selectedSubject, setSelectedSubject] = useState<string>('All');
+  const [selectedResponsible, setSelectedResponsible] = useState<string>('All');
 
   const fetchRequests = useCallback(async () => {
     try {
@@ -169,7 +170,7 @@ export const StudentRecords: React.FC = () => {
 
   // Apply filters to students (a student matches if at least one of their requests matches the filters)
   const allStudents = useMemo(() => {
-    return groupedStudents.filter(student => {
+    const filtered = groupedStudents.filter(student => {
       // A student matches if AT LEAST ONE of their requests matches ALL active filters
       return student.requests.some(r => {
         // Dept filter
@@ -188,14 +189,31 @@ export const StudentRecords: React.FC = () => {
         if (selectedSubject !== 'All' && r.subject !== selectedSubject) {
           return false;
         }
+        // Responsible filter
+        if (selectedResponsible !== 'All' && r.responsible !== selectedResponsible) {
+          return false;
+        }
         return true;
       });
     });
-  }, [groupedStudents, selectedDepts, selectedSemester, selectedStatus, selectedSubject]);
+
+    // Sort by oldest request (oldest first)
+    // requests are already sorted by caseId ascending in fetchRequests
+    return [...filtered].sort((a, b) => {
+      const dateA = a.requests[0]?.date || '';
+      const dateB = b.requests[0]?.date || '';
+      return dateA.localeCompare(dateB);
+    });
+  }, [groupedStudents, selectedDepts, selectedSemester, selectedStatus, selectedSubject, selectedResponsible]);
 
   // Unique subjects for filter
   const subjects = useMemo(() => {
     return Array.from(new Set(requests.map(r => r.subject).filter(Boolean)));
+  }, [requests]);
+
+  // Unique responsibles for filter
+  const responsibles = useMemo(() => {
+    return Array.from(new Set(requests.map(r => r.responsible).filter(Boolean)));
   }, [requests]);
 
   const students = useMemo(() => {
@@ -223,10 +241,11 @@ export const StudentRecords: React.FC = () => {
     setSelectedSemester('All');
     setSelectedStatus('All');
     setSelectedSubject('All');
+    setSelectedResponsible('All');
     setSearchTerm('');
   };
 
-  const hasActiveFilters = selectedDepts.length > 0 || selectedSemester !== 'All' || selectedStatus !== 'All' || selectedSubject !== 'All' || searchTerm.trim() !== '';
+  const hasActiveFilters = selectedDepts.length > 0 || selectedSemester !== 'All' || selectedStatus !== 'All' || selectedSubject !== 'All' || selectedResponsible !== 'All' || searchTerm.trim() !== '';
 
   if (loading) {
     return (
@@ -248,6 +267,9 @@ export const StudentRecords: React.FC = () => {
         selectedSubject={selectedSubject}
         onSubjectChange={setSelectedSubject}
         subjects={subjects}
+        selectedResponsible={selectedResponsible}
+        onResponsibleChange={setSelectedResponsible}
+        responsibles={responsibles}
       />
       <div className="flex-1 overflow-y-auto p-6 lg:p-10 bg-background-light dark:bg-background-dark">
         <div className="max-w-[1200px] mx-auto flex flex-col h-full min-h-min">

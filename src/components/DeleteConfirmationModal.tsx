@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface DeleteConfirmationModalProps {
   isOpen: boolean;
@@ -20,6 +20,17 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
   isDeleting = false
 }) => {
   const [inputValue, setInputValue] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

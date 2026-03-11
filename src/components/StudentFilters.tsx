@@ -11,6 +11,9 @@ interface StudentFiltersProps {
   selectedSubject: string;
   onSubjectChange: (subject: string) => void;
   subjects: string[];
+  selectedResponsible?: string;
+  onResponsibleChange?: (responsible: string) => void;
+  responsibles?: string[];
   selectedAction?: string;
   onActionChange?: (action: string) => void;
 }
@@ -39,6 +42,9 @@ export const StudentFilters: React.FC<StudentFiltersProps> = ({
   selectedSubject,
   onSubjectChange,
   subjects,
+  selectedResponsible,
+  onResponsibleChange,
+  responsibles = [],
   selectedAction,
   onActionChange,
 }) => {
@@ -105,6 +111,26 @@ export const StudentFilters: React.FC<StudentFiltersProps> = ({
             ))}
           </select>
         </div>
+
+        {/* Responsible Filter */}
+        {onResponsibleChange && (
+          <div>
+            <h3 className="text-[#0d141b] dark:text-white tracking-light text-sm uppercase font-bold leading-tight mb-4 flex items-center gap-2">
+              <span className="material-symbols-outlined text-lg text-primary">person</span>
+              Responsable
+            </h3>
+            <select
+              value={selectedResponsible}
+              onChange={(e) => onResponsibleChange(e.target.value)}
+              className="w-full bg-white dark:bg-surface-dark border border-[#e7edf3] dark:border-gray-700 rounded-lg p-2 text-sm text-[#0d141b] dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/20"
+            >
+              <option value="All">Todos los Responsables</option>
+              {responsibles.sort().map(resp => (
+                <option key={resp} value={resp}>{resp}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Action Filter (Only for Requests View) */}
         {onActionChange && (

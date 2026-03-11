@@ -26,7 +26,7 @@ export const PREDEFINED_RESPONSES: PredefinedResponse[] = [
     id: 'add-success-3',
     category: 'Agregar (Exitosa)',
     label: 'Inscripción exitosa (mínimo)',
-    text: 'Saludos! Fuiste inscrito en la asignatura solicitada.'
+    text: '¡Saludos! Fuiste inscrito en la asignatura solicitada.'
   },
 
   // Category: Agregar (fallida por cupos)
@@ -62,7 +62,7 @@ export const PREDEFINED_RESPONSES: PredefinedResponse[] = [
     id: 'add-fail-horario',
     category: 'Horario',
     label: 'Sin permiso de modificar horario',
-    text: 'Hola! Dado que no diste permiso de modificar tu horario y la única forma de inscribir la asignatura era cambiando tu horario, no pudimos inscribir la asignatura solicitada.'
+    text: '¡Hola! Dado que no diste permiso de modificar tu horario y la única forma de inscribir la asignatura era cambiando tu horario, no pudimos inscribir la asignatura solicitada.'
   },
 
   // Category: Eliminar
@@ -76,7 +76,7 @@ export const PREDEFINED_RESPONSES: PredefinedResponse[] = [
     id: 'del-success-2',
     category: 'Eliminar',
     label: 'Eliminación exitosa (corto)',
-    text: 'Saludos! Fue eliminada tu inscripción de la asignatura solicitada.'
+    text: '¡Saludos! Fue eliminada tu inscripción de la asignatura solicitada.'
   },
   {
     id: 'del-success-3',
