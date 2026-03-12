@@ -18,6 +18,7 @@ export const StudentRecords: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
   const [selectedSubject, setSelectedSubject] = useState<string>('All');
   const [selectedResponsible, setSelectedResponsible] = useState<string>('All');
+  const [selectedAction, setSelectedAction] = useState<string>('All');
 
   const fetchRequests = useCallback(async () => {
     try {
@@ -193,6 +194,10 @@ export const StudentRecords: React.FC = () => {
         if (selectedResponsible !== 'All' && r.responsible !== selectedResponsible) {
           return false;
         }
+        // Action filter
+        if (selectedAction !== 'All' && r.action !== selectedAction) {
+          return false;
+        }
         return true;
       });
     });
@@ -204,7 +209,7 @@ export const StudentRecords: React.FC = () => {
       const dateB = b.requests[0]?.date || '';
       return dateA.localeCompare(dateB);
     });
-  }, [groupedStudents, selectedDepts, selectedSemester, selectedStatus, selectedSubject, selectedResponsible]);
+  }, [groupedStudents, selectedDepts, selectedSemester, selectedStatus, selectedSubject, selectedResponsible, selectedAction]);
 
   // Unique subjects for filter
   const subjects = useMemo(() => {
@@ -242,10 +247,11 @@ export const StudentRecords: React.FC = () => {
     setSelectedStatus('All');
     setSelectedSubject('All');
     setSelectedResponsible('All');
+    setSelectedAction('All');
     setSearchTerm('');
   };
 
-  const hasActiveFilters = selectedDepts.length > 0 || selectedSemester !== 'All' || selectedStatus !== 'All' || selectedSubject !== 'All' || selectedResponsible !== 'All' || searchTerm.trim() !== '';
+  const hasActiveFilters = selectedDepts.length > 0 || selectedSemester !== 'All' || selectedStatus !== 'All' || selectedSubject !== 'All' || selectedResponsible !== 'All' || selectedAction !== 'All' || searchTerm.trim() !== '';
 
   if (loading) {
     return (
@@ -270,6 +276,8 @@ export const StudentRecords: React.FC = () => {
         selectedResponsible={selectedResponsible}
         onResponsibleChange={setSelectedResponsible}
         responsibles={responsibles}
+        selectedAction={selectedAction}
+        onActionChange={setSelectedAction}
       />
       <div className="flex-1 overflow-y-auto p-6 lg:p-10 bg-background-light dark:bg-background-dark">
         <div className="max-w-[1200px] mx-auto flex flex-col h-full min-h-min">

@@ -7,6 +7,7 @@ import { DEPARTMENT_COLORS, DEPARTMENT_NAMES } from '../constants/departments';
 import { useRealtimeLock } from '../hooks/useRealtimeLock';
 import { LockedBanner } from './LockedBanner';
 import { SuccessModal } from './SuccessModal';
+import { StudentFilters } from './StudentFilters';
 
 export const RequestsView: React.FC = () => {
 
@@ -42,17 +43,6 @@ export const RequestsView: React.FC = () => {
     }
   };
 
-  const DEPARTMENTS = Object.entries(DEPARTMENT_NAMES).map(([id, label]) => ({ id, label }));
-
-  const STATUSES = [
-    'POR REVISAR',
-    'EN REVISIÓN',
-    'REVISADO',
-    'SOLUCIONADO',
-    'NO PROCEDE',
-    'REPETIDO',
-    'IGNORADO',
-  ];
 
   const fetchRequests = async () => {
     try {
@@ -298,132 +288,20 @@ export const RequestsView: React.FC = () => {
   return (
     <div className="flex-1 flex overflow-hidden bg-background-light dark:bg-background-dark">
       {/* Sidebar Filters */}
-      <div className="w-56 flex-shrink-0 border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 overflow-y-auto p-4 pb-12 flex flex-col gap-4 custom-scrollbar">
-        <div>
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-            <span className="material-symbols-outlined text-lg">filter_alt</span>
-            Departamentos
-          </h3>
-          <div className="flex flex-col gap-1.5">
-            {DEPARTMENTS.map(dept => (
-              <label key={dept.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/50 cursor-pointer transition-colors group">
-                <input
-                  type="checkbox"
-                  checked={selectedDepts.includes(dept.id)}
-                  onChange={() => handleDeptToggle(dept.id)}
-                  className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-primary focus:ring-primary/20"
-                />
-                <span className="text-sm font-medium text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors flex-1">
-                  {dept.label} <span className="text-[10px] opacity-40">({dept.id})</span>
-                </span>
-                <span
-                  className="w-2 h-2 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: DEPARTMENT_COLORS[dept.id] || '#cbd5e1' }}
-                ></span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-            <span className="material-symbols-outlined text-lg">check_circle</span>
-            Estado de Solicitud
-          </h3>
-          <select
-            className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
-            value={selectedStatus}
-            onChange={(e) => {
-              setSelectedStatus(e.target.value);
-              setCurrentPage(1);
-            }}
-          >
-            <option value="All">Todos los estados</option>
-            {STATUSES.map(s => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-            <span className="material-symbols-outlined text-lg">book</span>
-            Materia
-          </h3>
-          <select
-            className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
-            value={selectedSubject}
-            onChange={(e) => {
-              setSelectedSubject(e.target.value);
-              setCurrentPage(1);
-            }}
-          >
-            <option value="All">Todas las materias</option>
-            {subjects.sort().map(s => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-            <span className="material-symbols-outlined text-lg">touch_app</span>
-            Acción
-          </h3>
-          <select
-            className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
-            value={selectedAction}
-            onChange={(e) => {
-              setSelectedAction(e.target.value);
-              setCurrentPage(1);
-            }}
-          >
-            <option value="All">Todas las acciones</option>
-            <option value="Agregar">Agregar</option>
-            <option value="Eliminar">Eliminar</option>
-          </select>
-        </div>
-
-        <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-            <span className="material-symbols-outlined text-lg">person</span>
-            Responsable
-          </h3>
-          <select
-            className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
-            value={selectedResponsible}
-            onChange={(e) => {
-              setSelectedResponsible(e.target.value);
-              setCurrentPage(1);
-            }}
-          >
-            <option value="All">Todos los responsables</option>
-            {responsibles.sort().map(r => (
-              <option key={r} value={r}>{r}</option>
-            ))}
-          </select>
-        </div>
-
-        {(selectedDepts.length > 0 || selectedStatus !== 'All' || selectedSubject !== 'All' || selectedAction !== 'All' || selectedResponsible !== 'All' || searchTerm) && (
-          <div className="mt-auto pt-6">
-            <button
-              onClick={() => {
-                setSelectedDepts([]);
-                setSelectedStatus('All');
-                setSelectedSubject('All');
-                setSelectedAction('All');
-                setSelectedResponsible('All');
-                setSearchTerm('');
-                setCurrentPage(1);
-              }}
-              className="w-full py-2.5 text-sm font-bold text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all border border-rose-100 dark:border-rose-900/30 flex items-center justify-center gap-2"
-            >
-              <span className="material-symbols-outlined text-sm">filter_alt_off</span>
-              Limpiar filtros
-            </button>
-          </div>
-        )}
-      </div>
+      <StudentFilters
+        selectedDepts={selectedDepts}
+        onDeptChange={handleDeptToggle}
+        selectedStatus={selectedStatus}
+        onStatusChange={setSelectedStatus}
+        selectedSubject={selectedSubject}
+        onSubjectChange={setSelectedSubject}
+        subjects={subjects}
+        selectedResponsible={selectedResponsible}
+        onResponsibleChange={setSelectedResponsible}
+        responsibles={responsibles}
+        selectedAction={selectedAction}
+        onActionChange={setSelectedAction}
+      />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col p-6 lg:p-8 overflow-hidden">
@@ -461,6 +339,33 @@ export const RequestsView: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {/* Results Info Bar */}
+        {(selectedDepts.length > 0 || selectedStatus !== 'All' || selectedSubject !== 'All' || selectedAction !== 'All' || selectedResponsible !== 'All' || searchTerm.trim() !== '') && (
+          <div className="mb-4 flex items-center justify-between bg-white dark:bg-slate-900 rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-800 shadow-sm animate-fadeInUp" style={{ animationDelay: '100ms', opacity: 0 }}>
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-primary text-xl">manage_search</span>
+              <span className="text-sm text-slate-600 dark:text-slate-400">
+                Filtrando solicitudes: <span className="font-bold text-slate-900 dark:text-white">{filteredRequests.length}</span> resultados encontrados
+              </span>
+            </div>
+            <button
+              onClick={() => {
+                setSelectedDepts([]);
+                setSelectedStatus('All');
+                setSelectedSubject('All');
+                setSelectedAction('All');
+                setSelectedResponsible('All');
+                setSearchTerm('');
+                setCurrentPage(1);
+              }}
+              className="flex items-center gap-1.5 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+            >
+              <span className="material-symbols-outlined text-sm">filter_alt_off</span>
+              Limpiar filtros
+            </button>
+          </div>
+        )}
 
         {/* Table Container */}
         <div className="flex-1 bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col animate-fadeInUp" style={{ animationDelay: '100ms', opacity: 0 }}>
