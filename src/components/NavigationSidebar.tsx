@@ -29,6 +29,11 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({ activePage
     navItems.push({ id: 'upload-projections', label: 'Datos', icon: 'database' });
   }
 
+  // Add Utilities menu for coordinators and admins
+  if (profile?.role === 'coordinador' || profile?.role === 'administrador') {
+    navItems.push({ id: 'section-balancing', label: 'Utilidades', icon: 'construction' });
+  }
+
   return (
     <>
       <aside className="w-48 flex-shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark h-full flex flex-col">

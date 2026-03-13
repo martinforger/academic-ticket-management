@@ -14,6 +14,7 @@ import { OnboardingTour, useOnboarding } from './components/OnboardingTour';
 
 import { PendingApprovalPage } from './components/PendingApprovalPage';
 import { UploadProjections } from './components/UploadProjections';
+import { SectionBalancing } from './components/SectionBalancing';
 
 function AppContent() {
   const [activePage, setActivePage] = useState('overview');
@@ -43,6 +44,8 @@ function AppContent() {
         return <UserManagement />;
       case 'upload-projections':
         return <UploadProjections />;
+      case 'section-balancing':
+        return <SectionBalancing />;
       default:
         return (
           <div className="flex-1 overflow-y-auto p-8 flex items-center justify-center text-slate-500">
