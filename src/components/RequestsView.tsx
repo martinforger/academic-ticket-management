@@ -530,6 +530,13 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
   // Track if request was auto-claimed when opening
   const wasAutoClaimedRef = React.useRef(false);
 
+  // Snapshot initial values at modal open for close-time revert logic
+  const initialStatusRef = React.useRef<Status>(request.status);
+  const initialStudentResponseRef = React.useRef(request.studentResponse || '');
+
+  // Tracks explicit user interaction vs automatic status sync/autoclaim
+  const hasStatusManualChangeRef = React.useRef(false);
+
   const isReader = profile?.role === 'lector';
 
   // Realtime lock detection - check if another user has this request in review
@@ -651,6 +658,29 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
           wasAutoClaimedRef.current = true;
           setStatus('EN REVISIÓN'); // Update local UI immediately
 
+          // If user closed while claim request was in-flight, immediately release
+          if (isClosingRef.current) {
+            const { data: revertedRows, error: revertError } = await supabase
+              .from('observacion')
+              .update({
+                obs_estatus: 'POR REVISAR',
+                obs_responsable: ''
+              })
+              .eq('obs_id', request.id)
+              .eq('obs_estatus', 'EN REVISIÓN')
+              .eq('obs_responsable', profile.initials)
+              .select('obs_id');
+
+            if (revertError) throw revertError;
+
+            if (revertedRows && revertedRows.length > 0) {
+              wasAutoClaimedRef.current = false;
+              setStatus('POR REVISAR');
+              onUpdate({ ...request, status: 'POR REVISAR', responsible: '' });
+            }
+            return;
+          }
+
           // Audit log for claim
           await supabase.from('audit_logs').insert({
             user_id: profile.id,
@@ -679,11 +709,16 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
   const handleClose = async () => {
     isClosingRef.current = true;
 
+    const startedAsPorRevisar = initialStatusRef.current === 'POR REVISAR';
+    const hasMeaningfulChanges =
+      hasStatusManualChangeRef.current ||
+      studentResponse.trim() !== initialStudentResponseRef.current.trim();
+
     // If the request was auto-claimed and the user didn't change the status
     // (still EN REVISIÓN), revert to POR REVISAR
-    if (wasAutoClaimedRef.current && status === 'EN REVISIÓN' && !isReader && profile) {
+    if (startedAsPorRevisar && !hasMeaningfulChanges && !isReader && profile) {
       try {
-        await supabase
+        const { data: revertedRows, error: revertError } = await supabase
           .from('observacion')
           .update({
             obs_estatus: 'POR REVISAR',
@@ -691,19 +726,26 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
           })
           .eq('obs_id', request.id)
           .eq('obs_estatus', 'EN REVISIÓN') // Logic safety: only revert if still in review
-          .eq('obs_responsable', profile.initials); // Security: only if locked by CURRENT user
+          .eq('obs_responsable', profile.initials) // Security: only if locked by CURRENT user
+          .select('obs_id');
 
-        // Audit log for unclaim
-        await supabase.from('audit_logs').insert({
-          user_id: profile.id,
-          case_id: request.caseId,
-          action: 'UNCLAIM_REQUEST',
-          details: { description: 'Solicitud liberada al cerrar sin resolver' },
-          changes: { status: { old: 'EN REVISIÓN', new: 'POR REVISAR' } }
-        });
+        if (revertError) throw revertError;
 
-        // Update parent component with reverted status
-        onUpdate({ ...request, status: 'POR REVISAR', responsible: '' });
+        if (revertedRows && revertedRows.length > 0) {
+          // Audit log for unclaim
+          await supabase.from('audit_logs').insert({
+            user_id: profile.id,
+            case_id: request.caseId,
+            action: 'UNCLAIM_REQUEST',
+            details: { description: 'Solicitud liberada al cerrar sin resolver' },
+            changes: { status: { old: 'EN REVISIÓN', new: 'POR REVISAR' } }
+          });
+
+          // Update parent component with reverted status
+          onUpdate({ ...request, status: 'POR REVISAR', responsible: '' });
+        } else {
+          console.warn(`Unclaim skipped for request ${request.id}: no matching row to revert`);
+        }
       } catch (err) {
         console.error('Error reverting request:', err);
       }
@@ -743,21 +785,29 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
 
     setSaving(true);
     try {
+      const hasExternalResponseChange =
+        studentResponse.trim() !== initialStudentResponseRef.current.trim();
+      const hasMeaningfulChanges = hasStatusManualChangeRef.current || hasExternalResponseChange;
+
+      // Business rule: if user did not change status manually and did not add external response,
+      // request should be released back to POR REVISAR.
+      const statusToPersist: Status = hasMeaningfulChanges ? status : 'POR REVISAR';
+
       const updates: any = {
-        obs_estatus: status,
+        obs_estatus: statusToPersist,
         obs_respuesta_interna: internalResponse,
         obs_respuesta_externa: studentResponse
       };
 
       // If status changed or response added, update responsible
-      const hasChanges = status !== request.status ||
+      const hasChanges = statusToPersist !== request.status ||
         internalResponse !== request.internalResponse ||
         studentResponse !== request.studentResponse;
 
       if (hasChanges) {
         // If setting back to POR REVISAR, clear the responsible
         // Otherwise, set to current user
-        updates.obs_responsable = status === 'POR REVISAR' ? '' : profile.initials;
+        updates.obs_responsable = statusToPersist === 'POR REVISAR' ? '' : profile.initials;
       }
 
       // Update Database
@@ -771,7 +821,7 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
       // Audit Log
       if (hasChanges) {
         const changes: any = {};
-        if (status !== request.status) changes.status = { old: request.status, new: status };
+        if (statusToPersist !== request.status) changes.status = { old: request.status, new: statusToPersist };
         if (internalResponse !== request.internalResponse) changes.internalResponse = { old: request.internalResponse, new: internalResponse };
         if (studentResponse !== request.studentResponse) changes.studentResponse = { old: request.studentResponse, new: studentResponse };
 
@@ -786,7 +836,7 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
 
       onUpdate({
         ...request,
-        status,
+        status: statusToPersist,
         internalResponse,
         studentResponse,
         responsible: updates.obs_responsable !== undefined ? updates.obs_responsable : request.responsible
@@ -957,7 +1007,10 @@ const RequestDetailModal: React.FC<DetailModalProps> = ({ request, allRequests, 
               <select
                 value={status}
                 disabled={isEffectivelyReadOnly}
-                onChange={(e) => setStatus(e.target.value as Status)}
+                onChange={(e) => {
+                  hasStatusManualChangeRef.current = true;
+                  setStatus(e.target.value as Status);
+                }}
                 className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-50 disabled:bg-slate-100"
               >
                 {['POR REVISAR', 'EN REVISIÓN', 'REVISADO', 'SOLUCIONADO', 'NO PROCEDE', 'REPETIDO', 'IGNORADO'].map(s => (

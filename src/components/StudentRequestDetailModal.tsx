@@ -325,6 +325,9 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
   // Track IDs of requests that were auto-claimed
   const autoClaimedIdsRef = useRef<number[]>([]);
 
+  // Snapshot initial values per request at modal open for close-time revert logic
+  const initialRequestStateRef = useRef<Map<number, { status: Status; studentResponse: string }>>(new Map());
+
   // Prepare data for realtime lock detection
   const requestIds = useMemo(() =>
     student?.requests.map(r => r.id) || [],
@@ -354,6 +357,15 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
   useEffect(() => {
     if (isOpen) {
       isClosingRef.current = false;
+      initialRequestStateRef.current = new Map(
+        (student?.requests || []).map(r => [
+          r.id,
+          {
+            status: r.status,
+            studentResponse: r.studentResponse || ''
+          }
+        ])
+      );
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -404,8 +416,24 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
 
           // Only track the IDs that were actually claimed
           const newClaimedIds = data?.map(d => d.obs_id) || [];
-          
+
           if (newClaimedIds.length > 0) {
+            // If user closed while claim request was in-flight, immediately release
+            if (isClosingRef.current) {
+              const { error: revertError } = await supabase
+                .from('observacion')
+                .update({
+                  obs_estatus: 'POR REVISAR',
+                  obs_responsable: ''
+                })
+                .in('obs_id', newClaimedIds)
+                .eq('obs_estatus', 'EN REVISIÓN')
+                .eq('obs_responsable', profile.initials);
+
+              if (revertError) throw revertError;
+              return;
+            }
+
             // Merge previously claimed IDs with new ones
             const allClaimedIds = Array.from(new Set([...autoClaimedIdsRef.current, ...newClaimedIds]));
             autoClaimedIdsRef.current = allClaimedIds;
@@ -453,17 +481,26 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
 
     // Revert any auto-claimed requests that weren't explicitly changed
     if (autoClaimedIdsRef.current.length > 0 && !isReader && profile) {
-      // Find IDs that were NOT changed by the user at all (no status change)
+      // Revert only requests that started as POR REVISAR and had no meaningful changes
       const unchangedIds = autoClaimedIdsRef.current.filter(id => {
-        const changes = requestChanges[id];
-        // Revert only if: no changes at all, OR status is still EN REVISIÓN (wasn't changed)
-        // If user changed status to anything else (SOLUCIONADO, NO PROCEDE, etc.), don't revert
-        return !changes || changes.status === undefined || changes.status === 'EN REVISIÓN';
+        const initial = initialRequestStateRef.current.get(id);
+        if (!initial || initial.status !== 'POR REVISAR') return false;
+
+        const changes = requestChanges[id] || {};
+        const currentStatus = (changes.status ?? initial.status) as Status;
+        const currentStudentResponse =
+          (changes.studentResponse !== undefined ? changes.studentResponse : initial.studentResponse) || '';
+
+        const hasMeaningfulChanges =
+          currentStatus !== initial.status ||
+          currentStudentResponse.trim() !== initial.studentResponse.trim();
+
+        return !hasMeaningfulChanges;
       });
 
       if (unchangedIds.length > 0) {
         try {
-          await supabase
+          const { data: revertedRows, error: revertError } = await supabase
             .from('observacion')
             .update({
               obs_estatus: 'POR REVISAR',
@@ -471,20 +508,29 @@ export const StudentRequestDetailModal: React.FC<StudentRequestDetailModalProps>
             })
             .in('obs_id', unchangedIds)
             .eq('obs_estatus', 'EN REVISIÓN') // Logic safety: only revert if still in review
-            .eq('obs_responsable', profile.initials); // Security: only if locked by CURRENT user
+            .eq('obs_responsable', profile.initials) // Security: only if locked by CURRENT user
+            .select('obs_id');
 
-          // Audit log for unclaim
-          await supabase.from('audit_logs').insert({
-            user_id: profile.id,
-            case_id: student.studentId,
-            action: 'BATCH_UNCLAIM_REQUESTS',
-            details: {
-              description: 'Solicitudes liberadas al cerrar expediente sin resolver',
-              count: unchangedIds.length,
-              ids: unchangedIds
-            },
-            changes: { status: { old: 'EN REVISIÓN', new: 'POR REVISAR' } }
-          });
+          if (revertError) throw revertError;
+
+          const revertedIds = (revertedRows || []).map(row => row.obs_id);
+
+          if (revertedIds.length > 0) {
+            // Audit log for unclaim
+            await supabase.from('audit_logs').insert({
+              user_id: profile.id,
+              case_id: student.studentId,
+              action: 'BATCH_UNCLAIM_REQUESTS',
+              details: {
+                description: 'Solicitudes liberadas al cerrar expediente sin resolver',
+                count: revertedIds.length,
+                ids: revertedIds
+              },
+              changes: { status: { old: 'EN REVISIÓN', new: 'POR REVISAR' } }
+            });
+          } else {
+            console.warn('Batch unclaim skipped: no matching rows to revert');
+          }
         } catch (err) {
           console.error('Error reverting requests:', err);
         }
