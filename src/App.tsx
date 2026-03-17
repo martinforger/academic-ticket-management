@@ -15,6 +15,8 @@ import { OnboardingTour, useOnboarding } from './components/OnboardingTour';
 import { PendingApprovalPage } from './components/PendingApprovalPage';
 import { UploadProjections } from './components/UploadProjections';
 import { SectionBalancing } from './components/SectionBalancing';
+import { ProjectionAudit } from './components/ProjectionAudit';
+import { SectionClosing } from './components/SectionClosing';
 
 function AppContent() {
   const [activePage, setActivePage] = useState('overview');
@@ -46,6 +48,10 @@ function AppContent() {
         return <UploadProjections />;
       case 'section-balancing':
         return <SectionBalancing />;
+      case 'projection-audit':
+        return <ProjectionAudit />;
+      case 'section-closing':
+        return <SectionClosing />;
       default:
         return (
           <div className="flex-1 overflow-y-auto p-8 flex items-center justify-center text-slate-500">

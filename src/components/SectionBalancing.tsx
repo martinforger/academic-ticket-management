@@ -523,18 +523,12 @@ export function SectionBalancing() {
     const allProposals: TransferProposal[] = [];
 
     for (const overSection of overSections) {
-      const excess = overSection.enrolledCount - target;
-      let moved = 0;
-
       for (const studentCedula of overSection.students) {
-        if (moved >= excess) break;
-
         for (const underSection of underSections) {
-          // Check under section hasn't been filled by previous proposals
+          // Check under section hasn't exceeded its capacity with previous proposals
           const currentUnderCount = underSection.enrolledCount +
             allProposals.filter(p => p.moves[0]?.toCrn === underSection.crn).length -
             allProposals.filter(p => p.moves[0]?.fromCrn === underSection.crn).length;
-          if (currentUnderCount >= target) continue;
           if (currentUnderCount >= underSection.capacity) continue;
 
           const moves = findMoves(
@@ -553,7 +547,6 @@ export function SectionBalancing() {
               depth: moves.length,
               moves,
             });
-            moved++;
             break;
           }
         }

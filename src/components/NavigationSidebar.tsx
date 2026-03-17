@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { EditProfileModal } from './EditProfileModal';
@@ -29,10 +29,20 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({ activePage
     navItems.push({ id: 'upload-projections', label: 'Datos', icon: 'database' });
   }
 
-  // Add Utilities menu for coordinators and admins
-  if (profile?.role === 'coordinador' || profile?.role === 'administrador') {
-    navItems.push({ id: 'section-balancing', label: 'Utilidades', icon: 'construction' });
-  }
+  // Utilities sub-items for coordinators and admins
+  const isUtilityRole = profile?.role === 'coordinador' || profile?.role === 'administrador';
+  const utilitySubItems = isUtilityRole ? [
+    { id: 'section-balancing', label: 'Balanceo de Secciones', icon: 'balance' },
+    { id: 'section-closing', label: 'Cierre de Secciones', icon: 'cancel' },
+    { id: 'projection-audit', label: 'Auditoría de Proyecciones', icon: 'fact_check' },
+  ] : [];
+  const [utilitiesOpen, setUtilitiesOpen] = useState(false);
+  const isUtilityPage = utilitySubItems.some(u => u.id === activePage);
+
+  // Auto-expand utilities when a utility page is active
+  useEffect(() => {
+    if (isUtilityPage) setUtilitiesOpen(true);
+  }, [isUtilityPage]);
 
   return (
     <>
@@ -67,6 +77,44 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({ activePage
                 </button>
               );
             })}
+
+            {/* Utilities collapsible section */}
+            {isUtilityRole && (
+              <div>
+                <button
+                  onClick={() => setUtilitiesOpen(!utilitiesOpen)}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors w-full text-left ${
+                    isUtilityPage
+                      ? 'bg-primary/10 text-primary font-semibold'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium'
+                  }`}
+                >
+                  <span className="material-symbols-outlined">construction</span>
+                  <span className="text-sm flex-1">Utilidades</span>
+                  <span className={`material-symbols-outlined text-sm transition-transform ${utilitiesOpen ? 'rotate-180' : ''}`}>expand_more</span>
+                </button>
+                {utilitiesOpen && (
+                  <div className="ml-4 mt-0.5 flex flex-col gap-0.5 border-l-2 border-slate-200 dark:border-slate-700 pl-2">
+                    {utilitySubItems.map((sub) => {
+                      const isSubActive = activePage === sub.id;
+                      return (
+                        <button
+                          key={sub.id}
+                          onClick={() => onNavigate(sub.id)}
+                          className={`flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors w-full text-left ${isSubActive
+                            ? 'bg-primary/10 text-primary font-semibold'
+                            : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium'
+                          }`}
+                        >
+                          <span className="material-symbols-outlined text-base">{sub.icon}</span>
+                          <span className="text-xs">{sub.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
           </nav>
 
           {/* Bottom Section */}
