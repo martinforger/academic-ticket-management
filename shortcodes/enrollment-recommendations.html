@@ -770,20 +770,55 @@
     margin-bottom: 15px;
   }
 
-  .er-builder-grouped-block {
-    cursor: pointer;
-    border: 2px dashed rgba(0, 0, 0, 0.3) !important;
-    position: relative;
-    background: #fffbef !important;
-    color: #856404 !important;
-    transition: transform 0.1s;
-    box-shadow:
-      3px 3px 0 rgba(0, 0, 0, 0.05),
-      6px 6px 0 rgba(0, 0, 0, 0.02);
+  /* Checkboxes in Builder Sidebar */
+  .er-builder-semester-chk,
+  .er-builder-subject-chk,
+  .er-builder-section-chk {
+    display: inline-block !important;
+    vertical-align: middle;
+    margin: 0 8px 0 0 !important;
+    width: 16px !important;
+    height: 16px !important;
+    flex-shrink: 0;
   }
 
-  .er-builder-grouped-block:hover {
-    transform: translate(-1px, -1px);
+  .er-builder-alternative-block {
+    border: 2px dashed rgba(255, 255, 255, 0.6) !important;
+    opacity: 0.85;
+    cursor: pointer;
+  }
+
+  .er-builder-alternative-block:hover {
+    border-color: #fff !important;
+    opacity: 1;
+  }
+
+  .er-builder-fixed-block {
+    border: 2px solid #fff !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15) !important;
+    opacity: 1;
+    cursor: pointer;
+  }
+
+  .er-builder-fixed-block::before {
+    content: "📌";
+    position: absolute;
+    top: 2px;
+    left: 4px;
+    font-size: 0.7rem;
+    z-index: 10;
+  }
+
+  .er-conflict-block {
+    cursor: pointer;
+    border: 2px solid #ff4d4f !important;
+    background: #fff1f0 !important;
+    color: #cf1322 !important;
+    background-image: repeating-linear-gradient(45deg,
+        transparent,
+        transparent 10px,
+        rgba(255, 77, 79, 0.05) 10px,
+        rgba(255, 77, 79, 0.05) 20px) !important;
   }
 
   .er-conflict-badge {
@@ -803,25 +838,42 @@
     gap: 3px;
   }
 
-  .er-overlap-count {
+  /* Translucent Hover Overlay for Class Blocks */
+  .er-class-block {
+    position: relative;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, z-index 0.1s ease;
+  }
+  .er-class-block:hover {
+    transform: scale(1.03) translateY(-1px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
+    z-index: 100 !important;
+    overflow: visible !important;
+  }
+  .er-class-block .er-hover-overlay {
     position: absolute;
-    bottom: 5px;
-    right: 5px;
-    background: rgba(0, 0, 0, 0.1);
-    color: #856404;
-    font-size: 10px;
-    font-weight: bold;
-    padding: 1px 5px;
-    border-radius: 4px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    width: 250px;
+    background: rgba(15, 23, 42, 0.96);
+    color: #fff;
+    padding: 12px;
+    border-radius: 8px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 1000;
+    text-align: left;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(4px);
   }
-
-  .er-builder-fixed-block {
-    cursor: pointer;
-    border: 2px solid transparent;
-  }
-
-  .er-builder-fixed-block:hover {
-    border-color: #ff6b6b;
+  .er-class-block:hover .er-hover-overlay {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    pointer-events: auto;
   }
 
   .er-builder-popover {
@@ -922,6 +974,7 @@
       <button id="er-ssn-search-btn-%%careerName%%" class="form-button et_pb_button" type="submit">
         Buscar
       </button>
+    </form>
   </div>
 
   <div id="er-semester-controls-%%careerName%%" style="display: none; text-align: center; margin-bottom: 20px;">
@@ -1142,6 +1195,7 @@
     let builderSubjectSelection = new Set(); // Set of subjectIds
     let builderSectionSelection = new Set(); // Set of 'subjectId|crn'
     let builderFixedSections = {};           // Map of subjectId -> crn
+    let builderSemesterSelection = new Set(); // Set of semesterIds
 
     async function ensureCareerMetadata() {
       if (careerMetadataLoaded) return;
@@ -1360,10 +1414,6 @@
         if (activeModalTab === "builder") {
           jQuery("#subject-schedules-container-" + CAREER_SHORT_CODE).hide();
           jQuery("#er-builder-layout-" + CAREER_SHORT_CODE).show();
-          // Reset global state so builder starts clean
-          selectedSubjects.clear();
-          $totalUc.text("0");
-          $totalUc.parent().removeClass("alert");
           showLoader();
           try {
             await ensureSemesterModeData();
@@ -1435,7 +1485,9 @@
 
       function handleSemesterSchedules(data) {
         semesterSchedules = data;
-        studentSchedules = data;
+        if (scheduleMode === SCHEDULE_MODE.SEMESTER) {
+          studentSchedules = data;
+        }
         semesterSubjectsBySemester = buildSemesterSubjectsMap(data);
         hasLoadedSemesterModeData = true;
       }
@@ -2202,10 +2254,22 @@
       let builderPanelBuilt = false;
 
       function initializeBuilder() {
+        const $accordion = jQuery("#er-builder-accordion-" + CAREER_SHORT_CODE);
+
         if (!builderPanelBuilt) {
           bindBuilderEvents();
           renderBuilderPanel();
           builderPanelBuilt = true;
+
+          // Only initialize the very first time with global selections
+          if (builderSubjectSelection.size === 0 && builderSectionSelection.size === 0) {
+            builderSubjectSelection = new Set(selectedSubjects);
+            builderSubjectSelection.forEach(subjId => {
+              $accordion.find(`.er-builder-section-chk[data-subj="${subjId}"]`).each(function() {
+                builderSectionSelection.add(jQuery(this).val());
+              });
+            });
+          }
         }
 
         updateBuilderAfterSelection();
@@ -2216,14 +2280,65 @@
 
         // --- Bind accordion toggle events (semester headers) ---
         $accordion.off("click", ".er-builder-semester-header").on("click", ".er-builder-semester-header", function (e) {
+          if (jQuery(e.target).hasClass("er-builder-semester-chk")) {
+            return;
+          }
           e.stopPropagation();
-          jQuery(this).next(".er-builder-semester-content").slideToggle(200);
+          const $content = jQuery(this).next(".er-builder-semester-content");
+          const isOpen = $content.is(":visible");
+          $content.slideToggle(200);
+          jQuery(this).find(".er-accordion-arrow").css("transform", isOpen ? "rotate(0deg)" : "rotate(180deg)");
         });
 
         // --- Bind subject-level toggle (expand/collapse section list) ---
-        $accordion.off("click", ".er-builder-subj-toggle").on("click", ".er-builder-subj-toggle", function (e) {
+        $accordion.off("click", ".er-builder-subject-header").on("click", ".er-builder-subject-header", function (e) {
+          if (jQuery(e.target).hasClass("er-builder-subject-chk")) {
+            return;
+          }
           e.stopPropagation();
-          jQuery(this).closest(".er-builder-subject-item").find(".er-builder-section-list").slideToggle(200);
+          const $content = jQuery(this).next(".er-builder-section-list");
+          const isOpen = $content.is(":visible");
+          $content.slideToggle(200);
+          jQuery(this).find(".er-subject-arrow").css("transform", isOpen ? "rotate(0deg)" : "rotate(180deg)");
+        });
+
+        // --- Bind semester checkbox ---
+        $accordion.off("change", ".er-builder-semester-chk").on("change", ".er-builder-semester-chk", function (e) {
+          e.stopPropagation();
+          const semId = jQuery(this).val();
+          const isChecked = jQuery(this).is(":checked");
+          const $group = jQuery(this).closest(".er-builder-semester-group");
+
+          if (isChecked) {
+            builderSemesterSelection.add(semId);
+          } else {
+            builderSemesterSelection.delete(semId);
+          }
+
+          // Propagate to subjects
+          $group.find(".er-builder-subject-chk").each(function () {
+            const subjId = jQuery(this).val();
+            if (isChecked) {
+              builderSubjectSelection.add(subjId);
+            } else {
+              builderSubjectSelection.delete(subjId);
+              delete builderFixedSections[subjId];
+            }
+            jQuery(this).prop("checked", isChecked).prop("indeterminate", false);
+          });
+
+          // Propagate to sections
+          $group.find(".er-builder-section-chk").each(function () {
+            const secVal = jQuery(this).val();
+            if (isChecked) {
+              builderSectionSelection.add(secVal);
+            } else {
+              builderSectionSelection.delete(secVal);
+            }
+            jQuery(this).prop("checked", isChecked);
+          });
+
+          updateBuilderAfterSelection();
         });
 
         // --- Bind subject checkbox (select/deselect all sections) ---
@@ -2231,24 +2346,25 @@
           e.stopPropagation();
           const subjId = jQuery(this).val();
           const isChecked = jQuery(this).is(":checked");
-
-          const $secChks = $accordion.find(`.er-builder-section-chk[data-subj="${subjId}"]`);
-          $secChks.prop("checked", isChecked);
+          const $item = jQuery(this).closest(".er-builder-subject-item");
 
           if (isChecked) {
             builderSubjectSelection.add(subjId);
-            selectedSubjects.add(subjId);
-            $secChks.each(function () {
-              builderSectionSelection.add(jQuery(this).val());
-            });
           } else {
             builderSubjectSelection.delete(subjId);
-            selectedSubjects.delete(subjId);
-            $secChks.each(function () {
-              builderSectionSelection.delete(jQuery(this).val());
-            });
             delete builderFixedSections[subjId];
           }
+
+          // Propagate to sections
+          $item.find(".er-builder-section-chk").each(function () {
+            const secVal = jQuery(this).val();
+            if (isChecked) {
+              builderSectionSelection.add(secVal);
+            } else {
+              builderSectionSelection.delete(secVal);
+            }
+            jQuery(this).prop("checked", isChecked);
+          });
 
           updateBuilderAfterSelection();
         });
@@ -2257,33 +2373,25 @@
         $accordion.off("change", ".er-builder-section-chk").on("change", ".er-builder-section-chk", function (e) {
           e.stopPropagation();
           const subjId = jQuery(this).data("subj");
-          const val = jQuery(this).val();
+          const secVal = jQuery(this).val();
           const isChecked = jQuery(this).is(":checked");
 
           if (isChecked) {
-            builderSectionSelection.add(val);
+            builderSectionSelection.add(secVal);
             builderSubjectSelection.add(subjId);
-            selectedSubjects.add(subjId);
           } else {
-            builderSectionSelection.delete(val);
-            if (builderFixedSections[subjId] === val.split("|")[1]) {
+            builderSectionSelection.delete(secVal);
+            const [_, crn] = secVal.split("|");
+            if (builderFixedSections[subjId] === String(crn)) {
               delete builderFixedSections[subjId];
             }
-          }
 
-          // Update parent checkbox indeterminate state
-          const $parentChk = $accordion.find(`.er-builder-subject-chk[value="${subjId}"]`);
-          const totalSecs = $accordion.find(`.er-builder-section-chk[data-subj="${subjId}"]`).length;
-          const checkedSecs = $accordion.find(`.er-builder-section-chk[data-subj="${subjId}"]:checked`).length;
-
-          if (checkedSecs === 0) {
-            $parentChk.prop("checked", false).prop("indeterminate", false);
-            builderSubjectSelection.delete(subjId);
-            selectedSubjects.delete(subjId);
-          } else if (checkedSecs === totalSecs) {
-            $parentChk.prop("checked", true).prop("indeterminate", false);
-          } else {
-            $parentChk.prop("checked", false).prop("indeterminate", true);
+            // Check if any sections remain checked for this subject
+            const $item = jQuery(this).closest(".er-builder-subject-item");
+            const hasCheckedSecs = $item.find(".er-builder-section-chk:checked").length > 0;
+            if (!hasCheckedSecs) {
+              builderSubjectSelection.delete(subjId);
+            }
           }
 
           updateBuilderAfterSelection();
@@ -2330,8 +2438,7 @@
           renderBuilderGrid();
         }
 
-        syncBuilderPanelState();
-        syncGlobalCheckboxes();
+        syncBuilderCheckboxes();
       }
 
       function renderBuilderPanel() {
@@ -2347,9 +2454,12 @@
 
           let semesterHtml = `
           <div class="er-builder-semester-group">
-            <div class="er-builder-semester-header" data-sem="${semId}">
-               <span>${semId === 'Electivas' ? 'Electivas' : 'Semestre ' + semId.replace("SE", "")}</span>
-               <span>&#9662;</span>
+            <div class="er-builder-semester-header" data-sem="${semId}" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 15px; background: #edf2f7; border-bottom: 1px solid #e2e8f0; cursor: pointer;">
+               <div style="display: flex; align-items: center;">
+                 <input type="checkbox" class="er-builder-semester-chk" value="${semId}" />
+                 <span style="font-weight: 700; color: #1a202c;">${semId === 'Electivas' ? 'Electivas' : 'Semestre ' + semId.replace("SE", "")}</span>
+               </div>
+               <span class="material-symbols-outlined er-accordion-arrow" style="font-size: 20px; transition: transform 0.2s; color: #4a5568;">expand_more</span>
             </div>
             <div class="er-builder-semester-content" id="er-builder-sem-content-${semId}">
         `;
@@ -2360,12 +2470,15 @@
 
             semesterHtml += `
             <div class="er-builder-subject-item" data-subj="${sub.id}">
-              <div class="er-builder-subject-header">
-                <input type="checkbox" class="er-builder-subject-chk" value="${sub.id}" />
-                <div class="er-builder-subj-toggle">
-                  <span>${sub.name}</span>
-                  <span style="font-weight:normal; font-size:0.75rem; color:#718096;">${sub.id} • ${sections.length} secciones</span>
+              <div class="er-builder-subject-header" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #edf2f7;">
+                <div style="display: flex; align-items: center; flex-grow: 1;">
+                  <input type="checkbox" class="er-builder-subject-chk" value="${sub.id}" />
+                  <div class="er-builder-subj-title" style="display: flex; flex-direction: column;">
+                    <span style="font-weight: 600; font-size: 0.85rem; color: #2d3748;">${sub.name}</span>
+                    <span style="font-size: 0.72rem; color: #718096;">${sub.id} • ${sections.length} secciones</span>
+                  </div>
                 </div>
+                <span class="material-symbols-outlined er-subject-arrow" style="font-size: 18px; transition: transform 0.2s; color: #a0aec0; margin-left: 10px;">expand_more</span>
               </div>
               <div class="er-builder-section-list" id="er-builder-seclist-${sub.id}">
           `;
@@ -2382,14 +2495,20 @@
               const schedStr = schedItems.join(", ") || "Horario por definir";
 
               semesterHtml += `
-              <div class="er-builder-section-item">
+              <div class="er-builder-section-item" style="display: flex; align-items: flex-start; padding: 6px 10px; margin-bottom: 6px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
                 <input type="checkbox" class="er-builder-section-chk" 
                        data-subj="${sub.id}" 
                        value="${sub.id}|${sec.crn}" />
-                <div class="er-builder-section-info">
-                  <strong>Sec ${sec.section} (${sec.crn})</strong>
-                  <span class="sec-prof"><span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle; margin-right: 4px;">person</span>${sec.professor || 'Profesor no asignado'}</span>
-                  <span class="sec-sched"><span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle; margin-right: 4px;">schedule</span>${schedStr}</span>
+                <div class="er-builder-section-info" style="display: flex; flex-direction: column;">
+                  <strong style="font-size: 0.8rem; color: #0284c7;">Sec ${sec.section} (${sec.crn})</strong>
+                  <span class="sec-prof" style="font-size: 0.75rem; color: #475569; display: flex; align-items: center; margin-top: 2px;">
+                    <span class="material-symbols-outlined" style="font-size: 14px; margin-right: 4px;">person</span>
+                    ${sec.professor || 'Profesor no asignado'}
+                  </span>
+                  <span class="sec-sched" style="font-size: 0.7rem; color: #64748b; display: flex; align-items: center; margin-top: 2px;">
+                    <span class="material-symbols-outlined" style="font-size: 14px; margin-right: 4px;">schedule</span>
+                    ${schedStr}
+                  </span>
                 </div>
               </div>
             `;
@@ -2403,65 +2522,49 @@
         });
       }
 
-      function syncGlobalCheckboxes() {
-        const $detailsContainer = jQuery("#er-details-container-" + CAREER_SHORT_CODE);
-        let totalSum = 0;
-
-        $detailsContainer.find("input[type=checkbox]:not(.select-all)").each(function () {
-          const rowSubj = jQuery(this).closest("tr").find("td:nth-child(3)").text();
-          const rowCredits = parseFloat(jQuery(this).closest("tr").find("td:nth-child(5)").text()) || 0;
-
-          if (selectedSubjects.has(rowSubj)) {
-            jQuery(this).prop("checked", true);
-            totalSum += rowCredits;
-          } else {
-            jQuery(this).prop("checked", false);
-          }
-        });
-
-        const $totalUcStr = jQuery("#total-projected-uc-" + CAREER_SHORT_CODE);
-        if ($totalUcStr.length) {
-          $totalUcStr.text(totalSum.toFixed(0));
-        }
-
-        const $chkboxes = $detailsContainer.find("input[type=checkbox]:not(.select-all)");
-        const $chkboxesChecked = $chkboxes.filter(":checked");
-        const $selectAll = $detailsContainer.find(".select-all");
-
-        if ($chkboxes.length > 0 && $chkboxes.length === $chkboxesChecked.length) {
-          $selectAll.prop("checked", true).prop("indeterminate", false);
-        } else if ($chkboxesChecked.length === 0) {
-          $selectAll.prop("checked", false).prop("indeterminate", false);
-        } else {
-          $selectAll.prop("checked", false).prop("indeterminate", true);
-        }
-      }
-
-      function syncBuilderPanelState() {
+      function syncBuilderCheckboxes() {
         const $accordion = jQuery("#er-builder-accordion-" + CAREER_SHORT_CODE);
 
-        // Update section checkboxes
-        $accordion.find(".er-builder-section-chk").each(function () {
-          const val = jQuery(this).val();
-          if (builderSectionSelection.has(val)) {
-            jQuery(this).prop("checked", true);
-          } else {
-            jQuery(this).prop("checked", false);
-          }
-        });
+        // For each semester group
+        $accordion.find(".er-builder-semester-group").each(function () {
+          const $semChk = jQuery(this).find(".er-builder-semester-chk");
+          
+          // Get subjects in this semester
+          const $subjChks = jQuery(this).find(".er-builder-subject-chk");
+          const totalSubjs = $subjChks.length;
+          let checkedSubjs = 0;
+          let indeterminateSubjs = false;
 
-        // Update subject checkboxes based on sections
-        $accordion.find(".er-builder-subject-chk").each(function () {
-          const subjId = jQuery(this).val();
-          const totalSecs = $accordion.find(`.er-builder-section-chk[data-subj="${subjId}"]`).length;
-          const checkedSecs = $accordion.find(`.er-builder-section-chk[data-subj="${subjId}"]:checked`).length;
+          $subjChks.each(function () {
+            const subjId = jQuery(this).val();
+            const $secChks = jQuery(this).closest(".er-builder-subject-item").find(".er-builder-section-chk");
+            const totalSecs = $secChks.length;
+            let checkedSecs = 0;
 
-          if (checkedSecs === 0) {
-            jQuery(this).prop("checked", false).prop("indeterminate", false);
-          } else if (checkedSecs === totalSecs) {
-            jQuery(this).prop("checked", true).prop("indeterminate", false);
+            $secChks.each(function () {
+              const secVal = jQuery(this).val();
+              const isSecChecked = builderSectionSelection.has(secVal);
+              jQuery(this).prop("checked", isSecChecked);
+              if (isSecChecked) checkedSecs++;
+            });
+
+            if (checkedSecs === 0) {
+              jQuery(this).prop("checked", false).prop("indeterminate", false);
+            } else if (checkedSecs === totalSecs) {
+              jQuery(this).prop("checked", true).prop("indeterminate", false);
+              checkedSubjs++;
+            } else {
+              jQuery(this).prop("checked", false).prop("indeterminate", true);
+              indeterminateSubjs = true;
+            }
+          });
+
+          if (checkedSubjs === 0) {
+            $semChk.prop("checked", false).prop("indeterminate", indeterminateSubjs);
+          } else if (checkedSubjs === totalSubjs && !indeterminateSubjs) {
+            $semChk.prop("checked", true).prop("indeterminate", false);
           } else {
-            jQuery(this).prop("checked", false).prop("indeterminate", true);
+            $semChk.prop("checked", false).prop("indeterminate", true);
           }
         });
       }
@@ -2470,9 +2573,7 @@
         builderSubjectSelection.clear();
         builderSectionSelection.clear();
         builderFixedSections = {};
-        selectedSubjects.clear();
-        $totalUc.text("0");
-        $totalUc.parent().removeClass("alert");
+        builderSemesterSelection.clear();
         builderPanelBuilt = false;
         initializeBuilder();
       }
@@ -2494,86 +2595,62 @@
       });
 
       // Builder Grid Rendering
-      function buildVirtualSchedules() {
-        // Get all selected sections natively
-        const selSections = [];
+      function buildBuilderSections() {
+        const sectionsToRender = [];
         builderSectionSelection.forEach(val => {
           const [subjId, crn] = val.split("|");
-          // If this subject is FIXED to a specific CRN, skip all other sections of this subject!
+          // If this subject is fixed to a different section, skip this section
           if (builderFixedSections[subjId] && String(builderFixedSections[subjId]) !== String(crn)) {
             return;
           }
           const s = semesterSchedules.find(x => String(x.crn) === String(crn) && x.subjectId === subjId);
           if (s) {
-            // Deep clone to add custom properties for builder UI
             const clone = JSON.parse(JSON.stringify(s));
-            if (String(builderFixedSections[subjId]) === String(crn)) {
-              clone.isFixed = true;
-            }
-            selSections.push(clone);
+            clone.isFixed = (String(builderFixedSections[subjId]) === String(crn));
+            sectionsToRender.push(clone);
           }
         });
-
-        // To group overlapping sections of the SAME subject
-        // First, categorize by Subject ID
-        const bySubject = {};
-        selSections.forEach(s => {
-          if (!bySubject[s.subjectId]) bySubject[s.subjectId] = [];
-          bySubject[s.subjectId].push(s);
-        });
-
-        // For each subject, we check overlaps between its own sections to form 'groups'
-        // Warning: Usually, sections of the same subject WILL overlap in time (e.g. M/W 8am-10am).
-        // We group them into a "Virtual Schedule" block representing "Matematica (3 sections)"
-        const virtualBlocks = [];
-
-        Object.keys(bySubject).forEach(subjId => {
-          const sections = bySubject[subjId];
-
-          // If fixed, there's only 1 section anyway.
-          if (builderFixedSections[subjId]) {
-            virtualBlocks.push([sections[0]]);
-            return;
-          }
-
-          // Grouping logic for overlapping sections of the same subject
-          const groupedSubj = [];
-          sections.forEach(sec => {
-            let placed = false;
-            for (const grp of groupedSubj) {
-              // check overlap with any section in the group
-              let overlaps = false;
-              for (const elem of grp) {
-                if (checkOverlap([elem], sec)) { overlaps = true; break; }
-              }
-              if (overlaps) {
-                grp.push(sec);
-                placed = true;
-                break;
-              }
-            }
-            if (!placed) {
-              groupedSubj.push([sec]);
-            }
-          });
-
-          groupedSubj.forEach(grp => {
-            virtualBlocks.push(grp); // This is an array of sections
-          });
-        });
-
-        return virtualBlocks;
+        return sectionsToRender;
       }
 
       function renderBuilderGrid() {
-        const groupedBlocks = buildVirtualSchedules();
+        const sectionsToRender = buildBuilderSections();
         const $target = jQuery("#er-builder-grid-target-" + CAREER_SHORT_CODE);
-        renderScheduleBlocksCustomized(groupedBlocks, $target);
+        renderScheduleBlocksCustomized(sectionsToRender, $target);
       }
 
-      function renderScheduleBlocksCustomized(blockGroups, $container) {
+      function renderScheduleBlocksCustomized(sections, $container) {
         $container.empty();
-        if (blockGroups.length === 0) return;
+        if (sections.length === 0) return;
+
+        // Group into individual day-blocks
+        const dayBlocks = [];
+        sections.forEach(sec => {
+          Object.keys(weekDays).forEach(day => {
+            const sched = sec.schedules[day];
+            if (sched) {
+              dayBlocks.push({
+                section: sec,
+                day: day,
+                start: sched.start,
+                end: sched.end,
+                startMins: sched.startMins,
+                endMins: sched.endMins,
+                room: sched.room
+              });
+            }
+          });
+        });
+
+        if (dayBlocks.length === 0) return;
+
+        // Group dayBlocks by day
+        const blocksByDay = { monday: [], tuesday: [], wednesday: [], thursday: [], friday: [], saturday: [], sunday: [] };
+        dayBlocks.forEach(b => {
+          if (blocksByDay[b.day]) {
+            blocksByDay[b.day].push(b);
+          }
+        });
 
         // Calculate dynamic time range based on selected blocks
         let minHour = 7;
@@ -2581,29 +2658,57 @@
         let earliest = 20;
         let latest = 7;
 
-        blockGroups.forEach((group) => {
-          group.forEach(s => {
-            Object.keys(weekDays).forEach(day => {
-              if (s.schedules[day]) {
-                const startH = parseInt(s.schedules[day].start.split(":")[0], 10);
-                let endH = parseInt(s.schedules[day].end.split(":")[0], 10);
-                if (isNaN(endH)) {
-                  const cleanEnd = s.schedules[day].end.replace(/[^\d:]/g, "");
-                  if (cleanEnd.includes(":")) {
-                    endH = parseInt(cleanEnd.split(":")[0], 10);
-                  }
-                }
-                if (!isNaN(startH) && startH < earliest) earliest = startH;
-                if (!isNaN(endH) && endH > latest) latest = endH;
-              }
-            });
-          });
+        dayBlocks.forEach(b => {
+          const startH = Math.floor(b.startMins / 60);
+          const endH = Math.ceil(b.endMins / 60);
+          if (startH < earliest) earliest = startH;
+          if (endH > latest) latest = endH;
         });
 
         if (earliest <= latest) {
           minHour = Math.max(7, earliest - 1);
           maxHour = Math.min(20, latest + 1);
         }
+
+        // Run layout algorithm for each day
+        const daysMap = { monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6, sunday: 7 };
+        Object.keys(blocksByDay).forEach(day => {
+          const dayList = blocksByDay[day];
+          // Sort by startMins, then endMins descending
+          dayList.sort((a, b) => a.startMins - b.startMins || b.endMins - a.endMins);
+
+          const columns = [];
+          dayList.forEach(block => {
+            let colIndex = 0;
+            while (true) {
+              if (!columns[colIndex]) {
+                columns[colIndex] = [];
+              }
+              const last = columns[colIndex][columns[colIndex].length - 1];
+              // If no overlap, place it in this column
+              if (!last || last.endMins <= block.startMins) {
+                columns[colIndex].push(block);
+                block.col = colIndex;
+                break;
+              }
+              colIndex++;
+            }
+          });
+
+          // Calculate maxCols for each block
+          dayList.forEach(block => {
+            const overlappingCols = new Set([block.col]);
+            dayList.forEach(other => {
+              if (block !== other) {
+                const overlaps = block.startMins < other.endMins && other.startMins < block.endMins;
+                if (overlaps) {
+                  overlappingCols.add(other.col);
+                }
+              }
+            });
+            block.maxCols = Math.max(1, overlappingCols.size);
+          });
+        });
 
         const gridHtml = `
           <div class="er-schedule-wrapper">
@@ -2632,145 +2737,109 @@
           }
         }
 
+        // Count sections per subject
+        const subjectSectionCounts = {};
+        sections.forEach(sec => {
+          subjectSectionCounts[sec.subjectId] = (subjectSectionCounts[sec.subjectId] || 0) + 1;
+        });
+
+        // Assign a consistent color class (0 to 9) to each subject
+        const subjectColors = {};
+        let colorCounter = 0;
+        builderSubjectSelection.forEach(subjId => {
+          subjectColors[subjId] = colorCounter % 10;
+          colorCounter++;
+        });
+
         let blocksHtml = "";
-        const daysMap = { monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6, sunday: 7 };
+        Object.keys(blocksByDay).forEach(day => {
+          const dayList = blocksByDay[day];
+          const dayCol = daysMap[day];
 
-        blockGroups.forEach((group, groupIndex) => {
-          const baseSection = group[0];
-          const isGroup = group.length > 1;
-          const isFixed = baseSection.isFixed;
-          const colorCls = `er-color-${groupIndex % 10}`;
-          const groupData = encodeURIComponent(JSON.stringify(group));
+          dayList.forEach(block => {
+            const sec = block.section;
+            const hasMultipleSections = subjectSectionCounts[sec.subjectId] > 1;
+            const isFixed = sec.isFixed;
+            
+            let blockClass = "er-builder-fixed-block";
+            let badgeHtml = "";
 
-          Object.keys(daysMap).forEach(dayKey => {
-            const ds = baseSection.schedules[dayKey];
-            if (ds) {
-              const dayCol = daysMap[dayKey];
-              const startParts = ds.start.split(":");
-              const endParts = ds.end.split(":");
-              const startHour = parseInt(startParts[0], 10);
-              const startMin = parseInt(startParts[1], 10);
-              const startRow = 2 + (startHour - minHour) * 2 + (startMin >= 30 ? 1 : 0);
-
-              let endHour = parseInt(endParts[0], 10);
-              let endMin = parseInt(endParts[1], 10);
-              if (isNaN(endMin)) {
-                const cleanEnd = ds.end.replace(/[^\d:]/g, "");
-                if (cleanEnd.includes(":")) {
-                  const parts = cleanEnd.split(":");
-                  endHour = parseInt(parts[0], 10);
-                  endMin = parseInt(parts[1], 10);
-                }
+            if (hasMultipleSections) {
+              if (isFixed) {
+                blockClass = "er-builder-fixed-block";
+                badgeHtml = `<div class="er-conflict-badge" style="background:#16a34a;"><span class="material-symbols-outlined" style="font-size:12px;">pin</span> FIJADO</div>`;
+              } else {
+                blockClass = "er-builder-alternative-block";
+                badgeHtml = `<div class="er-conflict-badge" style="background:#eab308; color:#000;"><span class="material-symbols-outlined" style="font-size:12px;">help</span> ALTERNATIVA</div>`;
               }
-
-              let endRow = 2 + (endHour - minHour) * 2 + (endMin >= 30 ? 1 : 0);
-              if (endMin >= 50) endRow += 1;
-
-              // Detect if this block conflicts with ANOTHER subject
-              const subjectsInSlot = new Set(group.map(s => s.subjectId));
-              const isConflictWithOthers = subjectsInSlot.size > 1;
-              const isGroupedSameSubj = subjectsInSlot.size === 1 && group.length > 1;
-
-              let badgeHtml = "";
-              if (isConflictWithOthers) {
-                badgeHtml = `<div class="er-conflict-badge"><span class="material-symbols-outlined" style="font-size:12px;">warning</span> CONFLICTO</div>`;
-              } else if (isGroupedSameSubj) {
-                badgeHtml = `<div class="er-overlap-count">${group.length} secciones</div>`;
-              }
-
-              const blockClass = isConflictWithOthers ? 'er-conflict-block' : (isGroupedSameSubj ? 'er-builder-grouped-block' : 'er-builder-fixed-block');
-              const colorClass = `er-color-${groupIndex % 10}`; // Re-using colorCls
-
-              blocksHtml += `
-                <div class="er-class-block ${colorClass} ${blockClass}" 
-                     style="grid-column: ${dayCol + 1}; grid-row: ${startRow} / ${endRow};" 
-                     data-group-data="${groupData}">
-                  ${badgeHtml}
-                  <span class="subject-title" title="${baseSection.subjectName || baseSection.subjectId}">${isConflictWithOthers ? 'Conflicto de Horario' : baseSection.subjectName}</span>
-                  <span class="subject-acronym">${isConflictWithOthers ? 'Múltiples Materias' : baseSection.subjectId}</span>
-                  <span class="subject-professor">${ds.room ? ds.room + '<br>' : ''}${isConflictWithOthers ? '' : `NRC: ${baseSection.crn} - Sec: ${baseSection.section}`}</span>
-                  <span>${ds.start} - ${ds.end}</span>
-                </div>
-              `;
             }
+
+            const startHour = Math.floor(block.startMins / 60);
+            const startMin = block.startMins % 60;
+            const startRow = 2 + (startHour - minHour) * 2 + (startMin >= 30 ? 1 : 0);
+
+            const endHour = Math.floor(block.endMins / 60);
+            const endMin = block.endMins % 60;
+            let endRow = 2 + (endHour - minHour) * 2 + (endMin >= 30 ? 1 : 0);
+            if (endMin >= 50) endRow += 1;
+
+            let widthStyle = "width: calc(100% - 2px); margin-left: 1px;";
+            if (block.maxCols > 1) {
+              const widthVal = 70;
+              const leftVal = block.col * (30 / (block.maxCols - 1));
+              widthStyle = `width: ${widthVal}%; margin-left: ${leftVal}%;`;
+            }
+
+            const colorClass = `er-color-${subjectColors[sec.subjectId] || 0}`;
+
+            blocksHtml += `
+              <div class="er-class-block ${colorClass} ${blockClass}" 
+                   style="grid-column: ${dayCol + 1}; grid-row: ${startRow} / ${endRow}; ${widthStyle} z-index: ${5 + block.col}; cursor: pointer;"
+                   data-subj="${sec.subjectId}"
+                   data-crn="${sec.crn}">
+                ${badgeHtml}
+                <span class="subject-title" style="font-weight: bold; font-size: 0.72rem;" title="${sec.subjectName}">${sec.subjectName}</span>
+                <span class="subject-acronym" style="font-size: 0.62rem; opacity: 0.9;">${sec.subjectId}</span>
+                <span class="subject-professor" style="font-size: 0.62rem; opacity: 0.85;">Sec ${sec.section} (NRC ${sec.crn})</span>
+                <span style="font-size: 0.6rem; font-weight: 500;">${block.start} - ${block.end}</span>
+
+                <!-- Translucent Hover Overlay -->
+                <div class="er-hover-overlay">
+                  <div style="font-weight: 800; font-size: 0.85rem; margin-bottom: 4px; text-transform: uppercase;">${sec.subjectName}</div>
+                  <div style="font-size: 0.75rem; margin-bottom: 6px; opacity: 0.9;">Código: <strong>${sec.subjectId}</strong></div>
+                  <div style="background: rgba(255,255,255,0.12); padding: 6px 10px; border-radius: 6px; font-size: 0.72rem; width: 100%; text-align: left; margin-bottom: 8px;">
+                    <div><strong>NRC:</strong> ${sec.crn}</div>
+                    <div><strong>Sección:</strong> ${sec.section}</div>
+                    <div><strong>Profesor:</strong> ${sec.professor || 'Por definir'}</div>
+                    <div><strong>Aula:</strong> ${block.room || 'Por definir'}</div>
+                    <div><strong>Modalidad:</strong> ${sec.modality || 'Presencial'}</div>
+                    <div><strong>Horario:</strong> ${block.start} - ${block.end}</div>
+                  </div>
+                  <div style="font-size: 0.72rem; font-weight: bold; color: #38bdf8;">
+                    ${hasMultipleSections ? (isFixed ? '📌 FIJADO (Clic para liberar)' : '⚡ Alternativa (Clic para fijar)') : 'Asignatura Seleccionada'}
+                  </div>
+                </div>
+              </div>
+            `;
           });
         });
 
         $container.html(gridHtml + timeRowsHtml + blocksHtml + '</div></div>');
-        bindPopoverEvents($container);
-      }
 
-      function bindPopoverEvents($container) {
-        const $popover = jQuery("#er-builder-popover-" + CAREER_SHORT_CODE);
-        const $content = $popover.find(".popover-content");
-
-        $container.find(".er-builder-grouped-block, .er-builder-fixed-block").on("click", function (e) {
+        // Bind click events on blocks to pin/unpin them
+        $container.find(".er-class-block").on("click", function (e) {
           e.stopPropagation();
-
-          const isCurrentlyFixed = jQuery(this).hasClass("er-builder-fixed-block");
-          const group = JSON.parse(decodeURIComponent(jQuery(this).attr("data-group-data")));
-          const subjId = group[0].subjectId;
-
-          if (isCurrentlyFixed) {
-            // Revert the fix
-            delete builderFixedSections[subjId];
-            // Recheck the other sections of this subject in the panel?
-            // The panel already has them checked technically. We just unfix it.
-            updateBuilderAfterSelection();
-            $popover.hide();
-            return;
-          }
-
-          // It's a grouped block, show popover
-          let html = "";
-          group.forEach(sec => {
-            // Get room info from first schedule or fallback
-            let roomInfo = "";
-            const firstDay = Object.keys(weekDays).find(d => sec.schedules[d]);
-            if (firstDay && sec.schedules[firstDay].room) {
-              roomInfo = `<br><small style="color:#777;">Aula: ${sec.schedules[firstDay].room}</small>`;
-            }
-
-            html += `
-            <div class="popover-item" data-subj="${sec.subjectId}" data-crn="${sec.crn}">
-              <div style="font-size: 0.7rem; color: #888; font-weight: normal;">${sec.subjectName || sec.subjectId}</div>
-              <strong>Sec ${sec.section} (NRC ${sec.crn})</strong>
-              <div style="font-size: 0.75rem;">${sec.professor}${roomInfo}</div>
-            </div>
-          `;
-          });
-          $content.html(html);
-
-          // Position popover relative to clicked block
-          const offset = jQuery(this).offset();
-          const gridOffset = jQuery("#er-builder-layout-" + CAREER_SHORT_CODE).offset();
-
-          $popover.css({
-            top: (offset.top - gridOffset.top + 20) + "px",
-            left: (offset.left - gridOffset.left + 20) + "px",
-            display: "block"
-          });
-        });
-
-        $popover.on("click", ".popover-item", function (e) {
-          e.stopPropagation();
-          const crn = jQuery(this).data("crn");
           const subj = jQuery(this).data("subj");
+          const crn = jQuery(this).data("crn");
 
-          builderFixedSections[subj] = String(crn);
-          $popover.hide();
+          if (String(builderFixedSections[subj]) === String(crn)) {
+            // Already fixed to this CRN, unfix
+            delete builderFixedSections[subj];
+          } else {
+            // Fix this subject to this CRN
+            builderFixedSections[subj] = String(crn);
+          }
           updateBuilderAfterSelection();
-        });
-
-        jQuery("body").on("click", function () {
-          $popover.hide();
-        });
-        $popover.find(".popover-close").on("click", function (e) {
-          e.stopPropagation();
-          $popover.hide();
-        });
-        $popover.on("click", function (e) {
-          e.stopPropagation(); // prevent body click closing
         });
       }
     });
