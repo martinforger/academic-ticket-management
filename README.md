@@ -14,14 +14,17 @@ Sistema web para la gestión y seguimiento de observaciones de inscripción acad
 
 | Funcionalidad | Descripción |
 |---------------|-------------|
-| 📊 **Dashboard Interactivo** | Estadísticas en tiempo real con gráficos de dona y tendencias |
-| 📋 **Gestión de Solicitudes** | CRUD completo con filtros por departamento, estado y fecha |
-| 👥 **Vista por Estudiante** | Agrupa todas las solicitudes de un estudiante en un solo expediente |
-| 🔐 **Sistema de Roles** | Control de acceso basado en roles (Lector, Coordinador, Administrador) |
-| 📝 **Auditoría de Cambios** | Registro completo de todas las modificaciones realizadas |
-| 📥 **Exportación Excel** | Descarga de datos filtrados en formato .xlsx |
-| 🎯 **Onboarding Interactivo** | Tour guiado para nuevos usuarios |
-| 🌙 **Modo Oscuro** | Interfaz adaptable a preferencias del usuario |
+| 📊 **Dashboard Interactivo** | Estadísticas en tiempo real con gráficos de dona, métricas clave y registro de actividad |
+| 📋 **Gestión de Solicitudes** | CRUD completo con filtros por departamento, estado, responsable, buscador y asignación automática |
+| 👥 **Vista por Estudiante** | Agrupa todas las solicitudes de un estudiante en un solo expediente para ver su historial académico completo |
+| 📅 **Constructor de Horarios** | Herramienta gráfica interactiva para que estudiantes armen su horario ideal, resuelvan colisiones visuales de secciones y guarden sus selecciones de manera persistente |
+| 📤 **Carga y Gestión Masiva** | Panel administrativo para importar y gestionar semestres, materias, proyecciones y horarios desde archivos Excel/CSV |
+| 🛠️ **Utilidades Académicas** | Herramientas de balanceo de secciones (algoritmo multi-nivel de reubicación), cierre de secciones (simulador de reubicación automática de alumnos) y auditoría de proyecciones |
+| 🔐 **Sistema de Roles** | Control de acceso basado en roles (Lector, Coordinador, Administrador) con restricciones a nivel de frontend y políticas RLS en base de datos |
+| 📝 **Auditoría de Cambios** | Registro automático de auditoría en la base de datos para todas las modificaciones críticas de solicitudes o roles |
+| 📥 **Exportación Excel** | Descarga de reportes filtrados y propuestas de balanceo/cierre de secciones en formato Excel (.xlsx) |
+| 🎯 **Onboarding Interactivo** | Tour guiado paso a paso para facilitar la adopción por parte de coordinadores nuevos |
+| 🌙 **Modo Oscuro** | Interfaz adaptable y pulida compatible con preferencias del sistema y usuario |
 
 ---
 
@@ -81,13 +84,24 @@ flowchart TB
 ```
 academic-ticket-management/
 ├── public/                  # Archivos estáticos
+├── shortcodes/              # Herramientas y páginas estáticas HTML/JS standalone (integrables externamente)
+│   ├── enrollment-recommendations.html # Constructor interactivo de horarios y visualizador de materias por semestre
+│   ├── formulario_observaciones.html   # Formulario inteligente para radicar observaciones/solicitudes de estudiantes
+│   ├── enrollment-responses.html       # Visualizador estático de respuestas a solicitudes
+│   ├── subject-schedule.html           # Buscador simple de horarios y materias
+│   └── test-builder.html               # Sandbox/entorno experimental del constructor de horarios
 ├── src/
 │   ├── assets/             # Recursos (imágenes, etc.)
-│   ├── components/         # Componentes React
+│   ├── components/         # Componentes React (SPA)
 │   │   ├── DashboardOverview.tsx    # Panel principal con estadísticas
-│   │   ├── RequestsView.tsx         # Vista de solicitudes
+│   │   ├── RequestsView.tsx         # Vista de solicitudes (CRUD + Auditoría)
 │   │   ├── StudentRecords.tsx       # Expedientes por estudiante
 │   │   ├── UserManagement.tsx       # Gestión de usuarios (admin)
+│   │   ├── UploadProjections.tsx    # Panel de administración e importación de datos
+│   │   ├── SectionBalancing.tsx     # Utilidad de Balanceo de Secciones
+│   │   ├── SectionClosing.tsx       # Utilidad de Cierre de Secciones
+│   │   ├── ProjectionAudit.tsx      # Utilidad de Auditoría de Proyecciones
+│   │   ├── MateriaModal.tsx         # Modal de gestión individual de materias
 │   │   ├── LoginPage.tsx            # Página de login
 │   │   ├── RegisterPage.tsx         # Página de registro
 │   │   ├── PendingApprovalPage.tsx  # Página de espera de aprobación
@@ -101,9 +115,9 @@ academic-ticket-management/
 │   ├── utils/
 │   │   └── dataUtils.ts     # Funciones de transformación de datos
 │   ├── types.ts             # Definiciones de tipos TypeScript
-│   ├── App.tsx              # Componente raíz con routing
+│   ├── App.tsx              # Componente raíz con routing reactivo (basado en estados)
 │   ├── main.tsx             # Punto de entrada
-│   └── index.css            # Estilos globales
+│   └── index.css            # Estilos globales y tokens
 ├── .env                     # Variables de entorno (no versionado)
 ├── package.json             # Dependencias y scripts
 ├── tailwind.config.js       # Configuración de TailwindCSS
@@ -119,70 +133,153 @@ academic-ticket-management/
 
 ```mermaid
 erDiagram
-    PROFILES ||--o{ AUDIT_LOGS : "genera"
-    PROFILES {
-        uuid id PK "ID del usuario (auth.users)"
+    profiles {
+        uuid id PK "auth.users ID"
         text email "Correo electrónico"
-        enum role "sin_asignar|lector|coordinador|administrador"
-        text initials "Iniciales del nombre"
+        user_role role "Rol de usuario"
+        text initials "Iniciales"
         text full_name "Nombre completo"
+        timestamp created_at "Fecha creación"
     }
 
-    OBSERVACIONES ||--o{ AUDIT_LOGS : "registra cambios"
-    OBSERVACIONES {
-        int id PK "ID autoincremental"
-        enum estatus "POR REVISAR|EN REVISIÓN|SOLUCIONADO|..."
-        enum clasificacion "IN|MC|IS|LP|TE|GE|AT|PP"
-        text caso "Número de caso único"
-        timestamp fecha "Fecha de creación"
-        int cedula "Cédula del estudiante"
-        text estudiante "Nombre del estudiante"
-        int uc "Unidades de crédito"
-        text semestre "Semestre actual"
-        float promedio "Promedio académico"
-        bool autoriza "Autorización del estudiante"
-        text accion "Agregar o Retirar"
-        text asignatura "Nombre de la asignatura"
-        int nrc "Número de referencia del curso"
-        text comentarios "Comentarios del estudiante"
-        text contacto "Información de contacto"
-        text responsable "Coordinador asignado"
-        text respuesta_interna "Notas internas"
-        text respuesta_estudiante "Respuesta al estudiante"
-    }
-
-    AUDIT_LOGS {
-        int id PK "ID autoincremental"
+    audit_logs {
+        bigint id PK "Generado por defecto"
         timestamp created_at "Fecha del registro"
-        uuid user_id FK "Usuario que realizó la acción"
-        text case_id "ID del caso afectado"
-        text action "Tipo de acción realizada"
-        jsonb details "Detalles adicionales"
-        jsonb changes "Cambios realizados (before/after)"
+        uuid user_id FK "auth.users ID"
+        text case_id "ID del caso"
+        text action "Acción realizada"
+        jsonb details "Detalles en JSON"
+        jsonb changes "Cambios en JSON"
     }
 
-    PROYECCIONES {
-        int campus "Código del campus"
-        text program "Programa académico"
-        text majorcode "Código de especialidad"
-        text subjectsemester "Semestre de la materia"
-        text subjectid "Código de la materia"
-        text subjectname "Nombre de la materia"
-        text studentid "Cédula del estudiante"
-        text studentname "Nombre del estudiante"
-        text averagegradepoints "Promedio de notas"
-        text accumulatedcredits "Créditos acumulados"
+    carrera {
+        int car_id PK "Autoincremental"
+        varchar car_nombre "Nombre de carrera (Único)"
+        varchar car_codigo "Código de carrera (Único)"
+        text car_clasificacion_grado "Clasificación de grado"
+        text car_cod_corto "Código corto de carrera"
     }
+
+    estudiante {
+        int est_id PK "Autoincremental"
+        int est_cedula "Cédula (Único)"
+        text est_nombre "Nombre completo"
+        char est_ubic_sem "Ubicación semestral"
+        char est_cumplimiento "Cumplimiento"
+        numeric est_promedio "Promedio"
+        int est_creditos_acum "Créditos acumulados"
+        int est_cod_campus "Código de campus"
+        varchar est_genero "Género"
+        text est_correo "Correo electrónico"
+        int est_car_id_fk FK "carrera ID"
+    }
+
+    materia {
+        int mat_id PK "Autoincremental"
+        text mat_cod "Código de materia (Único)"
+        text mat_departamento "Departamento"
+        text mat_nombre "Nombre de la materia"
+        int mat_creditos "Unidades de crédito"
+        text mat_taxonomia "Taxonomía"
+        int mat_horas_teoria "Horas teoría"
+        int mat_horas_practica "Horas práctica"
+        int mat_horas_lab "Horas laboratorio"
+        int mat_horas_est_indep "Horas est. indep."
+        text mat_modality "Modalidad (P|V)"
+        boolean mat_is_requirement "Materia requisito"
+    }
+
+    materia_carrera {
+        int id PK "Autoincremental"
+        int materia_id FK "materia ID"
+        int carrera_id FK "carrera ID"
+        boolean mat_sec_is_elective "Es electiva"
+        text mat_car_semestre "Semestre en carrera"
+    }
+
+    observacion {
+        int obs_id PK "Autoincremental"
+        Estatus obs_estatus "Estatus de observación"
+        Clasificacion obs_clasificacion "Clasificación"
+        text obs_num_caso "Número de caso único"
+        timestamp obs_fecha "Fecha de registro"
+        boolean obs_autoriza "Autorización estudiante"
+        text obs_accion "Acción"
+        text obs_comentarios "Comentarios"
+        text obs_responsable "Responsable"
+        text obs_respuesta_interna "Respuesta interna"
+        text obs_respuesta_externa "Respuesta externa"
+        int est_id FK "estudiante ID"
+        int mat_id FK "materia ID"
+        int obs_nrc_solicitado "NRC solicitado"
+        int obs_semester FK "semestre ID"
+    }
+
+    proyeccion {
+        int proy_id PK "Autoincremental"
+        int proy_intentos "Intentos de cursado"
+        int est_id FK "estudiante ID"
+        int mat_id FK "materia ID"
+        int sem_id FK "semestre ID"
+        int proy_car_id FK "carrera ID"
+    }
+
+    seccion {
+        bigint sec_id PK "Generado por defecto"
+        int sec_nrc "NRC de sección (Único)"
+        int sec_numero "Número de sección"
+        text sec_inscritos "Estudiantes inscritos"
+        text sec_cupo "Cupo máximo"
+        text sec_profesor "Nombre del profesor"
+        text sec_hor_lun "Horario Lunes"
+        text sec_hor_mar "Horario Martes"
+        text sec_hor_mie "Horario Miércoles"
+        text sec_hor_jue "Horario Jueves"
+        text sec_hor_vie "Horario Viernes"
+        text sec_hor_sab "Horario Sábado"
+        text sec_hor_dom "Horario Domingo"
+        int sec_mat_id FK "materia ID"
+        boolean sec_is_displayed_on_web "Visible en web"
+        int sec_sem FK "semestre ID"
+    }
+
+    semestre {
+        int sem_id PK "Autoincremental"
+        text sem_nombre "Nombre descriptivo de periodo"
+        boolean sem_is_active "Es semestre activo"
+        text TERM "Código TERM"
+    }
+
+    profiles ||--|| auth_users : "references"
+    audit_logs }o--|| auth_users : "logged_by"
+    carrera ||--o{ estudiante : "has"
+    carrera ||--o{ materia_carrera : "includes"
+    carrera ||--o{ proyeccion : "includes"
+    estudiante ||--o{ proyeccion : "has"
+    estudiante ||--o{ observacion : "makes"
+    materia ||--o{ materia_carrera : "associated_with"
+    materia ||--o{ proyeccion : "projected_in"
+    materia ||--o{ seccion : "has"
+    materia ||--o{ observacion : "requested_in"
+    semestre ||--o{ proyeccion : "applies_to"
+    semestre ||--o{ observacion : "applies_to"
+    semestre ||--o{ seccion : "applies_to"
 ```
 
 ### Descripción de Tablas
 
-| Tabla | Propósito | Registros |
-|-------|-----------|-----------|
-| `profiles` | Almacena información de usuarios y sus roles en el sistema | Variable |
-| `observaciones` | Registra todas las solicitudes/tickets de inscripción de estudiantes | ~755 |
-| `audit_logs` | Mantiene un historial de todas las acciones realizadas en el sistema | Variable |
-| `proyecciones` | Datos de proyección académica para consulta de expedientes | ~7,068 |
+| Tabla | Propósito |
+|-------|-----------|
+| `profiles` | Almacena información de usuarios y sus roles en el sistema (Lector, Coordinador, Administrador) |
+| `carrera` | Catálogo maestro de carreras universitarias y programas (tanto Majors como Minors) |
+| `estudiante` | Listado maestro de estudiantes con su información académica, promedio, créditos acumulados y carrera asociada |
+| `materia` | Listado maestro de asignaturas con sus créditos, taxonomía, distribución de horas, modalidad y prerrequisitos |
+| `materia_carrera` | Relación intermedia que define a qué carreras pertenece cada materia, el semestre sugerido y si es electiva |
+| `seccion` | Registro detallado de cada sección/NRC de materias, incluyendo cupos, inscritos, profesor y sus horarios semanales por bloque |
+| `semestre` | Control de periodos académicos (semestres ordinarios e intensivos) y su estado activo actual |
+| `proyeccion` | Tabla intermedia de intersección que define la proyección de una materia para un estudiante en un semestre y carrera específicos |
+| `observacion` | Registra todas las solicitudes y observaciones hechas por los estudiantes relativas a una materia, sección, estudiante y semestre |
+| `audit_logs` | Mantiene una bitácora detallada de todas las acciones de edición y cambios de roles para auditoría |
 
 ### Enumeraciones (ENUMs)
 
@@ -557,47 +654,56 @@ npm run build
 
 El sistema requiere las siguientes tablas en Supabase:
 
-1. **profiles** - Se crea automáticamente con un trigger en `auth.users`
-2. **observaciones** - Datos de solicitudes (se pobla automáticamente)
-3. **audit_logs** - Se crea para rastrear cambios
-4. **proyecciones** - Datos de proyección académica (actualización semestral)
+1. **profiles** - Tabla de perfiles de usuario, creada automáticamente con un trigger en `auth.users`.
+2. **observacion** - Registros de solicitudes y observaciones de estudiantes.
+3. **audit_logs** - Bitácora de cambios para auditoría de acciones del personal.
+4. **proyeccion** - Datos de proyección académica por estudiante.
+5. **carrera** - Catálogo maestro de carreras y programas académicos (Majors y Minors).
+6. **materia** - Catálogo maestro de asignaturas con sus créditos, taxonomías y horas.
+7. **materia_carrera** - Relación de asignaturas pertenecientes a cada carrera (incluyendo electivas).
+8. **semestre** - Registro de periodos académicos (semestres e intensivos) con indicación de cuál es el periodo activo.
 
-### 📥 Fuentes de Datos
+### 📥 Entrada de Observaciones (Estudiantes)
 
-#### Observaciones (Automático)
-
-La tabla `observaciones` se **pobla automáticamente** desde un formulario de Google Forms mediante un script de **Google Apps Script**. 
+Las observaciones y solicitudes de ajuste de NRC son radicadas directamente por los estudiantes usando el formulario web independiente en el shortcode: [formulario_observaciones.html](file:///c:/Users/luisr/dev/academic-ticket-management/shortcodes/formulario_observaciones.html).
 
 ```mermaid
 flowchart LR
-    A[📝 Google Forms<br/>Formulario de Observaciones] -->|Trigger onSubmit| B[⚙️ Google Apps Script]
-    B -->|INSERT via API| C[(🗄️ Supabase<br/>observaciones)]
-    C -->|Consulta| D[🖥️ React App]
+    A[🖥️ Alumno<br/>Formulario de Observaciones] -->|Inserta vía cliente JS| B[(🗄️ Supabase<br/>observacion)]
+    B -->|Consulta reactiva| C[🖥️ React App<br/>RequestsView]
 
     style A fill:#4285f4,stroke:#1a73e8,color:#fff
-    style B fill:#f9ab00,stroke:#e37400,color:#000
-    style C fill:#3fcf8e,stroke:#24b47e,color:#fff
-    style D fill:#61dafb,stroke:#21a0c9,color:#000
-```
-
-> [!IMPORTANT]
-> El script de Apps Script debe estar configurado con las credenciales de Supabase y un trigger `onFormSubmit` para sincronizar automáticamente las nuevas observaciones.
-
-#### Proyecciones (Semestral)
-
-La tabla `proyecciones` contiene datos de proyección académica de los estudiantes y debe **actualizarse cada inicio de semestre**:
-
-1. Exportar datos de proyección desde el sistema académico institucional
-2. Limpiar la tabla existente (opcional, según política de retención)
-3. Importar el nuevo archivo CSV/Excel a Supabase
-
-```bash
-# Ejemplo: Importar proyecciones usando Supabase CLI
-supabase db import --table proyecciones --file proyecciones_202601.csv
+    style B fill:#3fcf8e,stroke:#24b47e,color:#fff
+    style C fill:#61dafb,stroke:#21a0c9,color:#000
 ```
 
 > [!NOTE]
-> Los datos de proyecciones son utilizados para enriquecer los expedientes de estudiantes y no son modificados por la aplicación.
+> Este formulario realiza la carga dinámica de los datos del estudiante y sus materias proyectadas directamente desde la base de datos al validar su cédula, permitiéndole elegir de forma interactiva la acción a solicitar. En caso de no existir datos o proyección cargada, le permite auto-registrarse de manera sencilla.
+
+#### Datos Académicos y Carga Masiva (Panel de Datos - Admin)
+
+El sistema permite a los administradores cargar y sincronizar los datos maestros directamente desde la interfaz web en la sección **Datos** sin requerir CLI o acceso directo al motor de base de datos:
+
+1. **Carga de Proyecciones (Semestral)**:
+   - Se realiza al inicio de cada periodo académico.
+   - Se selecciona la carrera y periodo académico correspondientes.
+   - El archivo Excel/CSV debe contener las columnas `studentId`, `averageGradePoints`, `accumulatedCredits`, `subjectId` y `attempts`.
+   - La base de datos ejecuta el stored procedure `upload_proyecciones`, el cual limpia de manera atómica las proyecciones previas del periodo y carrera seleccionados antes de insertar los nuevos registros.
+
+2. **Carga de Horarios**:
+   - Importa el archivo de planificación de secciones y horarios de la carrera en el periodo.
+   - El archivo CSV debe usar delimitador de punto y coma `;` y tener las columnas de horarios estándar (LUNES, MARTES, MIERCOLES, JUEVES, VIERNES, SABADO, DOMINGO, SSBSECT_CRN, SSBSECT_SUBJ_CODE, SSBSECT_CRSE_NUMB, PROFESOR, SECCION, INSCRITOS, CUPO).
+   - Utiliza el stored procedure `upload_horarios_programa`, limpiando previamente los horarios de la carrera y periodo seleccionados.
+
+3. **Carga de Estudiantes General**:
+   - Sincroniza el listado maestro de estudiantes del sistema académico institucional.
+   - Procesa archivos CSV grandes por lotes de 500 registros usando el stored procedure `upload_estudiantes_general`.
+
+4. **Creación y Activación de Semestres (Periodos / TERM)**:
+   - Permite a los administradores registrar nuevos periodos (ej. `202625` para Sem Mar/Jul 2025-26) y seleccionar cuál periodo se define como el periodo activo del sistema para las solicitudes y simulaciones.
+
+5. **Catálogo de Materias**:
+   - Listado maestro y completo de asignaturas en el que se pueden buscar, crear o editar detalles como créditos, taxonomía, distribución de horas (teoría, práctica, laboratorio, independiente), modalidad y dependencias.
 
 
 ### Trigger para Crear Perfiles
